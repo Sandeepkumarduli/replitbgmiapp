@@ -8,11 +8,114 @@
       "gameId": "ADMIN001",
       "role": "admin",
       "id": 1,
-      "createdAt": "2025-05-01T19:59:00.785Z"
+      "createdAt": "2025-05-01T20:02:27.040Z"
+    },
+    {
+      "username": "Sandeepkumarduli",
+      "password": "8c07b13e81be97086723854aece2edbfa1da9c6d125cc3ccecbde6456502a1991f92553d157122b33b2eee9cf8a406538c27817d5282f6131455095a3f94b9fb.51b1af3c199d7d70bc95e227dce21f70",
+      "email": "admin@bgmi-tournaments.com",
+      "phone": "1234567890",
+      "gameId": "admin",
+      "role": "admin",
+      "id": 2,
+      "createdAt": "2025-05-01T20:03:13.030Z"
+    },
+    {
+      "username": "Sandeepkumar",
+      "password": "4de26d601ccb8dffe2640b1a3d7ea5e6e94b1330890cb1c92ed207854669249cfd5ac4803207eb74b5d5a48df9e8deff6d0701a13b7361d9e2fa4e754b1e0f38.b98d73fa47c151afa1a7fa83867a7429",
+      "email": "sandeepkumarduli@gmail.com",
+      "phone": "6305407936",
+      "gameId": "5218964656",
+      "role": "user",
+      "id": 3,
+      "createdAt": "2025-05-01T20:05:49.531Z"
+    },
+    {
+      "username": "akash",
+      "password": "27855f2345ba5d81e0ae7f2e24a94690c05c1828fba40ffc547501cd02911aaa2267a91435dfb1055b55bede0c4496395d22c60de5d54ee9df9567291187fb58.ea9a16c0f4ef78987d3c29d5869c0084",
+      "email": "dk0837@srmist.edu.in",
+      "phone": "6305407936",
+      "gameId": "5218964656",
+      "role": "user",
+      "id": 4,
+      "createdAt": "2025-05-01T20:08:07.410Z"
     }
   ],
-  "teams": [],
-  "teamMembers": [],
-  "tournaments": [],
-  "registrations": []
+  "teams": [
+    {
+      "name": "Team Gold",
+      "ownerId": 3,
+      "id": 1,
+      "createdAt": "2025-05-01T20:06:04.547Z"
+    },
+    {
+      "name": "TeamGold",
+      "ownerId": 4,
+      "id": 2,
+      "createdAt": "2025-05-01T20:08:51.696Z"
+    }
+  ],
+  "teamMembers": [
+    {
+      "teamId": 1,
+      "username": "Sandeepkumar",
+      "gameId": "5218964656",
+      "role": "captain",
+      "id": 1,
+      "createdAt": "2025-05-01T20:06:04.547Z"
+    },
+    {
+      "teamId": 2,
+      "username": "akash",
+      "gameId": "5218964656",
+      "role": "captain",
+      "id": 3,
+      "createdAt": "2025-05-01T20:08:51.696Z"
+    },
+    {
+      "teamId": 2,
+      "username": "Sandeepkumar",
+      "gameId": "5218964656",
+      "role": "member",
+      "id": 4,
+      "createdAt": "2025-05-01T20:09:09.097Z"
+    }
+  ],
+  "tournaments": [
+    {
+      "id": 1,
+      "title": "ERANGLE MAP ",
+      "description": "BGMI ERANGLE MAP ",
+      "date": "2025-05-02T04:30:16.171Z",
+      "mapType": "Erangel",
+      "teamType": "Squad",
+      "isPaid": false,
+      "totalSlots": 25,
+      "createdBy": 2,
+      "status": "completed",
+      "entryFee": 0,
+      "prizePool": 1000,
+      "createdAt": "2025-05-01T20:04:09.708Z",
+      "roomId": "123443",
+      "password": "123"
+    }
+  ],
+  "registrations": [
+    {
+      "tournamentId": 1,
+      "teamId": 1,
+      "userId": 3,
+      "id": 1,
+      "registeredAt": "2025-05-01T20:07:12.189Z",
+      "slot": 1
+    },
+    {
+      "tournamentId": 1,
+      "teamId": 2,
+      "userId": 4,
+      "id": 2,
+      "registeredAt": "2025-05-01T20:09:32.461Z",
+      "slot": 2
+    }
+  ]
 }

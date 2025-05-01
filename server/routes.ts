@@ -545,6 +545,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Tournament not found" });
       }
       
+      // Get tournament details and type (Squad, Duo, Solo)
+      const tournamentType = tournament.gameType || 'Squad'; // Default to Squad if not specified
+      
+      // Check if team registration is needed (Solo tournaments don't need teams)
+      if (tournamentType.toLowerCase() === 'solo') {
+        // For Solo tournaments, the user registers directly without a team
+        // The teamId will be the same as userId (user represents themselves)
+        // Check if user is already registered
+        const userRegistrations = await storage.getRegistrationsByUser(userId);
+        const alreadyRegistered = userRegistrations.some(reg => reg.tournamentId === tournamentId);
+        
+        if (alreadyRegistered) {
+          return res.status(400).json({ message: "You are already registered for this tournament" });
+        }
+        
+        // Check if tournament is already full
+        const registrations = await storage.getRegistrationsByTournament(tournamentId);
+        if (registrations.length >= tournament.slots) {
+          return res.status(400).json({ message: "Tournament is already full" });
+        }
+        
+        // Create a direct registration for the user
+        const soloResult = insertRegistrationSchema.safeParse({
+          tournamentId,
+          teamId: userId, // User is registered as an individual
+          userId
+        });
+        
+        if (!soloResult.success) {
+          return res.status(400).json({ message: soloResult.error.format() });
+        }
+        
+        const registration = await storage.createRegistration(soloResult.data);
+        return res.status(201).json(registration);
+      }
+      
+      // For Duo and Squad tournaments, proceed with team validation
       const team = await storage.getTeam(teamId);
       if (!team) {
         return res.status(404).json({ message: "Team not found" });
@@ -554,9 +591,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You are not the owner of this team" });
       }
       
+      // Get team members to check team size
+      const teamMembers = await storage.getTeamMembers(teamId);
+      
+      // Validate team size based on tournament type
+      if (tournamentType.toLowerCase() === 'squad' && teamMembers.length < 4) {
+        return res.status(400).json({ 
+          message: "Squad tournaments require at least 4 team members", 
+          currentSize: teamMembers.length,
+          requiredSize: 4
+        });
+      } else if (tournamentType.toLowerCase() === 'duo' && teamMembers.length < 2) {
+        return res.status(400).json({ 
+          message: "Duo tournaments require at least 2 team members", 
+          currentSize: teamMembers.length,
+          requiredSize: 2
+        });
+      }
+      
       // Check if tournament is already full
       const registrations = await storage.getRegistrationsByTournament(tournamentId);
-      if (registrations.length >= tournament.totalSlots) {
+      if (registrations.length >= tournament.slots) {
         return res.status(400).json({ message: "Tournament is already full" });
       }
       

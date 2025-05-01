@@ -32,22 +32,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Live Tournaments Section */}
-      <section className="py-12 px-4 sm:px-6 lg:px-8 bg-dark">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-3xl font-bold text-white">
-              <span className="inline-block mr-2 text-[#00CC66]">●</span> Live Tournaments
-            </h2>
-            <Link href="/tournaments" className="text-accent hover:text-accent/80 font-medium">
-              View All <i className="fas fa-arrow-right ml-1"></i>
-            </Link>
-          </div>
-
-          <TournamentList filter="live" limit={2} />
-        </div>
-      </section>
-
       {/* Upcoming Tournaments Section */}
       <section className="py-12 px-4 sm:px-6 lg:px-8 bg-dark-surface">
         <div className="max-w-7xl mx-auto">
@@ -60,7 +44,7 @@ export default function Home() {
             </Link>
           </div>
 
-          <TournamentList filter="upcoming" limit={3} />
+          <TournamentList filter="upcoming" limit={6} />
         </div>
       </section>
 

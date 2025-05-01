@@ -215,22 +215,7 @@ export default function UserDashboard() {
             </Link>
           </CardHeader>
           <CardContent>
-            <TournamentList showRegisteredOnly={true} limit={3} />
-          </CardContent>
-        </Card>
-
-        {/* Upcoming Tournaments */}
-        <Card className="bg-dark-card border-gray-800 shadow-lg mt-6">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-white text-xl">Upcoming Tournaments</CardTitle>
-            <Link href="/tournaments" className="inline-block">
-              <Button variant="link" className="text-accent hover:text-accent/80 p-0 h-auto">
-                View All
-              </Button>
-            </Link>
-          </CardHeader>
-          <CardContent>
-            <TournamentList filter="upcoming" limit={3} />
+            <TournamentList showRegisteredOnly={true} limit={5} />
           </CardContent>
         </Card>
       </div>

@@ -37,6 +37,9 @@ const memberFormSchema = z.object({
   role: z.enum(["captain", "member", "substitute"], {
     required_error: "Please select a role",
   }),
+}).refine(data => data.username !== data.gameId, {
+  message: "Username and Game ID cannot be the same",
+  path: ["gameId"],
 });
 
 type TeamFormValues = z.infer<typeof teamFormSchema>;
@@ -68,12 +71,19 @@ export function TeamForm({ team, isEditing = false, onSuccess }: TeamFormProps) 
       const res = await apiRequest("POST", "/api/teams", values);
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (createdTeam) => {
       queryClient.invalidateQueries({ queryKey: ["/api/teams/my"] });
+      
+      // Add the team creator as the team captain automatically
+      if (createdTeam && createdTeam.id) {
+        queryClient.invalidateQueries({ queryKey: [`/api/teams/${createdTeam.id}/members`] });
+      }
+      
       toast({
         title: "Team created",
-        description: "Your team has been created successfully",
+        description: "Your team has been created successfully. You've been added as team captain.",
       });
+      
       if (onSuccess) onSuccess();
     },
     onError: (error: Error) => {
@@ -92,6 +102,16 @@ export function TeamForm({ team, isEditing = false, onSuccess }: TeamFormProps) 
         gameId: values.gameId,
         role: values.role,
       });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        // Check for specific error code for user not found
+        if (errorData && errorData.code === "user_not_found") {
+          throw new Error(`User '${values.username}' does not exist. They need to sign up first.`);
+        }
+        throw new Error(errorData.message || "Failed to add team member");
+      }
+      
       return res.json();
     },
     onSuccess: () => {
@@ -104,11 +124,22 @@ export function TeamForm({ team, isEditing = false, onSuccess }: TeamFormProps) 
       memberForm.reset();
     },
     onError: (error: Error) => {
-      toast({
-        title: "Failed to add team member",
-        description: error.message,
-        variant: "destructive",
-      });
+      const message = error.message;
+      
+      // Special handling for user not found error
+      if (message.includes("need to sign up first")) {
+        toast({
+          title: "User not found",
+          description: message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Failed to add team member",
+          description: message,
+          variant: "destructive",
+        });
+      }
     },
   });
 

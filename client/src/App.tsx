@@ -135,9 +135,7 @@ function Router() {
           <ProtectedRoute path="/user/dashboard" component={UserDashboard}/>
           <ProtectedRoute path="/user/profile" component={UserProfile}/>
           <ProtectedRoute path="/user/team" component={UserTeam}/>
-          <Route path="/user/team/create">
-            <Redirect to="/user/team" />
-          </Route>
+          <ProtectedRoute path="/user/team/create" component={UserTeam}/>
           
           {/* Public Routes */}
           <Route path="/tournaments" component={Tournaments}/>

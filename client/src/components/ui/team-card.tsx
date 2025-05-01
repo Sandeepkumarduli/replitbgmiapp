@@ -140,6 +140,12 @@ export function TeamCard({ team, members = [], onManage, onAddMember, onRemoveMe
               <Plus className="h-4 w-4 mr-2" /> Add Team Member
             </Button>
           )}
+          
+          {members.length >= 5 && (
+            <div className="text-center text-sm text-amber-500 mt-4 p-2 border border-amber-500/20 rounded bg-amber-500/10">
+              Maximum team size reached (5 members)
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

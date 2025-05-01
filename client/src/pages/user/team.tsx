@@ -104,10 +104,21 @@ export default function UserTeam() {
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold text-white mb-8 flex items-center">
-          <Users className="mr-2 h-7 w-7 text-primary" />
-          {hasTeam ? "Manage Your Team" : "Create Your Team"}
-        </h1>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-white flex items-center">
+            <Users className="mr-2 h-7 w-7 text-primary" />
+            {hasTeam ? "Manage Your Teams" : "Create Your Team"}
+          </h1>
+          
+          {hasTeam && teams && teams.length < 3 && (
+            <Button
+              onClick={() => navigate("/user/team/create")}
+              className="bg-primary hover:bg-primary/90 text-white"
+            >
+              <Plus className="h-4 w-4 mr-2" /> Create New Team
+            </Button>
+          )}
+        </div>
 
         <div className="space-y-8">
           {!hasTeam ? (
@@ -124,40 +135,53 @@ export default function UserTeam() {
             </Card>
           ) : (
             <>
-              <Card className="bg-dark-card border-gray-800">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center">
-                    <Users className="mr-2 h-5 w-5 text-primary" />
-                    Team Management
-                  </CardTitle>
-                  <CardDescription className="text-gray-400">
-                    Manage your team members
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <TeamForm 
-                    team={teams[0]} 
-                    isEditing={true} 
-                  />
-                </CardContent>
-              </Card>
+              {teams && teams.length >= 3 && (
+                <div className="bg-amber-500/10 border border-amber-500/20 text-amber-500 p-4 rounded-lg mb-6">
+                  <p className="flex items-center">
+                    <AlertTriangle className="h-5 w-5 mr-2" />
+                    You've reached the maximum limit of 3 teams per user
+                  </p>
+                </div>
+              )}
+              
+              {teams && teams.map((team, index) => (
+                <div key={team.id} className="space-y-8 mb-12">
+                  <Card className="bg-dark-card border-gray-800">
+                    <CardHeader>
+                      <CardTitle className="text-white flex items-center">
+                        <Users className="mr-2 h-5 w-5 text-primary" />
+                        Team {index + 1}: {team.name}
+                      </CardTitle>
+                      <CardDescription className="text-gray-400">
+                        Manage your team members
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <TeamForm 
+                        team={team} 
+                        isEditing={true} 
+                      />
+                    </CardContent>
+                  </Card>
 
-              <Card className="bg-dark-card border-gray-800">
-                <CardHeader>
-                  <CardTitle className="text-white">Team Members</CardTitle>
-                  <CardDescription className="text-gray-400">
-                    Your current team roster
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <TeamCard 
-                    team={teams[0]}
-                    members={teamMembers}
-                    onAddMember={handleAddMember}
-                    onRemoveMember={handleRemoveMember}
-                  />
-                </CardContent>
-              </Card>
+                  <Card className="bg-dark-card border-gray-800">
+                    <CardHeader>
+                      <CardTitle className="text-white">Team Members</CardTitle>
+                      <CardDescription className="text-gray-400">
+                        Your current team roster
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <TeamCard 
+                        team={team}
+                        members={teamMembers?.filter(member => member.teamId === team.id) || []}
+                        onAddMember={handleAddMember}
+                        onRemoveMember={handleRemoveMember}
+                      />
+                    </CardContent>
+                  </Card>
+                </div>
+              ))}
             </>
           )}
         </div>

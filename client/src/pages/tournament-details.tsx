@@ -273,23 +273,86 @@ export default function TournamentDetails({ params }: { params: { id: string } }
                   </div>
                 )}
 
-                <div className="mt-8 flex justify-end">
-                  {isRegistered() ? (
-                    <Button disabled className="bg-gray-700 text-white">
-                      Already Registered
-                    </Button>
-                  ) : tournament.status === "completed" ? (
-                    <Button disabled className="bg-gray-700 text-white">
-                      Tournament Completed
-                    </Button>
+                <div className="mt-8 flex justify-end gap-4">
+                  {isAdmin ? (
+                    <>
+                      <Button 
+                        onClick={() => navigate(`/admin/edit-tournament/${tournament.id}`)} 
+                        className="bg-secondary hover:bg-secondary/90 text-white"
+                      >
+                        Edit Tournament
+                      </Button>
+                      {tournament.status === "upcoming" && (
+                        <Button 
+                          onClick={() => {
+                            // Direct update to 'live' status
+                            apiRequest("PATCH", `/api/tournaments/${tournament.id}`, { status: "live" })
+                              .then(() => {
+                                queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentId}`] });
+                                toast({
+                                  title: "Tournament started",
+                                  description: "The tournament has been marked as live",
+                                });
+                              })
+                              .catch((error) => {
+                                toast({
+                                  title: "Failed to start tournament",
+                                  description: error.message,
+                                  variant: "destructive",
+                                });
+                              });
+                          }}
+                          className="bg-accent hover:bg-accent/90 text-white"
+                        >
+                          Start Tournament
+                        </Button>
+                      )}
+                      {tournament.status === "live" && (
+                        <Button 
+                          onClick={() => {
+                            // Direct update to 'completed' status
+                            apiRequest("PATCH", `/api/tournaments/${tournament.id}`, { status: "completed" })
+                              .then(() => {
+                                queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentId}`] });
+                                toast({
+                                  title: "Tournament completed",
+                                  description: "The tournament has been marked as completed",
+                                });
+                              })
+                              .catch((error) => {
+                                toast({
+                                  title: "Failed to complete tournament",
+                                  description: error.message,
+                                  variant: "destructive",
+                                });
+                              });
+                          }}
+                          className="bg-primary hover:bg-primary/90 text-white"
+                        >
+                          Complete Tournament
+                        </Button>
+                      )}
+                    </>
                   ) : (
-                    <Button 
-                      onClick={handleRegister} 
-                      className="bg-primary hover:bg-primary/90 text-white"
-                      disabled={registerMutation.isPending}
-                    >
-                      {registerMutation.isPending ? "Processing..." : "Register for Tournament"}
-                    </Button>
+                    <>
+                      {isRegistered() ? (
+                        <Button disabled className="bg-gray-700 text-white">
+                          Already Registered
+                        </Button>
+                      ) : tournament.status === "completed" ? (
+                        <Button disabled className="bg-gray-700 text-white">
+                          Tournament Completed
+                        </Button>
+                      ) : (
+                        <Button 
+                          onClick={handleRegister} 
+                          className="bg-primary hover:bg-primary/90 text-white"
+                          disabled={registerMutation.isPending}
+                        >
+                          {registerMutation.isPending ? "Processing..." : "Register for Tournament"}
+                        </Button>
+                      )}
+                    </>
                   )}
                 </div>
               </CardContent>
@@ -417,8 +480,41 @@ export default function TournamentDetails({ params }: { params: { id: string } }
                           </div>
                           <div>
                             <p className="text-white font-medium">{registration.team?.name || "Team"}</p>
+                            {isAdmin && registration.team?.owner && (
+                              <p className="text-gray-400 text-xs">
+                                Owner: {registration.team.owner.username} • Registered: {new Date(registration.registeredAt).toLocaleDateString()}
+                              </p>
+                            )}
                           </div>
                         </div>
+                        {isAdmin && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
+                            onClick={() => {
+                              if (confirm(`Remove ${registration.team?.name || "this team"} from the tournament?`)) {
+                                apiRequest("DELETE", `/api/registrations/${registration.id}`)
+                                  .then(() => {
+                                    queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentId}/registrations`] });
+                                    toast({
+                                      title: "Team removed",
+                                      description: "The team has been removed from the tournament",
+                                    });
+                                  })
+                                  .catch((error) => {
+                                    toast({
+                                      title: "Failed to remove team",
+                                      description: error.message,
+                                      variant: "destructive",
+                                    });
+                                  });
+                              }
+                            }}
+                          >
+                            Remove
+                          </Button>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -427,6 +523,46 @@ export default function TournamentDetails({ params }: { params: { id: string } }
                     <Users className="h-12 w-12 text-gray-600 mx-auto mb-3" />
                     <p className="text-gray-400">No teams registered yet</p>
                     <p className="text-gray-500 text-sm mt-1">Be the first to join!</p>
+                  </div>
+                )}
+                
+                {isAdmin && registrations && registrations.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-gray-800">
+                    <h4 className="text-white font-medium mb-2">Admin Tools</h4>
+                    <div className="flex gap-2">
+                      <Button 
+                        size="sm"
+                        className="w-full bg-dark-surface text-white hover:bg-dark-surface/90"
+                        onClick={() => {
+                          // Export registrations as CSV
+                          const headers = ['Slot', 'Team Name', 'Owner', 'Email', 'Phone', 'Registration Date'];
+                          const rows = registrations.map((reg: any) => [
+                            reg.slot,
+                            reg.team?.name || 'Unknown',
+                            reg.team?.owner?.username || 'Unknown',
+                            reg.team?.owner?.email || 'N/A',
+                            reg.team?.owner?.phone || 'N/A',
+                            new Date(reg.registeredAt).toLocaleString()
+                          ]);
+                          
+                          let csvContent = headers.join(',') + '\n';
+                          rows.forEach((row) => {
+                            csvContent += row.join(',') + '\n';
+                          });
+                          
+                          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                          const url = URL.createObjectURL(blob);
+                          const link = document.createElement('a');
+                          link.setAttribute('href', url);
+                          link.setAttribute('download', `tournament_${tournament.id}_registrations.csv`);
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        }}
+                      >
+                        Export List
+                      </Button>
+                    </div>
                   </div>
                 )}
               </CardContent>

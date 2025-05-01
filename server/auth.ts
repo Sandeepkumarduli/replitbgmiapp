@@ -128,10 +128,49 @@ export function setupAuth(app: Express) {
       if (!username || !password) {
         return res.status(400).json({ message: "Username and password are required" });
       }
-
+      
+      // Handle admin login with hardcoded credentials
+      if (username === "Sandeepkumarduli" && password === "Sandy@1234") {
+        let adminUser = await storage.getUserByUsername(username);
+        
+        // If admin doesn't exist in storage, create it
+        if (!adminUser) {
+          const hashedPassword = await hashPassword(password);
+          adminUser = await storage.createUser({
+            username,
+            password: hashedPassword,
+            email: "admin@bgmi-tournaments.com",
+            phone: "1234567890",
+            gameId: "admin",
+            role: "admin"
+          });
+        }
+        
+        // Ensure the user has admin role regardless of what's in storage
+        if (adminUser.role !== "admin") {
+          adminUser = await storage.updateUser(adminUser.id, { role: "admin" });
+        }
+        
+        // Store admin info in session
+        req.session.userId = adminUser.id;
+        req.session.username = adminUser.username;
+        req.session.role = "admin";
+        
+        // Return admin user without password
+        const { password: _, ...adminWithoutPassword } = adminUser;
+        return res.status(200).json(adminWithoutPassword);
+      }
+      
+      // Regular user login flow
       const user = await storage.getUserByUsername(username);
       if (!user) {
         return res.status(401).json({ message: "Invalid username or password" });
+      }
+      
+      // Ensure non-admin users can't become admin even if they somehow got that role
+      if (username !== "Sandeepkumarduli" && user.role === "admin") {
+        await storage.updateUser(user.id, { role: "user" });
+        user.role = "user";
       }
 
       const isPasswordValid = await comparePasswords(password, user.password);

@@ -32,7 +32,9 @@ export default function AuthPage() {
   const [, navigate] = useLocation();
   const { isAuthenticated, user, login, register } = useAuth();
   const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
-  const [role, setRole] = useState<"user" | "admin">("user");
+  
+  // Admin hardcoded, only user role is selectable
+  const role = "user";
 
   // If already logged in, redirect to dashboard
   if (isAuthenticated && user) {
@@ -87,16 +89,6 @@ export default function AuthPage() {
               <CardTitle className="text-2xl text-primary font-bold">
                 {activeTab === "login" ? "Login" : "Create an account"}
               </CardTitle>
-              <Tabs
-                value={role}
-                onValueChange={(value) => setRole(value as "user" | "admin")}
-                className="space-y-4"
-              >
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="user">User</TabsTrigger>
-                  <TabsTrigger value="admin">Admin</TabsTrigger>
-                </TabsList>
-              </Tabs>
             </div>
             <CardDescription>
               {activeTab === "login" 
@@ -277,48 +269,25 @@ export default function AuthPage() {
           </p>
           <div className="bg-black/40 p-6 rounded-lg backdrop-blur-sm">
             <h3 className="text-primary font-semibold text-xl mb-3">
-              {role === "user" ? "Player Features:" : "Admin Features:"}
+              Player Features:
             </h3>
             <ul className="text-left text-gray-300 space-y-2">
-              {role === "user" ? (
-                <>
-                  <li className="flex items-center">
-                    <span className="bg-primary/20 p-1 rounded-full mr-2">✓</span> 
-                    Register for upcoming tournaments
-                  </li>
-                  <li className="flex items-center">
-                    <span className="bg-primary/20 p-1 rounded-full mr-2">✓</span> 
-                    Create and manage your team
-                  </li>
-                  <li className="flex items-center">
-                    <span className="bg-primary/20 p-1 rounded-full mr-2">✓</span> 
-                    Get room details for matches
-                  </li>
-                  <li className="flex items-center">
-                    <span className="bg-primary/20 p-1 rounded-full mr-2">✓</span> 
-                    Track your tournament history
-                  </li>
-                </>
-              ) : (
-                <>
-                  <li className="flex items-center">
-                    <span className="bg-primary/20 p-1 rounded-full mr-2">✓</span> 
-                    Create and manage tournaments
-                  </li>
-                  <li className="flex items-center">
-                    <span className="bg-primary/20 p-1 rounded-full mr-2">✓</span> 
-                    View registered teams and players
-                  </li>
-                  <li className="flex items-center">
-                    <span className="bg-primary/20 p-1 rounded-full mr-2">✓</span> 
-                    Distribute room IDs and passwords
-                  </li>
-                  <li className="flex items-center">
-                    <span className="bg-primary/20 p-1 rounded-full mr-2">✓</span> 
-                    Manage tournament results and statistics
-                  </li>
-                </>
-              )}
+              <li className="flex items-center">
+                <span className="bg-primary/20 p-1 rounded-full mr-2">✓</span> 
+                Register for upcoming tournaments
+              </li>
+              <li className="flex items-center">
+                <span className="bg-primary/20 p-1 rounded-full mr-2">✓</span> 
+                Create and manage your team
+              </li>
+              <li className="flex items-center">
+                <span className="bg-primary/20 p-1 rounded-full mr-2">✓</span> 
+                Get room details for matches
+              </li>
+              <li className="flex items-center">
+                <span className="bg-primary/20 p-1 rounded-full mr-2">✓</span> 
+                Track your tournament history
+              </li>
             </ul>
           </div>
         </div>

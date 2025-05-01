@@ -781,6 +781,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // New administrator management endpoints
+  app.get("/api/admin/administrators", isEnhancedAdmin, async (req, res) => {
+    try {
+      logSecurityEvent('Admin requested administrators list', req);
+      // Get all users
+      const users = await storage.getAllUsers();
+      
+      // Filter to only admins, add activity data and remove sensitive information
+      const administrators = users
+        .filter(user => user.role === 'admin')
+        .map(user => ({
+          ...user,
+          password: undefined,
+          lastActive: new Date().toISOString(), // In a real app, this would come from activity tracking
+          activityCount: Math.floor(Math.random() * 100) // Placeholder for demo
+        }));
+      
+      res.json(administrators);
+    } catch (error) {
+      console.error("Error in /api/admin/administrators:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Revoke admin privileges
+  app.patch("/api/admin/administrators/:id/revoke", isEnhancedAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      
+      // Get the current admin's userId from the session
+      const adminUserId = req.session.userId!;
+      
+      // Don't allow revoking own admin privileges
+      if (userId === adminUserId) {
+        logSecurityEvent('Admin attempted to revoke own privileges', req);
+        return res.status(400).json({ message: "You cannot revoke your own admin privileges" });
+      }
+      
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Don't allow modifying the hardcoded admin
+      if (user.username === "Sandeepkumarduli") {
+        logSecurityEvent('Admin attempted to modify system admin privileges', req, { targetUser: user.username });
+        return res.status(403).json({ message: "Cannot modify system administrator account" });
+      }
+      
+      // Check if user is actually an admin
+      if (user.role !== 'admin') {
+        return res.status(400).json({ message: "User is not an administrator" });
+      }
+      
+      // Change role from admin to regular user
+      const updatedUser = await storage.updateUser(userId, { role: "user" });
+      
+      if (!updatedUser) {
+        return res.status(500).json({ message: "Failed to revoke admin privileges" });
+      }
+      
+      logSecurityEvent('Admin privileges revoked', req, {
+        adminId: adminUserId, 
+        targetUserId: userId,
+        targetUsername: user.username
+      });
+      
+      res.json({
+        ...updatedUser,
+        password: undefined
+      });
+    } catch (error) {
+      console.error("Error in /api/admin/administrators/revoke:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
   // Get user by ID (admin only)
   app.get("/api/admin/users/:id", isAdmin, async (req, res) => {
     try {

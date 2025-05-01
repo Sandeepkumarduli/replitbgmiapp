@@ -97,7 +97,14 @@ export function TournamentForm({ tournament, isEditing = false }: TournamentForm
     mutationFn: async (values: FormValues) => {
       const url = isEditing ? `/api/tournaments/${tournament?.id}` : "/api/tournaments";
       const method = isEditing ? "PATCH" : "POST";
-      const res = await apiRequest(method, url, values);
+      
+      console.log(`Making ${method} request to ${url} with data:`, values);
+      
+      const res = await apiRequest(method, url, {
+        ...values,
+        // Convert date to ISO string format
+        date: values.date.toISOString(),
+      });
       return res.json();
     },
     onSuccess: () => {

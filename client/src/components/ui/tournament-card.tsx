@@ -11,13 +11,14 @@ type TournamentCardProps = {
   tournament: Tournament;
   onRegister?: (tournamentId: number) => void;
   registered?: boolean;
+  registrationsCount?: number;
 };
 
-export function TournamentCard({ tournament, onRegister, registered = false }: TournamentCardProps) {
+export function TournamentCard({ tournament, onRegister, registered = false, registrationsCount = 0 }: TournamentCardProps) {
   const { id, title, description, date, mapType, teamType, isPaid, prizePool, totalSlots, status } = tournament;
   
-  // Dynamically calculate slots taken based on current registrations vs total slots
-  const slotsTaken = Math.min(Math.floor(Math.random() * totalSlots) + 1, totalSlots);
+  // Use the actual registrations count
+  const slotsTaken = registrationsCount;
   
   const tournamentDate = parseISO(date.toString());
   const isPastEvent = isPast(tournamentDate) && !isToday(tournamentDate);

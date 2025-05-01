@@ -50,6 +50,13 @@ export function TournamentList({ filter, showRegisteredOnly = false, limit }: To
     queryKey: ["/api/registrations/user"],
     enabled: showRegisteredOnly,
   });
+  
+  // Fetch registration counts for all tournaments
+  const { data: registrationCounts, isLoading: isLoadingCounts } = useQuery<Record<number, number>>({
+    queryKey: ["/api/registrations/counts"],
+    // Create a fallback when API is not available or returns no data
+    select: (data) => data || {},
+  });
 
   const registerMutation = useMutation({
     mutationFn: async ({ tournamentId, teamId }: { tournamentId: number; teamId: number }) => {
@@ -105,7 +112,7 @@ export function TournamentList({ filter, showRegisteredOnly = false, limit }: To
     return registrations.some((reg: any) => reg.tournamentId === tournamentId);
   };
 
-  if (isLoadingTournaments || (showRegisteredOnly && isLoadingRegistrations)) {
+  if (isLoadingTournaments || (showRegisteredOnly && isLoadingRegistrations) || isLoadingCounts) {
     return (
       <div className="py-8 text-center">
         <p className="text-gray-400">Loading tournaments...</p>
@@ -147,6 +154,7 @@ export function TournamentList({ filter, showRegisteredOnly = false, limit }: To
             tournament={tournament}
             onRegister={handleRegister}
             registered={isRegistered(tournament.id)}
+            registrationsCount={registrationCounts?.[tournament.id] || 0}
           />
         ))}
       </div>

@@ -29,18 +29,33 @@ export class DatabaseStorage implements IStorage {
 
   // User operations
   async getUser(id: number): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+    try {
+      const [user] = await db.select().from(users).where(eq(users.id, id));
+      return user;
+    } catch (error) {
+      console.error(`Error fetching user with id ${id}:`, error);
+      throw error;
+    }
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user;
+    try {
+      const [user] = await db.select().from(users).where(eq(users.username, username));
+      return user;
+    } catch (error) {
+      console.error(`Error fetching user with username ${username}:`, error);
+      throw error;
+    }
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
-    return user;
+    try {
+      const [user] = await db.select().from(users).where(eq(users.email, email));
+      return user;
+    } catch (error) {
+      console.error(`Error fetching user with email ${email}:`, error);
+      throw error;
+    }
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
@@ -81,22 +96,42 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getAllUsers(): Promise<User[]> {
-    return await db.select().from(users).orderBy(asc(users.id));
+    try {
+      return await db.select().from(users).orderBy(asc(users.id));
+    } catch (error) {
+      console.error('Error fetching all users:', error);
+      throw error;
+    }
   }
 
   // Team operations
   async getTeam(id: number): Promise<Team | undefined> {
-    const [team] = await db.select().from(teams).where(eq(teams.id, id));
-    return team;
+    try {
+      const [team] = await db.select().from(teams).where(eq(teams.id, id));
+      return team;
+    } catch (error) {
+      console.error(`Error fetching team with id ${id}:`, error);
+      throw error;
+    }
   }
 
   async getTeamByName(name: string): Promise<Team | undefined> {
-    const [team] = await db.select().from(teams).where(eq(teams.name, name));
-    return team;
+    try {
+      const [team] = await db.select().from(teams).where(eq(teams.name, name));
+      return team;
+    } catch (error) {
+      console.error(`Error fetching team with name ${name}:`, error);
+      throw error;
+    }
   }
 
   async getTeamsByOwnerId(ownerId: number): Promise<Team[]> {
-    return await db.select().from(teams).where(eq(teams.ownerId, ownerId));
+    try {
+      return await db.select().from(teams).where(eq(teams.ownerId, ownerId));
+    } catch (error) {
+      console.error(`Error fetching teams with owner id ${ownerId}:`, error);
+      throw error;
+    }
   }
 
   async createTeam(insertTeam: InsertTeam): Promise<Team> {
@@ -137,21 +172,36 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getAllTeams(): Promise<Team[]> {
-    return await db.select().from(teams).orderBy(asc(teams.id));
+    try {
+      return await db.select().from(teams).orderBy(asc(teams.id));
+    } catch (error) {
+      console.error('Error fetching all teams:', error);
+      throw error;
+    }
   }
 
   // Team member operations
   async getTeamMembers(teamId: number): Promise<TeamMember[]> {
-    return await db.select()
-      .from(teamMembers)
-      .where(eq(teamMembers.teamId, teamId));
+    try {
+      return await db.select()
+        .from(teamMembers)
+        .where(eq(teamMembers.teamId, teamId));
+    } catch (error) {
+      console.error(`Error fetching team members for team ${teamId}:`, error);
+      throw error;
+    }
   }
   
   async getTeamMember(id: number): Promise<TeamMember | undefined> {
-    const [member] = await db.select()
-      .from(teamMembers)
-      .where(eq(teamMembers.id, id));
-    return member;
+    try {
+      const [member] = await db.select()
+        .from(teamMembers)
+        .where(eq(teamMembers.id, id));
+      return member;
+    } catch (error) {
+      console.error(`Error fetching team member with id ${id}:`, error);
+      throw error;
+    }
   }
 
   async addTeamMember(insertMember: InsertTeamMember): Promise<TeamMember> {
@@ -195,23 +245,38 @@ export class DatabaseStorage implements IStorage {
 
   // Tournament operations
   async getTournament(id: number): Promise<Tournament | undefined> {
-    const [tournament] = await db.select()
-      .from(tournaments)
-      .where(eq(tournaments.id, id));
-    return tournament;
+    try {
+      const [tournament] = await db.select()
+        .from(tournaments)
+        .where(eq(tournaments.id, id));
+      return tournament;
+    } catch (error) {
+      console.error('Error fetching tournament:', error);
+      throw error;
+    }
   }
 
   async getAllTournaments(): Promise<Tournament[]> {
-    return await db.select()
-      .from(tournaments)
-      .orderBy(asc(tournaments.date));
+    try {
+      return await db.select()
+        .from(tournaments)
+        .orderBy(asc(tournaments.date));
+    } catch (error) {
+      console.error('Error fetching all tournaments:', error);
+      throw error;
+    }
   }
 
   async getTournamentsByStatus(status: string): Promise<Tournament[]> {
-    return await db.select()
-      .from(tournaments)
-      .where(eq(tournaments.status, status))
-      .orderBy(asc(tournaments.date));
+    try {
+      return await db.select()
+        .from(tournaments)
+        .where(eq(tournaments.status, status))
+        .orderBy(asc(tournaments.date));
+    } catch (error) {
+      console.error(`Error fetching tournaments with status ${status}:`, error);
+      throw error;
+    }
   }
 
   async createTournament(insertTournament: InsertTournament): Promise<Tournament> {
@@ -266,38 +331,63 @@ export class DatabaseStorage implements IStorage {
 
   // Registration operations
   async getRegistration(id: number): Promise<Registration | undefined> {
-    const [registration] = await db.select()
-      .from(registrations)
-      .where(eq(registrations.id, id));
-    return registration;
+    try {
+      const [registration] = await db.select()
+        .from(registrations)
+        .where(eq(registrations.id, id));
+      return registration;
+    } catch (error) {
+      console.error('Error fetching registration:', error);
+      throw error;
+    }
   }
 
   async getRegistrationsByTournament(tournamentId: number): Promise<Registration[]> {
-    return await db.select()
-      .from(registrations)
-      .where(eq(registrations.tournamentId, tournamentId));
+    try {
+      return await db.select()
+        .from(registrations)
+        .where(eq(registrations.tournamentId, tournamentId));
+    } catch (error) {
+      console.error(`Error fetching registrations for tournament ${tournamentId}:`, error);
+      throw error;
+    }
   }
 
   async getRegistrationsByUser(userId: number): Promise<Registration[]> {
-    return await db.select()
-      .from(registrations)
-      .where(eq(registrations.userId, userId));
+    try {
+      return await db.select()
+        .from(registrations)
+        .where(eq(registrations.userId, userId));
+    } catch (error) {
+      console.error(`Error fetching registrations for user ${userId}:`, error);
+      throw error;
+    }
   }
 
   async getRegistrationsByTeam(teamId: number): Promise<Registration[]> {
-    return await db.select()
-      .from(registrations)
-      .where(eq(registrations.teamId, teamId));
+    try {
+      return await db.select()
+        .from(registrations)
+        .where(eq(registrations.teamId, teamId));
+    } catch (error) {
+      console.error(`Error fetching registrations for team ${teamId}:`, error);
+      throw error;
+    }
   }
 
   async checkRegistration(tournamentId: number, teamId: number): Promise<boolean> {
-    const [registration] = await db.select({ id: registrations.id })
-      .from(registrations)
-      .where(and(
-        eq(registrations.tournamentId, tournamentId),
-        eq(registrations.teamId, teamId)
-      ));
-    return !!registration;
+    try {
+      const [registration] = await db.select({ id: registrations.id })
+        .from(registrations)
+        .where(and(
+          eq(registrations.tournamentId, tournamentId),
+          eq(registrations.teamId, teamId)
+        ));
+      return !!registration;
+    } catch (error) {
+      console.error(`Error checking registration for tournament ${tournamentId} and team ${teamId}:`, error);
+      throw error;
+    }
   }
 
   async createRegistration(insertRegistration: InsertRegistration): Promise<Registration> {
@@ -324,11 +414,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateRegistration(id: number, registrationUpdate: Partial<Registration>): Promise<Registration | undefined> {
-    const [updatedRegistration] = await db.update(registrations)
-      .set(registrationUpdate)
-      .where(eq(registrations.id, id))
-      .returning();
-    return updatedRegistration;
+    try {
+      const [updatedRegistration] = await db.update(registrations)
+        .set(registrationUpdate)
+        .where(eq(registrations.id, id))
+        .returning();
+      return updatedRegistration;
+    } catch (error) {
+      console.error('Error updating registration:', error);
+      throw error;
+    }
   }
 
   async deleteRegistration(id: number): Promise<boolean> {

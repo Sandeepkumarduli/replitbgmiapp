@@ -517,6 +517,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/registrations/counts", async (req, res) => {
+    try {
+      // Get all tournaments
+      const tournaments = await storage.getAllTournaments();
+      
+      // Create a map to store tournament ID -> registration count
+      const counts: Record<number, number> = {};
+      
+      // Populate the counts for each tournament
+      for (const tournament of tournaments) {
+        const registrations = await storage.getRegistrationsByTournament(tournament.id);
+        counts[tournament.id] = registrations.length;
+      }
+      
+      res.json(counts);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   app.get("/api/registrations/user", isAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId!;

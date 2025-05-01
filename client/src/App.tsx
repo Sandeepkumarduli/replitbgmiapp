@@ -27,7 +27,7 @@ import AuthPage from "@/pages/auth-page";
 
 // Protected Routes Components
 function ProtectedRoute({ component: Component, adminOnly = false, ...rest }: { 
-  component: React.ComponentType, 
+  component: React.ComponentType<any>, 
   adminOnly?: boolean, 
   path?: string 
 }) {
@@ -46,7 +46,7 @@ function ProtectedRoute({ component: Component, adminOnly = false, ...rest }: {
   if (!user) {
     return (
       <Route {...rest}>
-        <Redirect to="/login" />
+        <Redirect to="/auth" />
       </Route>
     );
   }
@@ -59,11 +59,11 @@ function ProtectedRoute({ component: Component, adminOnly = false, ...rest }: {
     );
   }
 
-  return <Route {...rest} component={Component} />;
+  return <Route {...rest}>{(props) => <Component {...props} />}</Route>;
 }
 
 function AuthRoute({ component: Component, ...rest }: { 
-  component: React.ComponentType, 
+  component: React.ComponentType<any>, 
   path?: string 
 }) {
   const { user, isLoading } = useAuth();
@@ -86,7 +86,7 @@ function AuthRoute({ component: Component, ...rest }: {
     );
   }
 
-  return <Route {...rest} component={Component} />;
+  return <Route {...rest}>{(props) => <Component {...props} />}</Route>;
 }
 
 function Router() {

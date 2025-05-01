@@ -210,7 +210,7 @@ export default function Home() {
             Create an account, build your team, and start competing in exciting tournaments today
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Link href="/signup" className="inline-block">
+            <Link href="/auth" className="inline-block">
               <Button className="bg-primary hover:bg-primary/90 text-white px-8 py-3 rounded-md text-lg font-medium glow-hover">
                 Create Account
               </Button>

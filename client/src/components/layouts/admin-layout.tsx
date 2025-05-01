@@ -31,8 +31,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     {
       icon: <BarChart className="h-5 w-5 mr-3" />,
       text: "Dashboard",
-      path: "/admin",
-      active: location === "/admin"
+      path: "/admin/dashboard",
+      active: location === "/admin/dashboard"
     },
     {
       icon: <TrophyIcon className="h-5 w-5 mr-3" />,

@@ -114,10 +114,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             variant="ghost"
             className="w-full justify-start py-2 px-3 text-red-400 hover:bg-dark-surface"
             onClick={handleLogout}
-            disabled={logoutMutation.isPending}
           >
             <LogOut className="h-5 w-5 mr-3" />
-            {logoutMutation.isPending ? "Logging out..." : "Logout"}
+            Logout
           </Button>
           
           <div className="bg-dark-surface rounded-md p-3 mt-3 border border-gray-800">

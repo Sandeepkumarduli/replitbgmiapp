@@ -13,6 +13,15 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 
+// Declare session properties
+declare module 'express-session' {
+  interface SessionData {
+    userId: number;
+    username: string;
+    role: string;
+  }
+}
+
 const SessionStore = MemoryStore(session);
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -20,9 +29,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(
     session({
       secret: process.env.SESSION_SECRET || "bgmi-tournament-secret",
-      resave: false,
+      resave: true,
       saveUninitialized: false,
-      cookie: { secure: process.env.NODE_ENV === "production", maxAge: 86400000 }, // 24 hours
+      cookie: { 
+        secure: process.env.NODE_ENV === "production", 
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        httpOnly: true,
+        sameSite: "lax"
+      },
       store: new SessionStore({ checkPeriod: 86400000 }),
     })
   );
@@ -79,11 +93,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       req.session.username = user.username;
       req.session.role = user.role;
       
-      res.status(201).json({ 
-        id: user.id, 
-        username: user.username, 
-        email: user.email,
-        role: user.role
+      // Save session before sending response
+      req.session.save((err) => {
+        if (err) {
+          return res.status(500).json({ message: "Failed to create session" });
+        }
+        
+        res.status(201).json({ 
+          id: user.id, 
+          username: user.username, 
+          email: user.email,
+          role: user.role
+        });
       });
     } catch (error) {
       res.status(500).json({ message: "Internal server error" });
@@ -116,11 +137,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       req.session.username = user.username;
       req.session.role = user.role;
       
-      res.json({ 
-        id: user.id, 
-        username: user.username, 
-        email: user.email,
-        role: user.role
+      // Save session before sending response
+      req.session.save((err) => {
+        if (err) {
+          return res.status(500).json({ message: "Failed to create session" });
+        }
+        
+        res.json({ 
+          id: user.id, 
+          username: user.username, 
+          email: user.email,
+          role: user.role
+        });
       });
     } catch (error) {
       res.status(500).json({ message: "Internal server error" });

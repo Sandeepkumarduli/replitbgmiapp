@@ -80,6 +80,11 @@ export function setupAuth(app: Express) {
       if (!username || !password || !email || !phone || !gameId) {
         return res.status(400).json({ message: "All fields are required" });
       }
+      
+      // Prevent anyone from registering as Sandeepkumarduli (admin username)
+      if (username === "Sandeepkumarduli") {
+        return res.status(400).json({ message: "This username is reserved" });
+      }
 
       // Check if username already exists
       const existingUsername = await storage.getUserByUsername(username);
@@ -96,14 +101,14 @@ export function setupAuth(app: Express) {
       // Hash password
       const hashedPassword = await hashPassword(password);
 
-      // Create user
+      // Create user - always force role to be "user" regardless of what's submitted
       const newUser = await storage.createUser({
         username,
         password: hashedPassword,
         email,
         phone,
         gameId,
-        role: role || "user", // Default to "user" if role not provided
+        role: "user", // Enforce user role, ignore any attempted role override
       });
 
       // Store user info in session
@@ -131,34 +136,48 @@ export function setupAuth(app: Express) {
       
       // Handle admin login with hardcoded credentials
       if (username === "Sandeepkumarduli" && password === "Sandy@1234") {
-        let adminUser = await storage.getUserByUsername(username);
-        
-        // If admin doesn't exist in storage, create it
-        if (!adminUser) {
-          const hashedPassword = await hashPassword(password);
-          adminUser = await storage.createUser({
-            username,
-            password: hashedPassword,
-            email: "admin@bgmi-tournaments.com",
-            phone: "1234567890",
-            gameId: "admin",
-            role: "admin"
-          });
+        try {
+          let adminUser = await storage.getUserByUsername(username);
+          
+          // If admin doesn't exist in storage, create it
+          if (!adminUser) {
+            const hashedPassword = await hashPassword(password);
+            adminUser = await storage.createUser({
+              username,
+              password: hashedPassword,
+              email: "admin@bgmi-tournaments.com",
+              phone: "1234567890",
+              gameId: "admin",
+              role: "admin"
+            });
+          } else {
+            // Ensure the user has admin role regardless of what's in storage
+            if (adminUser.role !== "admin") {
+              const updatedAdmin = await storage.updateUser(adminUser.id, { role: "admin" });
+              if (updatedAdmin) {
+                adminUser = updatedAdmin;
+              }
+            }
+          }
+          
+          // At this point we should have a valid admin user
+          if (adminUser) {
+            // Store admin info in session
+            req.session.userId = adminUser.id;
+            req.session.username = adminUser.username;
+            req.session.role = "admin";
+            
+            // Return admin user without password
+            const { password: _, ...adminWithoutPassword } = adminUser;
+            return res.status(200).json(adminWithoutPassword);
+          }
+          
+          // If we reach here, something went wrong with admin creation/update
+          return res.status(500).json({ message: "Failed to authenticate admin" });
+        } catch (error) {
+          console.error("Admin login error:", error);
+          return res.status(500).json({ message: "Server error during admin login" });
         }
-        
-        // Ensure the user has admin role regardless of what's in storage
-        if (adminUser.role !== "admin") {
-          adminUser = await storage.updateUser(adminUser.id, { role: "admin" });
-        }
-        
-        // Store admin info in session
-        req.session.userId = adminUser.id;
-        req.session.username = adminUser.username;
-        req.session.role = "admin";
-        
-        // Return admin user without password
-        const { password: _, ...adminWithoutPassword } = adminUser;
-        return res.status(200).json(adminWithoutPassword);
       }
       
       // Regular user login flow

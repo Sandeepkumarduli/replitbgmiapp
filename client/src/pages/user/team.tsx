@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Team, TeamMember } from "@shared/schema";
-import { Users, AlertTriangle } from "lucide-react";
+import { Users, AlertTriangle, Plus } from "lucide-react";
 
 export default function UserTeam() {
   const { isAuthenticated, isAdmin, isLoading } = useAuth();
@@ -35,7 +35,7 @@ export default function UserTeam() {
 
   // Fetch team members if team exists
   const { data: teamMembers, isLoading: isMembersLoading } = useQuery<TeamMember[]>({
-    queryKey: teams && teams.length > 0 ? [`/api/teams/${teams[0].id}/members`] : null,
+    queryKey: teams && teams.length > 0 ? [`/api/teams/${teams[0].id}/members`] : ["/api/teams/no-members"],
     enabled: isAuthenticated && !isAdmin && teams && teams.length > 0,
   });
 
@@ -174,7 +174,7 @@ export default function UserTeam() {
                     <CardContent>
                       <TeamCard 
                         team={team}
-                        members={teamMembers?.filter(member => member.teamId === team.id) || []}
+                        members={teamMembers ? teamMembers.filter((member: TeamMember) => member.teamId === team.id) : []}
                         onAddMember={handleAddMember}
                         onRemoveMember={handleRemoveMember}
                       />

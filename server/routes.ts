@@ -206,6 +206,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Team routes
   app.post("/api/teams", isAuthenticated, async (req, res) => {
     try {
+      // Get the current user
+      if (!req.session.userId) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const user = await storage.getUser(req.session.userId as number);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Check if user has reached the limit of 3 teams
+      const userTeams = await storage.getTeamsByOwnerId(req.session.userId as number);
+      if (userTeams.length >= 3) {
+        return res.status(400).json({ message: "You've reached the maximum limit of 3 teams per user" });
+      }
+      
       const result = insertTeamSchema.safeParse({
         ...req.body,
         ownerId: req.session.userId
@@ -221,6 +237,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const team = await storage.createTeam(result.data);
+      
+      // Automatically add the team creator as team captain
+      await storage.addTeamMember({
+        teamId: team.id,
+        username: user.username,
+        gameId: user.gameId,
+        role: "captain"
+      });
       
       res.status(201).json(team);
     } catch (error) {
@@ -280,6 +304,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const members = await storage.getTeamMembers(teamId);
       if (members.length >= 5) {
         return res.status(400).json({ message: "Team cannot have more than 5 members" });
+      }
+      
+      // Check if the username exists
+      const userExists = await storage.getUserByUsername(req.body.username);
+      if (!userExists) {
+        return res.status(404).json({ 
+          message: `User '${req.body.username}' does not exist. They need to sign up first.`,
+          code: "user_not_found"
+        });
+      }
+      
+      // Check if username and gameId are the same
+      if (req.body.username === req.body.gameId) {
+        return res.status(400).json({
+          message: "Username and Game ID cannot be the same",
+          code: "invalid_data"
+        });
       }
       
       const member = await storage.addTeamMember(result.data);

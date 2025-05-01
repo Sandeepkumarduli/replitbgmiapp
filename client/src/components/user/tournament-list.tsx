@@ -99,12 +99,58 @@ export function TournamentList({ filter, showRegisteredOnly = false, limit }: To
     setRegisterDialogOpen(true);
   };
 
-  const confirmRegistration = () => {
+  const confirmRegistration = async () => {
     if (!selectedTournament || !selectedTeamId) return;
-    registerMutation.mutate({
-      tournamentId: selectedTournament.id,
-      teamId: parseInt(selectedTeamId),
-    });
+    
+    const teamId = parseInt(selectedTeamId);
+    const tournamentType = selectedTournament.teamType?.toLowerCase() || 'squad';
+    
+    // For Solo tournaments, we can proceed directly
+    if (tournamentType === 'solo') {
+      registerMutation.mutate({
+        tournamentId: selectedTournament.id,
+        teamId
+      });
+      return;
+    }
+    
+    // For Squad and Duo tournaments, validate team size
+    try {
+      // Fetch team members to check team size
+      const res = await fetch(`/api/teams/${teamId}/members`);
+      if (!res.ok) throw new Error('Failed to fetch team members');
+      
+      const teamMembers = await res.json();
+      
+      // Validate team size based on tournament type
+      if (tournamentType === 'squad' && teamMembers.length < 4) {
+        toast({
+          title: 'Invalid Team Size',
+          description: `Squad tournaments require at least 4 team members. Your team has ${teamMembers.length}.`,
+          variant: 'destructive'
+        });
+        return;
+      } else if (tournamentType === 'duo' && teamMembers.length < 2) {
+        toast({
+          title: 'Invalid Team Size',
+          description: `Duo tournaments require at least 2 team members. Your team has ${teamMembers.length}.`,
+          variant: 'destructive'
+        });
+        return;
+      }
+      
+      // If validation passes, proceed with registration
+      registerMutation.mutate({
+        tournamentId: selectedTournament.id,
+        teamId
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to validate team',
+        variant: 'destructive'
+      });
+    }
   };
 
   const isRegistered = (tournamentId: number) => {
@@ -200,6 +246,15 @@ export function TournamentList({ filter, showRegisteredOnly = false, limit }: To
                     ? `₹${selectedTournament.entryFee}` 
                     : "Free"}
                 </span>
+                {selectedTournament?.teamType && (
+                  <span className="block mt-2 font-medium text-amber-400">
+                    {selectedTournament.teamType.toLowerCase() === 'squad' 
+                      ? '⚠️ Squad tournaments require at least 4 team members'
+                      : selectedTournament.teamType.toLowerCase() === 'duo'
+                        ? '⚠️ Duo tournaments require at least 2 team members'
+                        : '✓ Solo tournaments don\'t require team members'}
+                  </span>
+                )}
               </p>
             </div>
           </div>

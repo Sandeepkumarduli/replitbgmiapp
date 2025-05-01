@@ -130,9 +130,52 @@ export default function TournamentDetails({ params }: { params: { id: string } }
     setRegisterDialogOpen(true);
   };
 
-  const confirmRegistration = () => {
-    if (!selectedTeamId) return;
-    registerMutation.mutate(parseInt(selectedTeamId));
+  const confirmRegistration = async () => {
+    if (!selectedTeamId || !tournament) return;
+    
+    const teamId = parseInt(selectedTeamId);
+    const tournamentType = tournament.teamType?.toLowerCase() || 'squad';
+    
+    // For Solo tournaments, we can proceed directly
+    if (tournamentType === 'solo') {
+      registerMutation.mutate(teamId);
+      return;
+    }
+    
+    // For Squad and Duo tournaments, validate team size
+    try {
+      // Fetch team members to check team size
+      const res = await fetch(`/api/teams/${teamId}/members`);
+      if (!res.ok) throw new Error('Failed to fetch team members');
+      
+      const teamMembers = await res.json();
+      
+      // Validate team size based on tournament type
+      if (tournamentType === 'squad' && teamMembers.length < 4) {
+        toast({
+          title: 'Invalid Team Size',
+          description: `Squad tournaments require at least 4 team members. Your team has ${teamMembers.length}.`,
+          variant: 'destructive'
+        });
+        return;
+      } else if (tournamentType === 'duo' && teamMembers.length < 2) {
+        toast({
+          title: 'Invalid Team Size',
+          description: `Duo tournaments require at least 2 team members. Your team has ${teamMembers.length}.`,
+          variant: 'destructive'
+        });
+        return;
+      }
+      
+      // If validation passes, proceed with registration
+      registerMutation.mutate(teamId);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to validate team',
+        variant: 'destructive'
+      });
+    }
   };
 
   const isRegistered = () => {

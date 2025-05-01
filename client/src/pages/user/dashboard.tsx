@@ -1,7 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, Link } from "wouter";
 import { useAuth } from "@/lib/auth";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { TournamentList } from "@/components/user/tournament-list";
@@ -12,12 +13,16 @@ import {
   Calendar, 
   Clock, 
   CalendarCheck,
-  User 
+  User,
+  RefreshCw
 } from "lucide-react";
 
 export default function UserDashboard() {
   const { isAuthenticated, isAdmin, isLoading, user } = useAuth();
   const [, navigate] = useLocation();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Redirect if not authenticated or is admin
   useEffect(() => {
@@ -41,6 +46,35 @@ export default function UserDashboard() {
     queryKey: ["/api/registrations/user"],
     enabled: isAuthenticated,
   });
+  
+  // Handle refresh data
+  const handleRefresh = async () => {
+    if (isRefreshing) return;
+    
+    setIsRefreshing(true);
+    
+    try {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["/api/teams/my"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/registrations/user"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/registrations/counts"] })
+      ]);
+      
+      toast({
+        title: "Dashboard refreshed",
+        description: "Your data has been updated successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Refresh failed",
+        description: "Failed to update your data",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   if (isLoading || !isAuthenticated) {
     return (
@@ -53,9 +87,19 @@ export default function UserDashboard() {
   return (
     <div className="min-h-screen bg-dark pt-20 pb-10 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-white">User Dashboard</h1>
-          <p className="text-gray-400 mt-1">Manage your tournaments, teams, and profile</p>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-white">User Dashboard</h1>
+            <p className="text-gray-400 mt-1">Manage your tournaments, teams, and profile</p>
+          </div>
+          <Button 
+            onClick={handleRefresh} 
+            disabled={isRefreshing || isLoadingTeams || isLoadingRegistrations}
+            className="bg-primary hover:bg-primary/90 text-white mt-4 sm:mt-0"
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'Refreshing...' : 'Refresh Dashboard'}
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

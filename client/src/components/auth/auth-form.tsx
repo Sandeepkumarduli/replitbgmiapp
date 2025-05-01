@@ -114,7 +114,9 @@ export function AuthForm({ type, role, initialTab = "user" }: AuthFormProps) {
 
         {type === "login" ? (
           <Form {...loginForm}>
-            <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
+            <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4" autoComplete="off">
+              {/* Hidden field to prevent browser autofill */}
+              <input type="text" style={{ display: 'none' }} name="hidden" autoComplete="off" />
               <FormField
                 control={loginForm.control}
                 name="username"
@@ -202,7 +204,9 @@ export function AuthForm({ type, role, initialTab = "user" }: AuthFormProps) {
           </Form>
         ) : (
           <Form {...signupForm}>
-            <form onSubmit={signupForm.handleSubmit(onSignupSubmit)} className="space-y-4">
+            <form onSubmit={signupForm.handleSubmit(onSignupSubmit)} className="space-y-4" autoComplete="off">
+              {/* Hidden field to prevent browser autofill */}
+              <input type="text" style={{ display: 'none' }} name="hidden" autoComplete="off" />
               <FormField
                 control={signupForm.control}
                 name="username"
@@ -272,6 +276,7 @@ export function AuthForm({ type, role, initialTab = "user" }: AuthFormProps) {
                         <Input
                           className="bg-dark-surface border-gray-700 text-white focus:ring-primary"
                           placeholder="Enter your BGMI game ID"
+                          autoComplete="off"
                           {...field}
                         />
                       </FormControl>
@@ -292,6 +297,7 @@ export function AuthForm({ type, role, initialTab = "user" }: AuthFormProps) {
                         type="password"
                         className="bg-dark-surface border-gray-700 text-white focus:ring-primary"
                         placeholder="Create a password"
+                        autoComplete="new-password"
                         {...field}
                       />
                     </FormControl>

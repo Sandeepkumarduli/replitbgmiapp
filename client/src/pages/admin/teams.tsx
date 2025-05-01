@@ -37,12 +37,26 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Team } from "@shared/schema";
+import { Team as BaseTeam, User } from "@shared/schema";
+
+// Extend the Team type to include owner and memberCount properties
+interface EnhancedTeam extends BaseTeam {
+  owner?: {
+    id: number;
+    username: string;
+    role: string;
+    email: string;
+  };
+  memberCount?: number;
+}
+
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
-import AdminLayout from "@/components/layouts/admin-layout";
 import { Filter, MoreVertical, Search, Trash, Users, UsersRound, Eye, Shield } from "lucide-react";
+import AdminLayout from "../../components/layouts/admin-layout";
+
+type Team = EnhancedTeam;
 
 export default function AdminTeams() {
   const [_, navigate] = useLocation();
@@ -79,7 +93,7 @@ export default function AdminTeams() {
       toast({
         title: "Team deleted",
         description: "The team has been successfully deleted",
-        variant: "success",
+        variant: "default",
       });
       
       // Invalidate teams query to refresh the list

@@ -92,6 +92,7 @@ function AuthRoute({ component: Component, ...rest }: {
 
 function Router() {
   const [location] = useLocation();
+  const { isAuthenticated } = useAuth();
   
   const showNavbar = !location.startsWith("/auth") && 
                      !location.startsWith("/forgot-password");
@@ -134,6 +135,9 @@ function Router() {
           <ProtectedRoute path="/user/dashboard" component={UserDashboard}/>
           <ProtectedRoute path="/user/profile" component={UserProfile}/>
           <ProtectedRoute path="/user/team" component={UserTeam}/>
+          <Route path="/user/team/create">
+            {isAuthenticated ? <Redirect to="/user/team" /> : <Redirect to="/auth" />}
+          </Route>
           
           {/* Public Routes */}
           <Route path="/tournaments" component={Tournaments}/>

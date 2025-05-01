@@ -92,12 +92,27 @@ export default function UserProfile() {
   const onSubmit = async (data: ProfileFormValues) => {
     try {
       // Extract only the fields we want to update
-      const updateData = {
+      const updateData: any = {
         email: data.email !== user?.email ? data.email : undefined,
         phone: data.phone !== user?.phone ? data.phone : undefined,
         gameId: data.gameId !== user?.gameId ? data.gameId : undefined,
-        password: data.newPassword ? data.newPassword : undefined,
       };
+      
+      // Handle password change
+      if (data.newPassword) {
+        if (!data.currentPassword) {
+          toast({
+            title: "Error",
+            description: "Current password is required to set a new password",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        // Include both the new password and current password in the update
+        updateData.password = data.newPassword;
+        updateData.currentPassword = data.currentPassword;
+      }
       
       // Remove any undefined values
       const cleanedData = Object.fromEntries(
@@ -106,19 +121,6 @@ export default function UserProfile() {
       
       // Only proceed if there are changes to make
       if (Object.keys(cleanedData).length > 0) {
-        // Check if we're updating password
-        if (cleanedData.password) {
-          // Verify current password matches (this would be checked on the server)
-          if (!data.currentPassword) {
-            toast({
-              title: "Error",
-              description: "Current password is required to set a new password",
-              variant: "destructive",
-            });
-            return;
-          }
-        }
-        
         // Use the updateProfile method from auth context
         await updateProfile(cleanedData);
         

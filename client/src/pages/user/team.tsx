@@ -132,9 +132,35 @@ export default function UserTeam() {
             {hasTeam && teams && teams.length < 3 && (
               <Button
                 onClick={() => {
-                  // Navigate back to the same page to show new team form
+                  // Store existing teams temporarily
+                  const existingTeams = queryClient.getQueryData(["/api/teams/my"]);
+                  
+                  // Clear the teams data to show the new team form
                   queryClient.setQueryData(["/api/teams/my"], []);
-                  queryClient.invalidateQueries({ queryKey: ["/api/teams/my"] });
+                  
+                  // Add a listener to restore data if user cancels
+                  const handleRestore = () => {
+                    if (existingTeams) {
+                      queryClient.setQueryData(["/api/teams/my"], existingTeams);
+                    }
+                    window.removeEventListener('keydown', handleEscapeKey);
+                  };
+                  
+                  // Handle Escape key press to restore
+                  const handleEscapeKey = (e: KeyboardEvent) => {
+                    if (e.key === 'Escape') {
+                      handleRestore();
+                    }
+                  };
+                  
+                  // Add event listener
+                  window.addEventListener('keydown', handleEscapeKey);
+                  
+                  // Show toast with instructions
+                  toast({
+                    title: "Create New Team",
+                    description: "You can now create a new team. Press ESC to cancel.",
+                  });
                 }}
                 className="bg-primary hover:bg-primary/90 text-white"
               >

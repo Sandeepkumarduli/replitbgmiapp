@@ -10,6 +10,7 @@ import { Trophy } from "lucide-react";
 
 export default function EditTournament({ params }: { params?: { id?: string } }) {
   const tournamentId = params?.id ? parseInt(params.id) : 0;
+  console.log("EditTournament params:", params, "tournamentId:", tournamentId);
   const { isAdmin, isAuthenticated, isLoading } = useAuth();
   const [, navigate] = useLocation();
 

@@ -16,7 +16,8 @@ import {
   trackFailedLogin, 
   resetLoginAttempts, 
   enhancedAdminCheck,
-  validateHardcodedAdmin
+  validateHardcodedAdmin,
+  logSecurityEvent
 } from "./auth-security";
 import { z } from "zod";
 
@@ -28,6 +29,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const { isAuthenticated, isAdmin } = useSupabase 
     ? setupSupabaseAuth(app) 
     : setupAuth(app);
+    
+  // Setup enhanced security middleware
+  setupSecurityMiddleware(app);
 
   // Auth routes
   app.post("/api/auth/register", async (req, res) => {
@@ -93,9 +97,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const user = await storage.getUserByUsername(username);
       
+      // Check if user exists and password matches
       if (!user || user.password !== password) {
+        // Track failed login attempt for rate limiting
+        trackFailedLogin(req);
         return res.status(401).json({ message: "Invalid username or password" });
       }
+      
+      // For admin login, perform additional validation
+      if (user.role === 'admin') {
+        // Verify against hardcoded admin credentials for extra security
+        if (!validateHardcodedAdmin(username, password)) {
+          trackFailedLogin(req);
+          return res.status(401).json({ message: "Invalid credentials" });
+        }
+      }
+      
+      // Reset failed login attempts
+      resetLoginAttempts(req);
       
       // Set session
       req.session.userId = user.id;
@@ -107,6 +126,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (err) {
           return res.status(500).json({ message: "Failed to create session" });
         }
+        
+        // Log successful login
+        logSecurityEvent('login_success', req, { userId: user.id, role: user.role });
         
         res.json({ 
           id: user.id, 

@@ -1,110 +1,224 @@
-// This script helps initialize Supabase tables based on our schema
-const { createClient } = require('@supabase/supabase-js');
+/**
+ * This script sets up the necessary tables in your Supabase project
+ * Run this script after creating a new Supabase project to prepare it for the application
+ * 
+ * Usage: node scripts/setup-supabase.js
+ */
 
+const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config();
 
-// Get Supabase credentials from environment variables
+// Supabase configuration
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-// Check if credentials are available
+// Ensure Supabase credentials are available
 if (!supabaseUrl || !supabaseKey) {
-  console.error('Missing Supabase credentials. Please add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to your .env file.');
+  console.error('Missing Supabase credentials. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env file.');
   process.exit(1);
 }
 
-// Create Supabase client
+// Initialize Supabase client
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function createTables() {
   try {
-    console.log('Starting Supabase table creation...');
-
-    // Create users table if it doesn't exist
+    console.log('Setting up Supabase tables...');
+    
+    // Create users table
     console.log('Creating users table...');
-    await supabase.rpc('create_table_if_not_exists', {
+    const { error: usersError } = await supabase.rpc('create_table_if_not_exists', {
       table_name: 'users',
-      table_definition: `
-        id bigserial PRIMARY KEY,
-        username text UNIQUE NOT NULL,
-        password text NOT NULL,
-        email text UNIQUE NOT NULL,
-        phone text NOT NULL,
-        gameId text NOT NULL,
-        role text NOT NULL DEFAULT 'user',
-        createdAt timestamp with time zone DEFAULT timezone('utc'::text, now())
+      column_definitions: `
+        id SERIAL PRIMARY KEY,
+        username TEXT NOT NULL UNIQUE,
+        password TEXT NOT NULL,
+        email TEXT NOT NULL UNIQUE,
+        phone TEXT NOT NULL,
+        gameId TEXT,
+        role TEXT NOT NULL DEFAULT 'user',
+        createdAt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       `
     });
-
+    
+    if (usersError) {
+      console.error('Error creating users table:', usersError);
+    } else {
+      console.log('Users table created successfully');
+    }
+    
     // Create teams table
     console.log('Creating teams table...');
-    await supabase.rpc('create_table_if_not_exists', {
+    const { error: teamsError } = await supabase.rpc('create_table_if_not_exists', {
       table_name: 'teams',
-      table_definition: `
-        id bigserial PRIMARY KEY,
-        name text UNIQUE NOT NULL,
-        ownerId bigint REFERENCES users(id) ON DELETE CASCADE NOT NULL,
-        createdAt timestamp with time zone DEFAULT timezone('utc'::text, now())
+      column_definitions: `
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL UNIQUE,
+        logo TEXT,
+        ownerId INTEGER NOT NULL REFERENCES users(id),
+        createdAt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       `
     });
-
+    
+    if (teamsError) {
+      console.error('Error creating teams table:', teamsError);
+    } else {
+      console.log('Teams table created successfully');
+    }
+    
     // Create team_members table
     console.log('Creating team_members table...');
-    await supabase.rpc('create_table_if_not_exists', {
+    const { error: teamMembersError } = await supabase.rpc('create_table_if_not_exists', {
       table_name: 'team_members',
-      table_definition: `
-        id bigserial PRIMARY KEY,
-        teamId bigint REFERENCES teams(id) ON DELETE CASCADE NOT NULL,
-        playerName text NOT NULL,
-        gameId text NOT NULL,
-        createdAt timestamp with time zone DEFAULT timezone('utc'::text, now())
+      column_definitions: `
+        id SERIAL PRIMARY KEY,
+        teamId INTEGER NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+        username TEXT NOT NULL,
+        gameId TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT 'member'
       `
     });
-
+    
+    if (teamMembersError) {
+      console.error('Error creating team_members table:', teamMembersError);
+    } else {
+      console.log('Team members table created successfully');
+    }
+    
     // Create tournaments table
     console.log('Creating tournaments table...');
-    await supabase.rpc('create_table_if_not_exists', {
+    const { error: tournamentsError } = await supabase.rpc('create_table_if_not_exists', {
       table_name: 'tournaments',
-      table_definition: `
-        id bigserial PRIMARY KEY,
-        title text NOT NULL,
-        description text NOT NULL,
-        date timestamp with time zone NOT NULL,
-        mapType text NOT NULL,
-        teamType text NOT NULL,
-        entryFee integer NOT NULL DEFAULT 0,
-        prizePool integer NOT NULL DEFAULT 0,
-        totalSlots integer NOT NULL,
-        filledSlots integer NOT NULL DEFAULT 0,
-        status text NOT NULL DEFAULT 'upcoming',
-        roomId text,
-        password text,
-        createdAt timestamp with time zone DEFAULT timezone('utc'::text, now()),
-        isPaid boolean NOT NULL DEFAULT false
+      column_definitions: `
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        description TEXT,
+        date TIMESTAMP WITH TIME ZONE NOT NULL,
+        slots INTEGER NOT NULL,
+        map TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'upcoming',
+        entryFee NUMERIC,
+        prizePool NUMERIC,
+        image TEXT,
+        createdBy INTEGER NOT NULL REFERENCES users(id),
+        roomDetails JSONB,
+        createdAt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       `
     });
-
+    
+    if (tournamentsError) {
+      console.error('Error creating tournaments table:', tournamentsError);
+    } else {
+      console.log('Tournaments table created successfully');
+    }
+    
     // Create registrations table
     console.log('Creating registrations table...');
-    await supabase.rpc('create_table_if_not_exists', {
+    const { error: registrationsError } = await supabase.rpc('create_table_if_not_exists', {
       table_name: 'registrations',
-      table_definition: `
-        id bigserial PRIMARY KEY,
-        userId bigint REFERENCES users(id) ON DELETE CASCADE NOT NULL,
-        teamId bigint REFERENCES teams(id) ON DELETE CASCADE NOT NULL,
-        tournamentId bigint REFERENCES tournaments(id) ON DELETE CASCADE NOT NULL,
-        slot integer NOT NULL,
-        registeredAt timestamp with time zone DEFAULT timezone('utc'::text, now()),
+      column_definitions: `
+        id SERIAL PRIMARY KEY,
+        tournamentId INTEGER NOT NULL REFERENCES tournaments(id) ON DELETE CASCADE,
+        teamId INTEGER NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+        userId INTEGER NOT NULL REFERENCES users(id),
+        status TEXT NOT NULL DEFAULT 'pending',
+        slot INTEGER,
+        registeredAt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(tournamentId, teamId)
       `
     });
-
-    console.log('All tables created successfully!');
+    
+    if (registrationsError) {
+      console.error('Error creating registrations table:', registrationsError);
+    } else {
+      console.log('Registrations table created successfully');
+    }
+    
+    // Create necessary indexes for performance
+    console.log('Creating indexes...');
+    
+    // Index on teams.ownerId
+    const { error: teamOwnerIdxError } = await supabase.rpc('execute_sql', {
+      sql_query: 'CREATE INDEX IF NOT EXISTS idx_teams_owner_id ON teams(ownerId)'
+    });
+    
+    if (teamOwnerIdxError) {
+      console.error('Error creating teams.ownerId index:', teamOwnerIdxError);
+    }
+    
+    // Index on team_members.teamId
+    const { error: teamMemberIdxError } = await supabase.rpc('execute_sql', {
+      sql_query: 'CREATE INDEX IF NOT EXISTS idx_team_members_team_id ON team_members(teamId)'
+    });
+    
+    if (teamMemberIdxError) {
+      console.error('Error creating team_members.teamId index:', teamMemberIdxError);
+    }
+    
+    // Index on tournaments.status
+    const { error: tournamentStatusIdxError } = await supabase.rpc('execute_sql', {
+      sql_query: 'CREATE INDEX IF NOT EXISTS idx_tournaments_status ON tournaments(status)'
+    });
+    
+    if (tournamentStatusIdxError) {
+      console.error('Error creating tournaments.status index:', tournamentStatusIdxError);
+    }
+    
+    // Indexes on registrations
+    const { error: regTournamentIdxError } = await supabase.rpc('execute_sql', {
+      sql_query: 'CREATE INDEX IF NOT EXISTS idx_registrations_tournament_id ON registrations(tournamentId)'
+    });
+    
+    if (regTournamentIdxError) {
+      console.error('Error creating registrations.tournamentId index:', regTournamentIdxError);
+    }
+    
+    const { error: regTeamIdxError } = await supabase.rpc('execute_sql', {
+      sql_query: 'CREATE INDEX IF NOT EXISTS idx_registrations_team_id ON registrations(teamId)'
+    });
+    
+    if (regTeamIdxError) {
+      console.error('Error creating registrations.teamId index:', regTeamIdxError);
+    }
+    
+    const { error: regUserIdxError } = await supabase.rpc('execute_sql', {
+      sql_query: 'CREATE INDEX IF NOT EXISTS idx_registrations_user_id ON registrations(userId)'
+    });
+    
+    if (regUserIdxError) {
+      console.error('Error creating registrations.userId index:', regUserIdxError);
+    }
+    
+    // Create stored procedures for common operations
+    console.log('Creating stored procedures...');
+    
+    // Procedure to get tournament registration counts
+    const { error: procRegCountError } = await supabase.rpc('execute_sql', {
+      sql_query: `
+        CREATE OR REPLACE FUNCTION get_tournament_registration_counts()
+        RETURNS TABLE(tournamentId INTEGER, registrationCount BIGINT) 
+        LANGUAGE SQL
+        AS $$
+          SELECT tournamentId, COUNT(*) as registrationCount 
+          FROM registrations 
+          GROUP BY tournamentId;
+        $$;
+      `
+    });
+    
+    if (procRegCountError) {
+      console.error('Error creating get_tournament_registration_counts procedure:', procRegCountError);
+    }
+    
+    console.log('Setup completed!');
+    console.log('Your Supabase database is now ready to be used with the BGMI Tournament Platform.');
+    
   } catch (error) {
-    console.error('Error creating tables:', error);
-    process.exit(1);
+    console.error('Error setting up Supabase:', error);
   }
 }
 
-// Run the script
-createTables();
+createTables().catch(err => {
+  console.error('Script execution failed:', err);
+  process.exit(1);
+});

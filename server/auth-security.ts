@@ -12,6 +12,10 @@ import { storage } from './storage';
 import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
+import 'express-session';
+
+// We're using an existing declaration from auth.ts, so we don't need to redeclare here
+// The session interface is already declared in auth.ts with these fields
 
 // Load environment variables
 dotenv.config();
@@ -34,7 +38,7 @@ if (!fs.existsSync(SECURITY_LOG_PATH)) {
 const loginAttempts: Record<string, { count: number, timestamp: number }> = {};
 
 // Log security events
-function logSecurityEvent(event: string, req: Request, details?: any): void {
+export function logSecurityEvent(event: string, req: Request, details?: any): void {
   const timestamp = new Date().toISOString();
   const ip = req.ip || req.socket.remoteAddress || 'unknown';
   const userAgent = req.headers['user-agent'] || 'unknown';
@@ -64,7 +68,8 @@ export function loginRateLimiter(req: Request, res: Response, next: NextFunction
   
   // Skip rate limiting for whitelisted IPs
   if (ADMIN_WHITELIST_IPS.includes(ip)) {
-    return next();
+    next();
+    return;
   }
   
   // Check if this IP is currently locked out
@@ -77,9 +82,10 @@ export function loginRateLimiter(req: Request, res: Response, next: NextFunction
       const remainingTimeMinutes = Math.ceil((LOCKOUT_TIME_MS - timeSinceLockout) / 60000);
       logSecurityEvent('login_attempt_during_lockout', req);
       
-      return res.status(429).json({
+      res.status(429).json({
         message: `Too many login attempts. Please try again in ${remainingTimeMinutes} minutes.`
       });
+      return;
     } else {
       // Lockout period expired, reset counter
       delete loginAttempts[ip];
@@ -142,7 +148,8 @@ export async function enhancedAdminCheck(req: Request, res: Response, next: Next
   // Check if user is authenticated and session exists
   if (!req.session || !req.session.userId) {
     logSecurityEvent('unauthorized_admin_access_attempt', req);
-    return res.status(401).json({ message: "Not authenticated" });
+    res.status(401).json({ message: "Not authenticated" });
+    return;
   }
   
   try {
@@ -155,7 +162,8 @@ export async function enhancedAdminCheck(req: Request, res: Response, next: Next
         userId: req.session.userId,
         userRole: user?.role || 'unknown'
       });
-      return res.status(403).json({ message: "Not authorized" });
+      res.status(403).json({ message: "Not authorized" });
+      return;
     }
     
     // Additional IP validation for admin actions
@@ -168,7 +176,8 @@ export async function enhancedAdminCheck(req: Request, res: Response, next: Next
     /*
     if (!isWhitelistedIP) {
       logSecurityEvent('admin_access_from_non_whitelisted_ip', req, { ip });
-      return res.status(403).json({ message: "Access denied from this location" });
+      res.status(403).json({ message: "Access denied from this location" });
+      return;
     }
     */
     
@@ -186,7 +195,8 @@ export async function enhancedAdminCheck(req: Request, res: Response, next: Next
     next();
   } catch (error) {
     logSecurityEvent('admin_check_error', req, { error: String(error) });
-    return res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: "Internal server error" });
+    return;
   }
 }
 

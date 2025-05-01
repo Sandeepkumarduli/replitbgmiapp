@@ -1,68 +1,20 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import session from "express-session";
-import MemoryStore from "memorystore";
 import { 
-  insertUserSchema, 
+  insertUserSchema,
   insertTeamSchema, 
   insertTeamMemberSchema, 
   insertTournamentSchema, 
   updateTournamentSchema,
   insertRegistrationSchema 
 } from "@shared/schema";
+import { setupAuth } from "./auth";
 import { z } from "zod";
 
-// Declare session properties
-declare module 'express-session' {
-  interface SessionData {
-    userId: number;
-    username: string;
-    role: string;
-  }
-}
-
-const SessionStore = MemoryStore(session);
-
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Configure session middleware
-  app.use(
-    session({
-      secret: process.env.SESSION_SECRET || "bgmi-tournament-secret",
-      resave: true,
-      saveUninitialized: false,
-      cookie: { 
-        secure: process.env.NODE_ENV === "production", 
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        httpOnly: true,
-        sameSite: "lax"
-      },
-      store: new SessionStore({ checkPeriod: 86400000 }),
-    })
-  );
-
-  // Middleware to check if user is authenticated
-  const isAuthenticated = (req: Request, res: Response, next: Function) => {
-    if (req.session.userId) {
-      next();
-    } else {
-      res.status(401).json({ message: "Unauthorized" });
-    }
-  };
-
-  // Middleware to check if user is admin
-  const isAdmin = async (req: Request, res: Response, next: Function) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    const user = await storage.getUser(req.session.userId);
-    if (!user || user.role !== "admin") {
-      return res.status(403).json({ message: "Forbidden" });
-    }
-
-    next();
-  };
+  // Setup authentication with middleware
+  const { isAuthenticated, isAdmin } = setupAuth(app);
 
   // Auth routes
   app.post("/api/auth/register", async (req, res) => {

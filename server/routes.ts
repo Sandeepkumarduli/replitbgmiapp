@@ -370,6 +370,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Internal server error" });
     }
   });
+  
+  app.delete("/api/teams/:id", isAuthenticated, async (req, res) => {
+    try {
+      const teamId = parseInt(req.params.id);
+      const team = await storage.getTeam(teamId);
+      
+      if (!team) {
+        return res.status(404).json({ message: "Team not found" });
+      }
+      
+      if (team.ownerId !== req.session.userId) {
+        return res.status(403).json({ message: "You are not the owner of this team" });
+      }
+      
+      // Delete all team members first
+      const members = await storage.getTeamMembers(teamId);
+      for (const member of members) {
+        await storage.deleteTeamMember(member.id);
+      }
+      
+      // Delete the team
+      const deleted = await storage.deleteTeam(teamId);
+      
+      if (deleted) {
+        res.json({ message: "Team deleted successfully" });
+      } else {
+        res.status(500).json({ message: "Failed to delete team" });
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
 
   // Tournament routes
   app.post("/api/tournaments", isAdmin, async (req, res) => {

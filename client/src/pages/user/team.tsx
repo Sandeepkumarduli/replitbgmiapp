@@ -36,6 +36,7 @@ export default function UserTeam() {
     gameId: "",
     role: "member" // default role
   });
+  const [createTeamDialogOpen, setCreateTeamDialogOpen] = useState(false);
 
   // Fetch user's teams
   const { data: teams, isLoading: isTeamsLoading } = useQuery<Team[]>({
@@ -189,35 +190,7 @@ export default function UserTeam() {
             {hasTeam && teams && teams.length < 3 && (
               <Button
                 onClick={() => {
-                  // Store existing teams temporarily
-                  const existingTeams = queryClient.getQueryData(["/api/teams/my"]);
-                  
-                  // Clear the teams data to show the new team form
-                  queryClient.setQueryData(["/api/teams/my"], []);
-                  
-                  // Add a listener to restore data if user cancels
-                  const handleRestore = () => {
-                    if (existingTeams) {
-                      queryClient.setQueryData(["/api/teams/my"], existingTeams);
-                    }
-                    window.removeEventListener('keydown', handleEscapeKey);
-                  };
-                  
-                  // Handle Escape key press to restore
-                  const handleEscapeKey = (e: KeyboardEvent) => {
-                    if (e.key === 'Escape') {
-                      handleRestore();
-                    }
-                  };
-                  
-                  // Add event listener
-                  window.addEventListener('keydown', handleEscapeKey);
-                  
-                  // Show toast with instructions
-                  toast({
-                    title: "Create New Team",
-                    description: "You can now create a new team. Press ESC to cancel.",
-                  });
+                  setCreateTeamDialogOpen(true);
                 }}
                 className="bg-primary hover:bg-primary/90 text-white"
               >
@@ -410,6 +383,44 @@ export default function UserTeam() {
                 disabled={addMemberMutation.isPending || !memberData.username || !memberData.gameId}
               >
                 {addMemberMutation.isPending ? "Adding..." : "Add Member"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        
+        {/* Create New Team Dialog */}
+        <Dialog open={createTeamDialogOpen} onOpenChange={setCreateTeamDialogOpen}>
+          <DialogContent className="bg-dark-card border-gray-800 text-white">
+            <DialogHeader>
+              <DialogTitle className="flex items-center">
+                <Users className="h-5 w-5 text-primary mr-2" />
+                Create New Team
+              </DialogTitle>
+              <DialogDescription className="text-gray-400">
+                Create an additional team to participate in tournaments
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="py-4">
+              <TeamForm 
+                onSuccess={() => {
+                  queryClient.invalidateQueries({ queryKey: ["/api/teams/my"] });
+                  setCreateTeamDialogOpen(false);
+                  toast({
+                    title: "Team created successfully",
+                    description: "Your new team is ready to be managed",
+                  });
+                }} 
+              />
+            </div>
+            
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => setCreateTeamDialogOpen(false)}
+                className="border-gray-700 text-white hover:bg-dark-surface"
+              >
+                Cancel
               </Button>
             </DialogFooter>
           </DialogContent>

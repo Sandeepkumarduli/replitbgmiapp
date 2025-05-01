@@ -255,23 +255,31 @@ export default function TournamentDetails({ params }: { params: { id: string } }
                 </div>
 
                 {/* Room information for admins and registered users */}
-                {(tournament.status === "live" && tournament.roomId && tournament.password && 
-                  (isAdmin || (isRegistered() && isAuthenticated))) && (
+                {(isAdmin || (isRegistered() && isAuthenticated)) && (
                   <div className="mt-8 p-4 bg-dark-surface border border-gray-700 rounded-lg">
                     <h3 className="text-white font-medium flex items-center mb-4">
                       <Key className="h-5 w-5 mr-2 text-primary" />
                       Room Information
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-gray-400 text-sm mb-1">Room ID</p>
-                        <p className="text-white bg-dark-card px-3 py-2 rounded-md">{tournament.roomId}</p>
+                    
+                    {tournament.roomId && tournament.password ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-gray-400 text-sm mb-1">Room ID</p>
+                          <p className="text-white bg-dark-card px-3 py-2 rounded-md">{tournament.roomId}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-400 text-sm mb-1">Password</p>
+                          <p className="text-white bg-dark-card px-3 py-2 rounded-md">{tournament.password}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-gray-400 text-sm mb-1">Password</p>
-                        <p className="text-white bg-dark-card px-3 py-2 rounded-md">{tournament.password}</p>
+                    ) : (
+                      <div className="bg-dark-card p-4 rounded-md text-gray-400 text-center">
+                        {tournament.status === "upcoming" ? 
+                          "Room details will be available when the tournament starts" : 
+                          "Room details have not been provided by the organizer yet"}
                       </div>
-                    </div>
+                    )}
                   </div>
                 )}
 

@@ -7,8 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tournament } from "@shared/schema";
 import { Trophy } from "lucide-react";
 
-export default function EditTournament({ params }: { params: { id: string } }) {
-  const tournamentId = parseInt(params.id);
+export default function EditTournament({ params }: { params?: { id?: string } }) {
+  const tournamentId = params?.id ? parseInt(params.id) : 0;
   const { isAdmin, isAuthenticated, isLoading } = useAuth();
   const [, navigate] = useLocation();
 

@@ -112,7 +112,11 @@ export default function UserTeam() {
           
           {hasTeam && teams && teams.length < 3 && (
             <Button
-              onClick={() => navigate("/user/team/create")}
+              onClick={() => {
+                // Navigate back to the same page to show new team form
+                queryClient.setQueryData(["/api/teams/my"], []);
+                queryClient.invalidateQueries({ queryKey: ["/api/teams/my"] });
+              }}
               className="bg-primary hover:bg-primary/90 text-white"
             >
               <Plus className="h-4 w-4 mr-2" /> Create New Team

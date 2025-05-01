@@ -97,22 +97,20 @@ export function TeamForm({ team, isEditing = false, onSuccess }: TeamFormProps) 
 
   const addMemberMutation = useMutation({
     mutationFn: async (values: MemberFormValues & { teamId: number }) => {
-      const res = await apiRequest("POST", `/api/teams/${values.teamId}/members`, {
-        username: values.username,
-        gameId: values.gameId,
-        role: values.role,
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        // Check for specific error code for user not found
-        if (errorData && errorData.code === "user_not_found") {
+      try {
+        const res = await apiRequest("POST", `/api/teams/${values.teamId}/members`, {
+          username: values.username,
+          gameId: values.gameId,
+          role: values.role,
+        });
+        return await res.json();
+      } catch (error: any) {
+        // Extract the message from the error response
+        if (error?.message?.includes("does not exist")) {
           throw new Error(`User '${values.username}' does not exist. They need to sign up first.`);
         }
-        throw new Error(errorData.message || "Failed to add team member");
+        throw error;
       }
-      
-      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/teams/${team?.id}/members`] });

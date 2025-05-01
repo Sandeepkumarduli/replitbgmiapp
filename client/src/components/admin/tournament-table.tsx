@@ -37,7 +37,8 @@ import {
   MoreVertical,
   Eye,
   Key,
-  AlertTriangle
+  AlertTriangle,
+  RefreshCw
 } from "lucide-react";
 import { Tournament } from "@shared/schema";
 
@@ -49,10 +50,30 @@ export function TournamentTable() {
   const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [roomData, setRoomData] = useState({ roomId: "", password: "" });
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const { data: tournaments, isLoading } = useQuery<Tournament[]>({
+  const { data: tournaments, isLoading, refetch } = useQuery<Tournament[]>({
     queryKey: ["/api/tournaments"],
   });
+  
+  const refreshTournaments = async () => {
+    setIsRefreshing(true);
+    try {
+      await refetch();
+      toast({
+        title: "Tournaments refreshed",
+        description: "The tournament list has been refreshed successfully"
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to refresh tournaments",
+        description: "There was an error refreshing the tournament list",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const updateRoomMutation = useMutation({
     mutationFn: async (tournamentId: number) => {
@@ -156,12 +177,23 @@ export function TournamentTable() {
             <Trophy className="h-5 w-5 mr-2 text-primary" />
             Tournaments
           </h3>
-          <Button 
-            className="bg-primary hover:bg-primary/90 text-white glow-hover"
-            onClick={() => navigate("/admin/tournaments/create")}
-          >
-            Add New
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              className="text-white border-gray-700 hover:bg-primary/20 hover:text-white"
+              onClick={refreshTournaments}
+              disabled={isRefreshing}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+              {isRefreshing ? 'Refreshing...' : 'Refresh'}
+            </Button>
+            <Button 
+              className="bg-primary hover:bg-primary/90 text-white glow-hover"
+              onClick={() => navigate("/admin/tournaments/create")}
+            >
+              Add New
+            </Button>
+          </div>
         </div>
         
         <Table>

@@ -7,7 +7,7 @@ type TeamCardProps = {
   team?: Team;
   members?: TeamMember[];
   onManage?: () => void;
-  onAddMember?: () => void;
+  onAddMember?: (team?: Team) => void;
   onRemoveMember?: (memberId: number) => void;
 };
 
@@ -135,7 +135,10 @@ export function TeamCard({ team, members = [], onManage, onAddMember, onRemoveMe
               variant="outline" 
               size="sm" 
               className="w-full mt-4" 
-              onClick={onAddMember}
+              onClick={(e) => { 
+                e.preventDefault(); 
+                if (onAddMember) onAddMember(team); 
+              }}
             >
               <Plus className="h-4 w-4 mr-2" /> Add Team Member
             </Button>

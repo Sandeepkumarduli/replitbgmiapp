@@ -82,8 +82,55 @@ export default function UserTeam() {
     }
   }, [isAuthenticated, isAdmin, isLoading, navigate]);
 
-  const handleAddMember = () => {
-    // This will be handled by the TeamCard component
+  // Add team member mutation
+  const addMemberMutation = useMutation({
+    mutationFn: async (data: { username: string; gameId: string; teamId: number; role: string }) => {
+      const res = await apiRequest("POST", `/api/teams/${data.teamId}/members`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      if (selectedTeam) {
+        queryClient.invalidateQueries({ queryKey: [`/api/teams/${selectedTeam.id}/members`] });
+        toast({
+          title: "Team member added",
+          description: "The team member has been added successfully",
+        });
+      }
+      setAddMemberDialogOpen(false);
+      setMemberData({ username: "", gameId: "", role: "member" });
+      setSelectedTeam(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to add team member",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleAddMember = (team: Team) => {
+    setSelectedTeam(team);
+    setAddMemberDialogOpen(true);
+  };
+  
+  const handleManageTeam = (team: Team) => {
+    // Scroll to the team's card
+    const teamElement = document.getElementById(`team-${team.id}`);
+    if (teamElement) {
+      teamElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      
+      // Flash effect to highlight the team card
+      teamElement.classList.add('border-primary');
+      setTimeout(() => {
+        teamElement.classList.remove('border-primary');
+      }, 1500);
+      
+      toast({
+        title: "Team Management",
+        description: `You're now viewing ${team.name}'s details`,
+      });
+    }
   };
 
   const handleRemoveMember = (memberId: number) => {
@@ -235,7 +282,8 @@ export default function UserTeam() {
                       <TeamCard 
                         team={team}
                         members={teamMembers ? teamMembers.filter((member: TeamMember) => member.teamId === team.id) : []}
-                        onAddMember={handleAddMember}
+                        onAddMember={() => handleAddMember(team)}
+                        onManage={() => handleManageTeam(team)}
                         onRemoveMember={handleRemoveMember}
                       />
                     </CardContent>
@@ -272,6 +320,96 @@ export default function UserTeam() {
                 disabled={deleteMemberMutation.isPending}
               >
                 {deleteMemberMutation.isPending ? "Removing..." : "Remove Member"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        
+        {/* Add Team Member Dialog */}
+        <Dialog open={addMemberDialogOpen} onOpenChange={setAddMemberDialogOpen}>
+          <DialogContent className="bg-dark-card border-gray-800 text-white">
+            <DialogHeader>
+              <DialogTitle className="flex items-center">
+                <Plus className="h-5 w-5 text-primary mr-2" />
+                Add Team Member
+              </DialogTitle>
+              <DialogDescription className="text-gray-400">
+                Add a new member to your team. The user must already exist on the platform.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label htmlFor="username" className="text-white">Username</Label>
+                <Input
+                  id="username"
+                  placeholder="Enter member's username"
+                  className="bg-dark-surface border-gray-700 text-white"
+                  value={memberData.username}
+                  onChange={(e) => setMemberData({ ...memberData, username: e.target.value })}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="gameId" className="text-white">Game ID</Label>
+                <Input
+                  id="gameId"
+                  placeholder="Enter member's BGMI ID"
+                  className="bg-dark-surface border-gray-700 text-white"
+                  value={memberData.gameId}
+                  onChange={(e) => setMemberData({ ...memberData, gameId: e.target.value })}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="role" className="text-white">Role</Label>
+                <Select
+                  value={memberData.role}
+                  onValueChange={(value) => setMemberData({ ...memberData, role: value })}
+                >
+                  <SelectTrigger className="bg-dark-surface border-gray-700 text-white">
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-dark-card border-gray-800">
+                    <SelectItem value="member" className="text-white hover:bg-dark-surface">Team Member</SelectItem>
+                    <SelectItem value="substitute" className="text-white hover:bg-dark-surface">Substitute</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setAddMemberDialogOpen(false);
+                  setMemberData({ username: "", gameId: "", role: "member" });
+                }}
+                className="border-gray-700 text-white hover:bg-dark-surface"
+              >
+                Cancel
+              </Button>
+              <Button 
+                className="bg-primary hover:bg-primary/90"
+                onClick={() => {
+                  if (selectedTeam && memberData.username && memberData.gameId) {
+                    addMemberMutation.mutate({
+                      teamId: selectedTeam.id,
+                      username: memberData.username,
+                      gameId: memberData.gameId,
+                      role: memberData.role
+                    });
+                  } else {
+                    toast({
+                      title: "Missing information",
+                      description: "Please fill in all fields",
+                      variant: "destructive"
+                    });
+                  }
+                }}
+                disabled={addMemberMutation.isPending || !memberData.username || !memberData.gameId}
+              >
+                {addMemberMutation.isPending ? "Adding..." : "Add Member"}
               </Button>
             </DialogFooter>
           </DialogContent>

@@ -136,7 +136,7 @@ function Router() {
           <ProtectedRoute path="/user/profile" component={UserProfile}/>
           <ProtectedRoute path="/user/team" component={UserTeam}/>
           <Route path="/user/team/create">
-            {isAuthenticated ? <Redirect to="/user/team" /> : <Redirect to="/auth" />}
+            <Redirect to="/user/team" />
           </Route>
           
           {/* Public Routes */}

@@ -315,6 +315,69 @@ export default function TournamentDetails({ params }: { params: { id: string } }
                     <li>Tournament officials have the final say in all disputes</li>
                   </ul>
                   
+                  <h3 className="text-white text-lg font-medium mt-6 mb-4">Match Schedule</h3>
+                  
+                  <div className="space-y-4">
+                    {tournament.mapType === "Erangel" && (
+                      <div className="bg-dark-surface border border-gray-700 rounded-lg p-4">
+                        <h4 className="text-white font-medium">Match 1: Erangel - Survival Classic</h4>
+                        <p className="text-gray-400 text-sm mt-2">
+                          Players will battle it out on Erangel with standard settings. Focus on survival and tactical play.
+                        </p>
+                      </div>
+                    )}
+                    
+                    {tournament.mapType === "Miramar" && (
+                      <div className="bg-dark-surface border border-gray-700 rounded-lg p-4">
+                        <h4 className="text-white font-medium">Match 1: Miramar - Desert Warriors</h4>
+                        <p className="text-gray-400 text-sm mt-2">
+                          Navigate the harsh desert landscape and use long-range combat skills to dominate.
+                        </p>
+                      </div>
+                    )}
+                    
+                    {tournament.mapType === "Sanhok" && (
+                      <div className="bg-dark-surface border border-gray-700 rounded-lg p-4">
+                        <h4 className="text-white font-medium">Match 1: Sanhok - Jungle Warfare</h4>
+                        <p className="text-gray-400 text-sm mt-2">
+                          Move quickly through dense foliage and adapt to fast-paced combat in this smaller map.
+                        </p>
+                      </div>
+                    )}
+                    
+                    {tournament.mapType === "Vikendi" && (
+                      <div className="bg-dark-surface border border-gray-700 rounded-lg p-4">
+                        <h4 className="text-white font-medium">Match 1: Vikendi - Snow Stalkers</h4>
+                        <p className="text-gray-400 text-sm mt-2">
+                          Track enemies in the snow and use stealth to your advantage in this winter battleground.
+                        </p>
+                      </div>
+                    )}
+                    
+                    {tournament.mapType === "All Maps" && (
+                      <>
+                        <div className="bg-dark-surface border border-gray-700 rounded-lg p-4">
+                          <h4 className="text-white font-medium">Match 1: Erangel - Battle Royale Classic</h4>
+                          <p className="text-gray-400 text-sm mt-2">
+                            Start with the original battleground experience.
+                          </p>
+                        </div>
+                        <div className="bg-dark-surface border border-gray-700 rounded-lg p-4">
+                          <h4 className="text-white font-medium">Match 2: Miramar - Desert Showdown</h4>
+                          <p className="text-gray-400 text-sm mt-2">
+                            Test your sniping and long-range combat skills.
+                          </p>
+                        </div>
+                        <div className="bg-dark-surface border border-gray-700 rounded-lg p-4">
+                          <h4 className="text-white font-medium">Match 3: Sanhok - Hot Drop Challenge</h4>
+                          <p className="text-gray-400 text-sm mt-2">
+                            Fast-paced combat with increased loot drops.
+                          </p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  
                   <h3 className="text-white text-lg font-medium mt-6 mb-4">Scoring System</h3>
                   
                   <ul className="list-disc pl-5 space-y-2 text-gray-300">

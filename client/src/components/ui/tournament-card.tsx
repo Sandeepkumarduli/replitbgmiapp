@@ -46,76 +46,93 @@ export function TournamentCard({ tournament, onRegister, registered = false }: T
   };
   
   return (
-    <div className="tournament-card">
-      <div className="relative">
-        <img 
-          src={`https://images.unsplash.com/photo-15${Math.floor(Math.random() * 100000000)}?w=500&h=300&auto=format&fit=crop`} 
-          alt={title} 
-          className="w-full h-48 object-cover"
-          onError={(e) => {
-            // Fallback image in case the random one fails
-            (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=500&h=300&auto=format&fit=crop";
-          }}
-        />
-        {statusDisplay()}
-        {!isPaid && (
-          <div className="absolute top-0 left-0 bg-accent/20 text-accent px-3 py-1 m-3 rounded-full text-xs font-bold">
-            FREE ENTRY
+    <Card className="tournament-card border border-gray-800 overflow-hidden bg-dark-card hover:bg-dark-card/80 transition-colors">
+      <CardContent className="p-0">
+        <div className="p-4">
+          {/* Status Badge */}
+          <div className="flex items-center justify-between mb-3">
+            {status === "live" ? (
+              <Badge className="bg-[#00CC66] text-white hover:bg-[#00CC66]">
+                <span className="w-2 h-2 bg-white rounded-full animate-pulse mr-1.5"></span>
+                LIVE NOW
+              </Badge>
+            ) : status === "upcoming" ? (
+              <Badge className="bg-[#FFCC00] text-dark hover:bg-[#FFCC00]">
+                <span className="w-2 h-2 bg-dark rounded-full mr-1.5"></span>
+                UPCOMING
+              </Badge>
+            ) : (
+              <Badge className="bg-[#FF3300] text-white hover:bg-[#FF3300]">
+                <span className="w-2 h-2 bg-white rounded-full mr-1.5"></span>
+                COMPLETED
+              </Badge>
+            )}
+            
+            {/* Entry Fee / Prize Badge */}
+            {!isPaid ? (
+              <Badge variant="outline" className="text-accent border-accent">
+                FREE ENTRY
+              </Badge>
+            ) : prizePool && prizePool > 0 ? (
+              <Badge variant="outline" className="text-secondary border-secondary">
+                ₹{prizePool.toLocaleString()} PRIZE
+              </Badge>
+            ) : null}
           </div>
-        )}
-      </div>
-      <div className="p-4">
-        <div className="flex justify-between items-start mb-2">
-          <h3 className="text-xl font-bold text-white">{title}</h3>
-          {prizePool > 0 && (
-            <span className="bg-secondary/20 text-secondary px-2 py-1 rounded text-xs font-medium">
-              ₹{prizePool.toLocaleString()} Prize
-            </span>
-          )}
-        </div>
-        <div className="flex items-center text-gray-400 text-sm mb-3">
-          <CalendarIcon className="h-4 w-4 mr-2" />
-          {isTodayEvent 
-            ? `Today, ${format(tournamentDate, "h:mm a")}`
-            : format(tournamentDate, "MMM d, h:mm a")
-          }
-        </div>
-        <div className="flex justify-between mb-4">
-          <div className="flex items-center text-gray-400 text-sm">
-            <Users className="h-4 w-4 mr-2" />
-            {teamType}
+          
+          {/* Tournament Title */}
+          <h3 className="text-xl font-bold text-white mb-3">{title}</h3>
+          
+          {/* Date/Time */}
+          <div className="flex items-center text-gray-400 text-sm mb-3">
+            <CalendarIcon className="h-4 w-4 mr-2" />
+            {isTodayEvent 
+              ? `Today, ${format(tournamentDate, "h:mm a")}`
+              : format(tournamentDate, "MMM d, h:mm a")
+            }
           </div>
-          <div className="flex items-center text-gray-400 text-sm">
-            <MapPin className="h-4 w-4 mr-2" />
-            {mapType}
-          </div>
-          <div className="flex items-center text-gray-400 text-sm">
-            <User className="h-4 w-4 mr-2" />
-            {slotsTaken}/{totalSlots}
+          
+          {/* Tournament Details */}
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            <div className="flex items-center text-gray-400 text-sm">
+              <Users className="h-4 w-4 mr-2" />
+              {teamType}
+            </div>
+            <div className="flex items-center text-gray-400 text-sm">
+              <MapPin className="h-4 w-4 mr-2" />
+              {mapType}
+            </div>
+            <div className="flex items-center text-gray-400 text-sm">
+              <User className="h-4 w-4 mr-2" />
+              {slotsTaken}/{totalSlots}
+            </div>
           </div>
         </div>
         
-        {registered ? (
-          <Button variant="outline" className="w-full">
-            Registered
-          </Button>
-        ) : status === "live" ? (
-          <Button className="w-full bg-[#00CC66] hover:bg-[#00CC66]/90 text-white font-medium">
-            Join Now
-          </Button>
-        ) : status === "upcoming" ? (
-          <Button 
-            className="w-full bg-secondary hover:bg-secondary/90 text-white font-medium"
-            onClick={() => onRegister && onRegister(id)}
-          >
-            Register
-          </Button>
-        ) : (
-          <Button variant="outline" className="w-full" disabled>
-            Completed
-          </Button>
-        )}
-      </div>
-    </div>
+        {/* Action Button */}
+        <div className="border-t border-gray-800 p-4 pt-3">
+          {registered ? (
+            <Button variant="outline" className="w-full">
+              Registered
+            </Button>
+          ) : status === "live" ? (
+            <Button className="w-full bg-[#00CC66] hover:bg-[#00CC66]/80 text-white font-medium">
+              Join Now
+            </Button>
+          ) : status === "upcoming" ? (
+            <Button 
+              className="w-full bg-secondary hover:bg-secondary/80 text-white font-medium"
+              onClick={() => onRegister && onRegister(id)}
+            >
+              Register
+            </Button>
+          ) : (
+            <Button variant="outline" className="w-full" disabled>
+              Completed
+            </Button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }

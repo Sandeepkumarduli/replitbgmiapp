@@ -48,6 +48,19 @@ export default function Navbar() {
                   Teams
                 </Link>
               )}
+              {isAuthenticated && isAdmin && (
+                <>
+                  <Link href="/admin/teams" className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${isActive("/admin/teams") ? "border-primary text-white" : "border-transparent text-gray-300 hover:text-white hover:border-accent"}`}>
+                    Teams
+                  </Link>
+                  <Link href="/admin/users" className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${isActive("/admin/users") ? "border-primary text-white" : "border-transparent text-gray-300 hover:text-white hover:border-accent"}`}>
+                    Users
+                  </Link>
+                  <Link href="/admin/admins" className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${isActive("/admin/admins") ? "border-primary text-white" : "border-transparent text-gray-300 hover:text-white hover:border-accent"}`}>
+                    Admins
+                  </Link>
+                </>
+              )}
             </div>
           </div>
           <div className="hidden sm:ml-6 sm:flex sm:items-center">
@@ -126,6 +139,22 @@ export default function Navbar() {
               <Users className="h-4 w-4 inline mr-2" />
               Teams
             </Link>
+          )}
+          {isAuthenticated && isAdmin && (
+            <>
+              <Link href="/admin/teams" className={`block pl-3 pr-4 py-2 text-base font-medium ${isActive("/admin/teams") ? "bg-primary text-white" : "text-gray-300 hover:bg-dark-card hover:text-white"}`}>
+                <Users className="h-4 w-4 inline mr-2" />
+                Teams
+              </Link>
+              <Link href="/admin/users" className={`block pl-3 pr-4 py-2 text-base font-medium ${isActive("/admin/users") ? "bg-primary text-white" : "text-gray-300 hover:bg-dark-card hover:text-white"}`}>
+                <Users className="h-4 w-4 inline mr-2" />
+                Users
+              </Link>
+              <Link href="/admin/admins" className={`block pl-3 pr-4 py-2 text-base font-medium ${isActive("/admin/admins") ? "bg-primary text-white" : "text-gray-300 hover:bg-dark-card hover:text-white"}`}>
+                <Users className="h-4 w-4 inline mr-2" />
+                Admins
+              </Link>
+            </>
           )}
           {isAuthenticated ? (
             <>

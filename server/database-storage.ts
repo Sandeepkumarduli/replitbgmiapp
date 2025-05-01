@@ -44,16 +44,26 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db.insert(users).values(insertUser).returning();
-    return user;
+    try {
+      const [user] = await db.insert(users).values(insertUser).returning();
+      return user;
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw error;
+    }
   }
 
   async updateUser(id: number, userUpdate: Partial<User>): Promise<User | undefined> {
-    const [updatedUser] = await db.update(users)
-      .set(userUpdate)
-      .where(eq(users.id, id))
-      .returning();
-    return updatedUser;
+    try {
+      const [updatedUser] = await db.update(users)
+        .set(userUpdate)
+        .where(eq(users.id, id))
+        .returning();
+      return updatedUser;
+    } catch (error) {
+      console.error('Error updating user:', error);
+      throw error;
+    }
   }
   
   async deleteUser(id: number): Promise<boolean> {
@@ -90,16 +100,26 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTeam(insertTeam: InsertTeam): Promise<Team> {
-    const [team] = await db.insert(teams).values(insertTeam).returning();
-    return team;
+    try {
+      const [team] = await db.insert(teams).values(insertTeam).returning();
+      return team;
+    } catch (error) {
+      console.error('Error creating team:', error);
+      throw error;
+    }
   }
 
   async updateTeam(id: number, teamUpdate: Partial<Team>): Promise<Team | undefined> {
-    const [updatedTeam] = await db.update(teams)
-      .set(teamUpdate)
-      .where(eq(teams.id, id))
-      .returning();
-    return updatedTeam;
+    try {
+      const [updatedTeam] = await db.update(teams)
+        .set(teamUpdate)
+        .where(eq(teams.id, id))
+        .returning();
+      return updatedTeam;
+    } catch (error) {
+      console.error('Error updating team:', error);
+      throw error;
+    }
   }
 
   async deleteTeam(id: number): Promise<boolean> {
@@ -135,18 +155,28 @@ export class DatabaseStorage implements IStorage {
   }
 
   async addTeamMember(insertMember: InsertTeamMember): Promise<TeamMember> {
-    const [member] = await db.insert(teamMembers)
-      .values(insertMember)
-      .returning();
-    return member;
+    try {
+      const [member] = await db.insert(teamMembers)
+        .values(insertMember)
+        .returning();
+      return member;
+    } catch (error) {
+      console.error('Error adding team member:', error);
+      throw error;
+    }
   }
 
   async updateTeamMember(id: number, memberUpdate: Partial<TeamMember>): Promise<TeamMember | undefined> {
-    const [updatedMember] = await db.update(teamMembers)
-      .set(memberUpdate)
-      .where(eq(teamMembers.id, id))
-      .returning();
-    return updatedMember;
+    try {
+      const [updatedMember] = await db.update(teamMembers)
+        .set(memberUpdate)
+        .where(eq(teamMembers.id, id))
+        .returning();
+      return updatedMember;
+    } catch (error) {
+      console.error('Error updating team member:', error);
+      throw error;
+    }
   }
 
   async deleteTeamMember(id: number): Promise<boolean> {
@@ -185,35 +215,53 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTournament(insertTournament: InsertTournament): Promise<Tournament> {
-    // Ensure slots is set to the same value as totalSlots for compatibility
-    const tournamentData = {
-      ...insertTournament,
-      slots: insertTournament.totalSlots
-    };
-    
-    const [tournament] = await db.insert(tournaments)
-      .values(tournamentData)
-      .returning();
-    return tournament;
+    try {
+      // Ensure slots is set to the same value as totalSlots for compatibility
+      const tournamentData = {
+        ...insertTournament,
+        slots: insertTournament.totalSlots
+      };
+      
+      const [tournament] = await db.insert(tournaments)
+        .values(tournamentData)
+        .returning();
+      return tournament;
+    } catch (error) {
+      console.error('Error creating tournament:', error);
+      throw error;
+    }
   }
 
   async updateTournament(id: number, tournamentUpdate: Partial<UpdateTournament>): Promise<Tournament | undefined> {
-    // If totalSlots is being updated, also update slots for compatibility
-    if (tournamentUpdate.totalSlots) {
-      tournamentUpdate.slots = tournamentUpdate.totalSlots;
+    try {
+      // If totalSlots is being updated, also update slots for compatibility
+      if (tournamentUpdate.totalSlots) {
+        tournamentUpdate.slots = tournamentUpdate.totalSlots;
+      }
+      
+      const [updatedTournament] = await db.update(tournaments)
+        .set(tournamentUpdate)
+        .where(eq(tournaments.id, id))
+        .returning();
+      return updatedTournament;
+    } catch (error) {
+      console.error('Error updating tournament:', error);
+      throw error;
     }
-    
-    const [updatedTournament] = await db.update(tournaments)
-      .set(tournamentUpdate)
-      .where(eq(tournaments.id, id))
-      .returning();
-    return updatedTournament;
   }
 
   async deleteTournament(id: number): Promise<boolean> {
-    const result = await db.delete(tournaments)
-      .where(eq(tournaments.id, id));
-    return result.rowCount ? result.rowCount > 0 : false;
+    try {
+      // Before deletion, check if the tournament exists
+      const tournament = await this.getTournament(id);
+      if (!tournament) return false;
+      
+      await db.delete(tournaments).where(eq(tournaments.id, id));
+      return true;
+    } catch (error) {
+      console.error('Error deleting tournament:', error);
+      return false;
+    }
   }
 
   // Registration operations
@@ -253,21 +301,26 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createRegistration(insertRegistration: InsertRegistration): Promise<Registration> {
-    // Assign slot number
-    const existingRegistrations = await this.getRegistrationsByTournament(insertRegistration.tournamentId);
-    const maxSlot = existingRegistrations.length > 0 
-      ? Math.max(...existingRegistrations.map(r => r.slot || 0))
-      : 0;
-    
-    const registrationData = {
-      ...insertRegistration,
-      slot: maxSlot + 1
-    };
-    
-    const [registration] = await db.insert(registrations)
-      .values(registrationData)
-      .returning();
-    return registration;
+    try {
+      // Assign slot number
+      const existingRegistrations = await this.getRegistrationsByTournament(insertRegistration.tournamentId);
+      const maxSlot = existingRegistrations.length > 0 
+        ? Math.max(...existingRegistrations.map(r => r.slot || 0))
+        : 0;
+      
+      const registrationData = {
+        ...insertRegistration,
+        slot: maxSlot + 1
+      };
+      
+      const [registration] = await db.insert(registrations)
+        .values(registrationData)
+        .returning();
+      return registration;
+    } catch (error) {
+      console.error('Error creating registration:', error);
+      throw error;
+    }
   }
 
   async updateRegistration(id: number, registrationUpdate: Partial<Registration>): Promise<Registration | undefined> {
@@ -279,8 +332,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteRegistration(id: number): Promise<boolean> {
-    const result = await db.delete(registrations)
-      .where(eq(registrations.id, id));
-    return result.rowCount ? result.rowCount > 0 : false;
+    try {
+      // Before deletion, check if the registration exists
+      const registration = await this.getRegistration(id);
+      if (!registration) return false;
+      
+      await db.delete(registrations).where(eq(registrations.id, id));
+      return true;
+    } catch (error) {
+      console.error('Error deleting registration:', error);
+      return false;
+    }
   }
 }

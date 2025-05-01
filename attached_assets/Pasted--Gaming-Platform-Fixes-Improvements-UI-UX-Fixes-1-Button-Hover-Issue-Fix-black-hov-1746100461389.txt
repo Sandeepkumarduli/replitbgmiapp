@@ -1,0 +1,80 @@
+# Gaming Platform Fixes & Improvements
+
+## UI/UX Fixes
+1. **Button Hover Issue** 
+   - Fix black hover state on buttons which is not visible against dark backgrounds
+   - Implement a more visible hover effect with appropriate contrast
+
+2. **Missing Footer**
+   - Add footer section to all pages
+   - Include standard elements like copyright, links, etc.
+
+3. **Authentication Routes**
+   - Consolidate duplicate routes: remove either `/auth` or `/login`
+   - Keep only `/auth` as the login page
+   - Ensure all redirects and links point to the correct route
+
+4. **Tournament Display**
+   - Simplify "Upcoming Tournaments" section
+   - Remove images from tournament cards
+   - Display only essential tournament details in a clean, organized format
+   - Ensure information is clearly visible and properly formatted
+
+## Error Message Handling
+5. **Password Reset Email**
+   - Fix issue with password reset emails not being sent
+   - Add proper error handling and user feedback
+
+6. **Tournament Join Flow**
+   - Change error message from "you need to create a team" to:
+     "You need to login and create a team to register"
+   - Improve user flow and guidance
+
+7. **Authentication Error Display**
+   - Remove raw error stack traces from the frontend
+   - Replace with user-friendly error messages
+   - Fix the error at `/home/runner/workspace/client/src/lib/auth.tsx:81:17`
+   - Implement proper error handling without exposing technical details
+
+8. **Password Update Issue**
+   - Fix the "current password should be entered" error that persists even when password is entered
+   - Debug form validation and submission process
+
+## Missing Features
+9. **Team Creation Link**
+   - Add "Create Team" link/button in user dashboard
+   - Ensure proper navigation and functionality
+
+10. **Team Member Management**
+    - Fix "Add Team Member" functionality in the Team Members section
+    - Ensure the button at the top works correctly
+    - Implement consistent functionality across all related buttons
+
+11. **Team Member Validation**
+    - Add validation for team member usernames
+    - Check if username exists in database before allowing addition
+    - Show appropriate error message if username doesn't exist
+    - Add guidance that other players must create accounts
+
+## Tournament System Improvements
+12. **Tournament Status**
+    - Implement dynamic tournament status based on time:
+      - Live
+      - Upcoming
+      - Finished (after 1 hour)
+    - Ensure slots update dynamically
+
+13. **Admin Panel Tournament Display**
+    - Fix registration count display (currently showing "5/25")
+    - Make registration numbers update dynamically based on actual data
+
+14. **User Panel - My Registrations**
+    - Make "My Registrations" section open by default
+    - Display room ID and password for registered tournaments
+    - Ensure all information is clearly visible
+
+## Implementation Notes
+- All changes must be thoroughly tested
+- Ensure consistent styling across the platform
+- Prioritize user experience and clear information display
+- Fix all identified issues with 100% completion

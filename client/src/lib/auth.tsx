@@ -77,10 +77,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return res.json();
       } catch (error) {
         // Handle specific error cases more gracefully
-        if (error instanceof Error && error.message.includes("Invalid username or password")) {
-          throw new Error("Invalid username or password. Please check your credentials or sign up if you don't have an account.");
+        if (error instanceof Error) {
+          if (error.message.includes("Invalid username or password")) {
+            throw new Error("Invalid username or password. Please check your credentials or sign up if you don't have an account.");
+          } else if (error.message.includes("401") || error.message.includes("Unauthorized")) {
+            throw new Error("Invalid username or password. Please check your credentials and try again.");
+          } else {
+            throw new Error("Login failed. Please try again later.");
+          }
+        } else {
+          throw new Error("An unexpected error occurred. Please try again later.");
         }
-        throw error;
       }
     },
     onSuccess: (data: User) => {
@@ -116,12 +123,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (error instanceof Error) {
           if (error.message.includes("Email already exists")) {
             throw new Error("This email is already registered. Please login or use a different email address.");
-          }
-          if (error.message.includes("Username already exists")) {
+          } else if (error.message.includes("Username already exists")) {
             throw new Error("This username is already taken. Please choose a different username.");
+          } else if (error.message.includes("Game ID already exists")) {
+            throw new Error("This Game ID is already registered. Please use a different Game ID.");
+          } else if (error.message.includes("400") || error.message.includes("Bad Request")) {
+            throw new Error("Please check all required fields are filled correctly.");
+          } else {
+            throw new Error("Registration failed. Please try again later.");
           }
+        } else {
+          throw new Error("An unexpected error occurred. Please try again later.");
         }
-        throw error;
       }
     },
     onSuccess: (data: User) => {
@@ -180,12 +193,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (error instanceof Error) {
           if (error.message.includes("Email already exists")) {
             throw new Error("This email is already registered. Please use a different email address.");
-          }
-          if (error.message.includes("Current password is incorrect")) {
+          } else if (error.message.includes("Current password is incorrect")) {
             throw new Error("Your current password is incorrect. Please try again.");
+          } else if (error.message.includes("Game ID already exists")) {
+            throw new Error("This Game ID is already registered. Please use a different Game ID.");
+          } else if (error.message.includes("Phone already exists")) {
+            throw new Error("This phone number is already registered. Please use a different phone number.");
+          } else if (error.message.includes("400") || error.message.includes("Bad Request")) {
+            throw new Error("Please check all fields are filled correctly.");
+          } else {
+            throw new Error("Profile update failed. Please try again later.");
           }
+        } else {
+          throw new Error("An unexpected error occurred. Please try again later.");
         }
-        throw error;
       }
     },
     onSuccess: (data: User) => {

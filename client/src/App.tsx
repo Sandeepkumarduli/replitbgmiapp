@@ -92,12 +92,8 @@ function AuthRoute({ component: Component, ...rest }: {
 function Router() {
   const [location] = useLocation();
   
-  const showNavbar = !location.startsWith("/login") && 
-                     !location.startsWith("/signup") && 
-                     !location.startsWith("/forgot-password") &&
-                     !location.startsWith("/admin/login") && 
-                     !location.startsWith("/admin/signup") &&
-                     !location.startsWith("/auth");
+  const showNavbar = !location.startsWith("/auth") && 
+                     !location.startsWith("/forgot-password");
   
   return (
     <div className="min-h-screen bg-dark font-poppins">
@@ -109,11 +105,21 @@ function Router() {
           
           {/* Auth Routes - redirect to dashboard if already logged in */}
           <AuthRoute path="/auth" component={AuthPage}/>
-          <AuthRoute path="/login" component={Login}/>
-          <AuthRoute path="/signup" component={Signup}/>
           <AuthRoute path="/forgot-password" component={ForgotPassword}/>
-          <AuthRoute path="/admin/login" component={AdminLogin}/>
-          <AuthRoute path="/admin/signup" component={AdminSignup}/>
+          
+          {/* Legacy routes - redirect to the unified auth page */}
+          <Route path="/login">
+            <Redirect to="/auth" />
+          </Route>
+          <Route path="/signup">
+            <Redirect to="/auth" />
+          </Route>
+          <Route path="/admin/login">
+            <Redirect to="/auth" />
+          </Route>
+          <Route path="/admin/signup">
+            <Redirect to="/auth" />
+          </Route>
           
           {/* Admin Routes - protected and admin only */}
           <ProtectedRoute path="/admin/dashboard" component={AdminDashboard} adminOnly={true}/>

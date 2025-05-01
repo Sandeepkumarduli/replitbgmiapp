@@ -11,6 +11,13 @@ import {
 } from "@shared/schema";
 import { setupAuth } from "./auth";
 import { setupSupabaseAuth } from "./supabase-auth";
+import { 
+  setupSecurityMiddleware, 
+  trackFailedLogin, 
+  resetLoginAttempts, 
+  enhancedAdminCheck,
+  validateHardcodedAdmin
+} from "./auth-security";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {

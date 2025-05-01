@@ -1,6 +1,11 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { scheduleBackups, initializeBackup } from "./backup";
+import dotenv from "dotenv";
+
+// Load environment variables
+dotenv.config();
 
 const app = express();
 app.use(express.json());
@@ -66,5 +71,14 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
+    
+    // Initialize backup system
+    initializeBackup().then(() => {
+      // Schedule automatic backups every 5 minutes
+      scheduleBackups(5 * 60 * 1000);
+      log('Data backup system initialized');
+    }).catch(err => {
+      console.error('Failed to initialize backup system:', err);
+    });
   });
 })();

@@ -1,0 +1,18 @@
+{
+  "users": [
+    {
+      "username": "admin",
+      "password": "admin123",
+      "email": "admin@bgmi.com",
+      "phone": "1234567890",
+      "gameId": "ADMIN001",
+      "role": "admin",
+      "id": 1,
+      "createdAt": "2025-05-01T19:59:00.785Z"
+    }
+  ],
+  "teams": [],
+  "teamMembers": [],
+  "tournaments": [],
+  "registrations": []
+}

@@ -37,6 +37,8 @@ export default function UserTeam() {
     role: "member" // default role
   });
   const [createTeamDialogOpen, setCreateTeamDialogOpen] = useState(false);
+  const [deleteTeamDialogOpen, setDeleteTeamDialogOpen] = useState(false);
+  const [teamToDelete, setTeamToDelete] = useState<number | null>(null);
 
   // Fetch user's teams
   const { data: teams, isLoading: isTeamsLoading } = useQuery<Team[]>({
@@ -134,14 +136,49 @@ export default function UserTeam() {
     }
   };
 
+  // Delete team mutation
+  const deleteTeamMutation = useMutation({
+    mutationFn: async (teamId: number) => {
+      const res = await apiRequest("DELETE", `/api/teams/${teamId}`, undefined);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/teams/my"] });
+      toast({
+        title: "Team deleted",
+        description: "Your team has been deleted successfully",
+      });
+      setDeleteTeamDialogOpen(false);
+      setTeamToDelete(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to delete team",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleRemoveMember = (memberId: number) => {
     setMemberToDelete(memberId);
     setDeleteDialogOpen(true);
   };
 
+  const handleDeleteTeam = (teamId: number) => {
+    setTeamToDelete(teamId);
+    setDeleteTeamDialogOpen(true);
+  };
+
   const confirmDelete = () => {
     if (memberToDelete) {
       deleteMemberMutation.mutate(memberToDelete);
+    }
+  };
+  
+  const confirmDeleteTeam = () => {
+    if (teamToDelete) {
+      deleteTeamMutation.mutate(teamToDelete);
     }
   };
 
@@ -258,6 +295,7 @@ export default function UserTeam() {
                         onAddMember={() => handleAddMember(team)}
                         onManage={() => handleManageTeam(team)}
                         onRemoveMember={handleRemoveMember}
+                        onDeleteTeam={handleDeleteTeam}
                       />
                     </CardContent>
                   </Card>
@@ -383,6 +421,37 @@ export default function UserTeam() {
                 disabled={addMemberMutation.isPending || !memberData.username || !memberData.gameId}
               >
                 {addMemberMutation.isPending ? "Adding..." : "Add Member"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        
+        {/* Delete Team Confirmation Dialog */}
+        <Dialog open={deleteTeamDialogOpen} onOpenChange={setDeleteTeamDialogOpen}>
+          <DialogContent className="bg-dark-card border-gray-800 text-white">
+            <DialogHeader>
+              <DialogTitle className="flex items-center">
+                <AlertTriangle className="h-5 w-5 text-red-500 mr-2" />
+                Delete Team
+              </DialogTitle>
+              <DialogDescription className="text-gray-400">
+                Are you sure you want to delete this team? All members and data will be permanently removed. This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => setDeleteTeamDialogOpen(false)}
+                className="border-gray-700 text-white hover:bg-dark-surface"
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={confirmDeleteTeam}
+                disabled={deleteTeamMutation.isPending}
+              >
+                {deleteTeamMutation.isPending ? "Deleting..." : "Delete Team"}
               </Button>
             </DialogFooter>
           </DialogContent>

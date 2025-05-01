@@ -9,9 +9,10 @@ type TeamCardProps = {
   onManage?: () => void;
   onAddMember?: (team?: Team) => void;
   onRemoveMember?: (memberId: number) => void;
+  onDeleteTeam?: (teamId: number) => void;
 };
 
-export function TeamCard({ team, members = [], onManage, onAddMember, onRemoveMember }: TeamCardProps) {
+export function TeamCard({ team, members = [], onManage, onAddMember, onRemoveMember, onDeleteTeam }: TeamCardProps) {
   if (!team) {
     return (
       <Card className="bg-dark-card border-gray-800">
@@ -148,6 +149,17 @@ export function TeamCard({ team, members = [], onManage, onAddMember, onRemoveMe
             <div className="text-center text-sm text-amber-500 mt-4 p-2 border border-amber-500/20 rounded bg-amber-500/10">
               Maximum team size reached (5 members)
             </div>
+          )}
+          
+          {onDeleteTeam && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full mt-4 text-destructive hover:text-destructive border-destructive/30 hover:bg-destructive/10" 
+              onClick={() => onDeleteTeam(team.id)}
+            >
+              <X className="h-4 w-4 mr-2" /> Delete Team
+            </Button>
           )}
         </div>
       </CardContent>

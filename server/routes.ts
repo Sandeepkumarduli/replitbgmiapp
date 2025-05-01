@@ -180,8 +180,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id: user.id, 
         username: user.username, 
         email: user.email,
+        phone: user.phone,
+        gameId: user.gameId,
         role: user.role
       });
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Update user profile
+  app.patch("/api/auth/profile", async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    try {
+      const user = await storage.getUser(req.session.userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Create a schema for profile updates
+      const updateProfileSchema = z.object({
+        password: z.string().optional(),
+        email: z.string().email().optional(),
+        phone: z.string().optional(),
+        gameId: z.string().optional(),
+      });
+      
+      const result = updateProfileSchema.safeParse(req.body);
+      
+      if (!result.success) {
+        return res.status(400).json({ message: result.error.format() });
+      }
+      
+      // If updating email, check if it's already in use
+      if (result.data.email && result.data.email !== user.email) {
+        const existingEmail = await storage.getUserByEmail(result.data.email);
+        if (existingEmail) {
+          return res.status(400).json({ message: "Email already exists" });
+        }
+      }
+      
+      // Update the user in storage
+      const updatedUser = await storage.updateUser(user.id, result.data);
+      
+      // Update session if needed
+      if (updatedUser) {
+        req.session.save((err) => {
+          if (err) {
+            return res.status(500).json({ message: "Error updating session" });
+          }
+          
+          res.json({ 
+            id: updatedUser.id, 
+            username: updatedUser.username, 
+            email: updatedUser.email,
+            phone: updatedUser.phone,
+            gameId: updatedUser.gameId,
+            role: updatedUser.role
+          });
+        });
+      } else {
+        res.status(500).json({ message: "Failed to update profile" });
+      }
     } catch (error) {
       res.status(500).json({ message: "Internal server error" });
     }

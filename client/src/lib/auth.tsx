@@ -9,6 +9,8 @@ interface User {
   id: number;
   username: string;
   email: string;
+  phone: string;
+  gameId: string;
   role: string;
 }
 
@@ -26,6 +28,13 @@ interface RegisterData {
   role?: string;
 }
 
+interface ProfileUpdateData {
+  email?: string;
+  password?: string;
+  phone?: string;
+  gameId?: string;
+}
+
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
@@ -34,6 +43,7 @@ interface AuthContextType {
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
+  updateProfile: (data: ProfileUpdateData) => Promise<void>;
 }
 
 // Create context

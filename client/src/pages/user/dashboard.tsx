@@ -146,6 +146,17 @@ export default function UserDashboard() {
                       +{teams.length - 2} more teams
                     </p>
                   )}
+                  <div className="flex justify-center mt-4">
+                    <Link href="/user/team" className="inline-block">
+                      <Button 
+                        variant="outline"
+                        className="border-gray-700 text-white hover:bg-dark-surface"
+                      >
+                        <Users className="h-4 w-4 mr-2" />
+                        Manage Teams
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               ) : (
                 <div className="text-center py-6">

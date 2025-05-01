@@ -56,6 +56,10 @@ export function TournamentTable() {
     queryKey: ["/api/tournaments"],
   });
   
+  const { data: registrationCounts = {} as Record<string, number> } = useQuery<Record<string, number>>({
+    queryKey: ["/api/registrations/counts"],
+  });
+  
   const refreshTournaments = async () => {
     setIsRefreshing(true);
     try {

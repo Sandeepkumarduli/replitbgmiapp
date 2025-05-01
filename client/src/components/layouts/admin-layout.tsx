@@ -72,8 +72,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   
   return (
     <div className="flex min-h-screen bg-dark-background">
-      {/* Sidebar */}
-      <div className="w-64 bg-dark-card border-r border-gray-800 flex flex-col">
+      {/* Sidebar - Fixed */}
+      <div className="w-64 bg-dark-card border-r border-gray-800 flex flex-col fixed top-0 left-0 h-screen overflow-y-auto">
         <div className="p-4 border-b border-gray-800">
           <div className="flex items-center space-x-2">
             <ShieldCheck className="h-6 w-6 text-accent" />
@@ -128,8 +128,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </div>
       </div>
       
-      {/* Main content */}
-      <div className="flex-1 overflow-auto">
+      {/* Main content - with margin for sidebar */}
+      <div className="flex-1 overflow-auto ml-64 pt-4">
         {children}
       </div>
     </div>

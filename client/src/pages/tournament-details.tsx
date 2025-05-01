@@ -98,7 +98,12 @@ export default function TournamentDetails({ params }: { params: { id: string } }
 
   const handleRegister = () => {
     if (!isAuthenticated) {
-      navigate("/login");
+      toast({
+        title: "Authentication required",
+        description: "You need to login and create a team to register",
+        variant: "destructive",
+      });
+      navigate("/auth");
       return;
     }
 
@@ -108,6 +113,7 @@ export default function TournamentDetails({ params }: { params: { id: string } }
         description: "You need to create a team before registering for a tournament",
         variant: "destructive",
       });
+      navigate("/user/team");
       return;
     }
 

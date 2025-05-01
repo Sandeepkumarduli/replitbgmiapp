@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "./lib/auth";
 import Navbar from "./components/navigation/navbar";
+import Footer from "./components/navigation/footer";
 import { Loader2 } from "lucide-react";
 
 // Pages
@@ -95,11 +96,14 @@ function Router() {
   const showNavbar = !location.startsWith("/auth") && 
                      !location.startsWith("/forgot-password");
   
+  const showFooter = !location.startsWith("/auth") && 
+                     !location.startsWith("/forgot-password");
+  
   return (
-    <div className="min-h-screen bg-dark font-poppins">
+    <div className="min-h-screen bg-dark font-poppins flex flex-col">
       {showNavbar && <Navbar />}
       
-      <div className="pt-16">
+      <div className="pt-16 flex-grow">
         <Switch>
           <Route path="/" component={Home}/>
           
@@ -137,6 +141,8 @@ function Router() {
           <Route component={NotFound} />
         </Switch>
       </div>
+      
+      {showFooter && <Footer />}
     </div>
   );
 }

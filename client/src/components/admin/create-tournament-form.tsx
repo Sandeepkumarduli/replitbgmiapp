@@ -191,7 +191,7 @@ export function TournamentForm({ tournament, isEditing = false }: TournamentForm
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
                           {field.value ? (
-                            format(field.value, "PPP p")
+                            format(new Date(field.value), "PPP p")
                           ) : (
                             <span>Pick a date</span>
                           )}
@@ -216,7 +216,7 @@ export function TournamentForm({ tournament, isEditing = false }: TournamentForm
                             newDate.setHours(parseInt(hours), parseInt(minutes));
                             field.onChange(newDate);
                           }}
-                          value={format(field.value, "HH:mm")}
+                          value={format(new Date(field.value), "HH:mm")}
                         />
                       </div>
                     </PopoverContent>

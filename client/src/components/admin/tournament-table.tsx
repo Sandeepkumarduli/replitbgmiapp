@@ -220,8 +220,7 @@ export function TournamentTable() {
                   <TableCell className="text-gray-300">{tournament.mapType}</TableCell>
                   <TableCell>{getStatusBadge(tournament.status)}</TableCell>
                   <TableCell className="text-gray-300">
-                    {/* This would fetch and show actual registrations */}
-                    {Math.floor(Math.random() * tournament.totalSlots)}/{tournament.totalSlots}
+                    {registrationCounts[tournament.id] || 0}/{tournament.totalSlots}
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>

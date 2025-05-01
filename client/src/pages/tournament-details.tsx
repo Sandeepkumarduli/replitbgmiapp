@@ -287,7 +287,7 @@ export default function TournamentDetails({ params }: { params: { id: string } }
                   {isAdmin ? (
                     <>
                       <Button 
-                        onClick={() => navigate(`/admin/edit-tournament/${tournament.id}`)} 
+                        onClick={() => navigate(`/admin/tournaments/edit/${tournament.id}`)} 
                         className="bg-secondary hover:bg-secondary/90 text-white"
                       >
                         Edit Tournament

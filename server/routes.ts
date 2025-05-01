@@ -32,6 +32,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
   // Setup enhanced security middleware
   setupSecurityMiddleware(app);
+  
+  // Enhanced Admin Check middleware for high-security routes
+  const isEnhancedAdmin = async (req: Request, res: Response, next: NextFunction) => {
+    // First check if user is an admin
+    if (!req.session || !req.session.userId || req.session.role !== 'admin') {
+      logSecurityEvent('Unauthorized admin access attempt', req);
+      return res.status(403).json({ message: "Unauthorized access attempt logged" });
+    }
+    
+    // Apply enhanced security checks for admin
+    await enhancedAdminCheck(req, res, next);
+  };
 
   // Auth routes
   app.post("/api/auth/register", async (req, res) => {
@@ -724,6 +736,223 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Registration canceled successfully" });
     } catch (error) {
       res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Admin API routes - highly secured
+  
+  // Get all users (admin only, with enhanced security)
+  app.get("/api/admin/users", isEnhancedAdmin, async (req, res) => {
+    try {
+      logSecurityEvent('Admin requested all users list', req);
+      // Get all users
+      const users = await storage.getAllUsers();
+      
+      // Filter out sensitive information
+      const safeUsers = users.map(user => ({
+        ...user,
+        password: undefined
+      }));
+      
+      res.json(safeUsers);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Get all admin users (admin only, with enhanced security)
+  app.get("/api/admin/users/admins", isEnhancedAdmin, async (req, res) => {
+    try {
+      logSecurityEvent('Admin requested admins list', req);
+      // Get all users
+      const users = await storage.getAllUsers();
+      
+      // Filter to only admins and remove sensitive information
+      const safeAdmins = users
+        .filter(user => user.role === 'admin')
+        .map(user => ({
+          ...user,
+          password: undefined
+        }));
+      
+      res.json(safeAdmins);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Get user by ID (admin only)
+  app.get("/api/admin/users/:id", isAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Remove sensitive information
+      const safeUser = { ...user, password: undefined };
+      
+      res.json(safeUser);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Update user role (admin only, with enhanced security)
+  app.patch("/api/admin/users/:id/role", isEnhancedAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      
+      // Get the current admin's userId from the session
+      const adminUserId = req.session.userId!;
+      
+      // Don't allow modifying own role
+      if (userId === adminUserId) {
+        logSecurityEvent('Admin attempted to modify own role', req);
+        return res.status(400).json({ message: "You cannot modify your own role" });
+      }
+      
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Don't allow modifying the hardcoded admin
+      if (user.username === "Sandeepkumarduli") {
+        logSecurityEvent('Admin attempted to modify system admin role', req, { targetUser: user.username });
+        return res.status(403).json({ message: "Cannot modify system administrator account" });
+      }
+      
+      // Validate role
+      const roleSchema = z.object({
+        role: z.enum(["user", "admin"])
+      });
+      
+      const result = roleSchema.safeParse(req.body);
+      
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid role" });
+      }
+      
+      // Update the user role
+      const updatedUser = await storage.updateUser(userId, { role: result.data.role });
+      
+      if (!updatedUser) {
+        return res.status(500).json({ message: "Failed to update user role" });
+      }
+      
+      // Log this security-sensitive action
+      logSecurityEvent('Admin updated user role', req, {
+        targetUserId: userId,
+        newRole: result.data.role
+      });
+      
+      // Return updated user without password
+      const safeUser = { ...updatedUser, password: undefined };
+      
+      res.json(safeUser);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Delete user (admin only, with enhanced security)
+  app.delete("/api/admin/users/:id", isEnhancedAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      
+      // Get the current admin's userId from the session
+      const adminUserId = req.session.userId!;
+      
+      // Don't allow deleting own account
+      if (userId === adminUserId) {
+        logSecurityEvent('Admin attempted to delete own account', req);
+        return res.status(400).json({ message: "You cannot delete your own account" });
+      }
+      
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Don't allow deleting the hardcoded admin
+      if (user.username === "Sandeepkumarduli") {
+        logSecurityEvent('Admin attempted to delete system admin account', req, { targetUser: user.username });
+        return res.status(403).json({ message: "Cannot delete system administrator account" });
+      }
+      
+      // Delete the user
+      const isDeleted = await storage.deleteUser(userId);
+      
+      if (!isDeleted) {
+        return res.status(500).json({ message: "Failed to delete user" });
+      }
+      
+      // Log this security-sensitive action
+      logSecurityEvent('Admin deleted user', req, { 
+        deletedUserId: userId,
+        deletedUsername: user.username 
+      });
+      
+      res.json({ message: "User deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Get all teams (admin only)
+  app.get("/api/teams", isAdmin, async (req, res) => {
+    try {
+      const teams = await storage.getAllTeams();
+      res.json(teams);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Delete team (admin only, with enhanced security)
+  app.delete("/api/teams/:id", isEnhancedAdmin, async (req, res) => {
+    try {
+      const teamId = parseInt(req.params.id);
+      const team = await storage.getTeam(teamId);
+      
+      if (!team) {
+        return res.status(404).json({ message: "Team not found" });
+      }
+      
+      // Log this security-sensitive action
+      logSecurityEvent('Admin deleted team', req, { 
+        teamId,
+        teamName: team.name,
+        teamOwnerId: team.ownerId
+      });
+      
+      // Delete the team
+      const isDeleted = await storage.deleteTeam(teamId);
+      
+      if (!isDeleted) {
+        return res.status(500).json({ message: "Failed to delete team" });
+      }
+      
+      res.json({ message: "Team deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Admin security log
+  app.post("/api/admin/log", isAdmin, async (req, res) => {
+    try {
+      const { action } = req.body;
+      logSecurityEvent(action, req);
+      res.json({ success: true });
+    } catch (error) {
+      // Don't return error to avoid leaking security information
+      res.json({ success: true });
     }
   });
 

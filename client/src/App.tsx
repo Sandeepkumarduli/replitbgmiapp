@@ -18,6 +18,9 @@ import AdminSignup from "@/pages/admin/signup";
 import AdminDashboard from "@/pages/admin/dashboard";
 import CreateTournament from "@/pages/admin/create-tournament";
 import EditTournament from "@/pages/admin/edit-tournament";
+import AdminTeams from "@/pages/admin/teams";
+import AdminUsers from "@/pages/admin/users";
+import AdminManagement from "@/pages/admin/admins";
 import UserDashboard from "@/pages/user/dashboard";
 import UserProfile from "@/pages/user/profile";
 import UserTeam from "@/pages/user/team";
@@ -129,6 +132,9 @@ function Router() {
           {/* Admin Routes - protected and admin only */}
           <ProtectedRoute path="/admin/dashboard" component={AdminDashboard} adminOnly={true}/>
           <ProtectedRoute path="/admin/tournaments/create" component={CreateTournament} adminOnly={true}/>
+          <ProtectedRoute path="/admin/teams" component={AdminTeams} adminOnly={true}/>
+          <ProtectedRoute path="/admin/users" component={AdminUsers} adminOnly={true}/>
+          <ProtectedRoute path="/admin/admins" component={AdminManagement} adminOnly={true}/>
           <Route path="/admin/tournaments/edit/:id">
             {(params) => (
               isAuthenticated ? 

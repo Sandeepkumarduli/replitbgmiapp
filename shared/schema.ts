@@ -39,11 +39,13 @@ export const tournaments = pgTable("tournaments", {
   description: text("description").notNull(),
   date: timestamp("date").notNull(),
   mapType: text("map_type").notNull(), // Erangel, Miramar, Sanhok, Vikendi
-  teamType: text("team_type").notNull(), // Solo, Duo, Squad
+  gameType: text("game_type").notNull().default("Squad"), // Solo, Duo, Squad
+  teamType: text("team_type").notNull(), // Solo, Duo, Squad (legacy field - use gameType instead)
   isPaid: boolean("is_paid").notNull(),
   entryFee: integer("entry_fee").default(0),
   prizePool: integer("prize_pool").default(0),
   totalSlots: integer("total_slots").notNull(),
+  slots: integer("slots").notNull().default(100), // Alias for totalSlots for compatibility
   roomId: text("room_id"),
   password: text("password"),
   status: text("status").notNull().default("upcoming"), // upcoming, live, completed
@@ -92,11 +94,13 @@ export const updateTournamentSchema = z.object({
   description: z.string().optional(),
   date: z.coerce.date().optional(),
   mapType: z.string().optional(),
+  gameType: z.string().optional(),
   teamType: z.string().optional(),
   isPaid: z.boolean().optional(),
   entryFee: z.number().optional(),
   prizePool: z.number().optional(),
   totalSlots: z.number().optional(),
+  slots: z.number().optional(),
   roomId: z.string().optional(),
   password: z.string().optional(),
   status: z.string().optional(),

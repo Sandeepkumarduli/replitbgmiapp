@@ -11,12 +11,15 @@ import session from "express-session";
 export interface IStorage {
   // Session storage
   sessionStore: session.Store;
+  
   // User operations
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, user: Partial<User>): Promise<User | undefined>;
+  deleteUser(id: number): Promise<boolean>; // For admin user management
+  getAllUsers(): Promise<User[]>; // For admin user management
   
   // Team operations
   getTeam(id: number): Promise<Team | undefined>;
@@ -25,6 +28,7 @@ export interface IStorage {
   createTeam(team: InsertTeam): Promise<Team>;
   updateTeam(id: number, team: Partial<Team>): Promise<Team | undefined>;
   deleteTeam(id: number): Promise<boolean>;
+  getAllTeams(): Promise<Team[]>; // For admin team management
   
   // Team member operations
   getTeamMembers(teamId: number): Promise<TeamMember[]>;
@@ -138,6 +142,14 @@ export class MemStorage implements IStorage {
     this.users.set(id, updatedUser);
     return updatedUser;
   }
+  
+  async deleteUser(id: number): Promise<boolean> {
+    return this.users.delete(id);
+  }
+  
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
 
   // Team operations
   async getTeam(id: number): Promise<Team | undefined> {
@@ -175,6 +187,10 @@ export class MemStorage implements IStorage {
 
   async deleteTeam(id: number): Promise<boolean> {
     return this.teams.delete(id);
+  }
+  
+  async getAllTeams(): Promise<Team[]> {
+    return Array.from(this.teams.values());
   }
 
   // Team member operations
@@ -240,9 +256,11 @@ export class MemStorage implements IStorage {
       description: insertTournament.description,
       date: insertTournament.date,
       mapType: insertTournament.mapType,
+      gameType: insertTournament.gameType || "Squad", // New field with default
       teamType: insertTournament.teamType,
       isPaid: insertTournament.isPaid,
       totalSlots: insertTournament.totalSlots,
+      slots: insertTournament.totalSlots, // Alias for totalSlots
       createdBy: insertTournament.createdBy,
       status: insertTournament.status || "upcoming",
       entryFee: insertTournament.entryFee || 0,

@@ -254,7 +254,9 @@ export default function TournamentDetails({ params }: { params: { id: string } }
                   </div>
                 </div>
 
-                {tournament.status === "live" && tournament.roomId && tournament.password && (
+                {/* Room information for admins and registered users */}
+                {(tournament.status === "live" && tournament.roomId && tournament.password && 
+                  (isAdmin || (isRegistered() && isAuthenticated))) && (
                   <div className="mt-8 p-4 bg-dark-surface border border-gray-700 rounded-lg">
                     <h3 className="text-white font-medium flex items-center mb-4">
                       <Key className="h-5 w-5 mr-2 text-primary" />

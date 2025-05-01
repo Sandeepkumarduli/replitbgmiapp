@@ -155,7 +155,7 @@ export function TeamForm({ team, isEditing = false, onSuccess }: TeamFormProps) 
       {/* Team Form */}
       {!isEditing ? (
         <Form {...teamForm}>
-          <form onSubmit={teamForm.handleSubmit(onTeamSubmit)} className="space-y-6">
+          <form onSubmit={teamForm.handleSubmit(onTeamSubmit)} className="space-y-6" autoComplete="off">
             <div className="space-y-4">
               <h2 className="text-xl font-bold text-white flex items-center">
                 <Users className="mr-2 h-5 w-5 text-primary" />
@@ -171,6 +171,7 @@ export function TeamForm({ team, isEditing = false, onSuccess }: TeamFormProps) 
                       <Input
                         placeholder="Enter team name"
                         className="bg-dark-surface border-gray-700 text-white"
+                        autoComplete="off"
                         {...field}
                       />
                     </FormControl>
@@ -227,7 +228,7 @@ export function TeamForm({ team, isEditing = false, onSuccess }: TeamFormProps) 
           </DialogHeader>
           
           <Form {...memberForm}>
-            <form onSubmit={memberForm.handleSubmit(onMemberSubmit)} className="space-y-4">
+            <form onSubmit={memberForm.handleSubmit(onMemberSubmit)} className="space-y-4" autoComplete="off">
               <FormField
                 control={memberForm.control}
                 name="username"
@@ -238,6 +239,7 @@ export function TeamForm({ team, isEditing = false, onSuccess }: TeamFormProps) 
                       <Input
                         placeholder="Enter username"
                         className="bg-dark-surface border-gray-700 text-white"
+                        autoComplete="off"
                         {...field}
                       />
                     </FormControl>
@@ -256,6 +258,7 @@ export function TeamForm({ team, isEditing = false, onSuccess }: TeamFormProps) 
                       <Input
                         placeholder="Enter BGMI game ID"
                         className="bg-dark-surface border-gray-700 text-white"
+                        autoComplete="off"
                         {...field}
                       />
                     </FormControl>

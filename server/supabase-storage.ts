@@ -1,13 +1,27 @@
-import { supabase } from './supabase';
-import {
-  User, Team, TeamMember, Tournament, Registration,
-  InsertUser, InsertTeam, InsertTeamMember, InsertTournament, InsertRegistration,
-  UpdateTournament
-} from '@shared/schema';
-import { IStorage } from './storage';
-import { PostgrestError } from '@supabase/supabase-js';
+import { 
+  users, teams, teamMembers, tournaments, registrations,
+  type User, type InsertUser, 
+  type Team, type InsertTeam, 
+  type TeamMember, type InsertTeamMember,
+  type Tournament, type InsertTournament, type UpdateTournament,
+  type Registration, type InsertRegistration
+} from "@shared/schema";
+import { IStorage } from "./storage";
+import { supabase } from "./supabase";
+import session from "express-session";
+import createMemoryStore from "memorystore";
+
+const MemoryStore = createMemoryStore(session);
 
 export class SupabaseStorage implements IStorage {
+  sessionStore: session.Store;
+  
+  constructor() {
+    // Use memory store for sessions
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000, // 24 hours
+    });
+  }
   // User operations
   async getUser(id: number): Promise<User | undefined> {
     const { data, error } = await supabase
@@ -17,7 +31,7 @@ export class SupabaseStorage implements IStorage {
       .single();
     
     if (error || !data) return undefined;
-    return data as unknown as User;
+    return data as User;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
@@ -28,7 +42,7 @@ export class SupabaseStorage implements IStorage {
       .single();
     
     if (error || !data) return undefined;
-    return data as unknown as User;
+    return data as User;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
@@ -39,21 +53,21 @@ export class SupabaseStorage implements IStorage {
       .single();
     
     if (error || !data) return undefined;
-    return data as unknown as User;
+    return data as User;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const { data, error } = await supabase
       .from('users')
-      .insert([insertUser])
+      .insert(insertUser)
       .select()
       .single();
     
     if (error || !data) {
-      throw new Error(`Failed to create user: ${error?.message || 'Unknown error'}`);
+      throw new Error(error?.message || 'Failed to create user');
     }
     
-    return data as unknown as User;
+    return data as User;
   }
 
   async updateUser(id: number, userUpdate: Partial<User>): Promise<User | undefined> {
@@ -65,9 +79,9 @@ export class SupabaseStorage implements IStorage {
       .single();
     
     if (error || !data) return undefined;
-    return data as unknown as User;
+    return data as User;
   }
-
+  
   // Team operations
   async getTeam(id: number): Promise<Team | undefined> {
     const { data, error } = await supabase
@@ -77,7 +91,7 @@ export class SupabaseStorage implements IStorage {
       .single();
     
     if (error || !data) return undefined;
-    return data as unknown as Team;
+    return data as Team;
   }
 
   async getTeamByName(name: string): Promise<Team | undefined> {
@@ -88,7 +102,7 @@ export class SupabaseStorage implements IStorage {
       .single();
     
     if (error || !data) return undefined;
-    return data as unknown as Team;
+    return data as Team;
   }
 
   async getTeamsByOwnerId(ownerId: number): Promise<Team[]> {
@@ -98,21 +112,21 @@ export class SupabaseStorage implements IStorage {
       .eq('ownerId', ownerId);
     
     if (error || !data) return [];
-    return data as unknown as Team[];
+    return data as Team[];
   }
 
   async createTeam(insertTeam: InsertTeam): Promise<Team> {
     const { data, error } = await supabase
       .from('teams')
-      .insert([insertTeam])
+      .insert(insertTeam)
       .select()
       .single();
     
     if (error || !data) {
-      throw new Error(`Failed to create team: ${error?.message || 'Unknown error'}`);
+      throw new Error(error?.message || 'Failed to create team');
     }
     
-    return data as unknown as Team;
+    return data as Team;
   }
 
   async updateTeam(id: number, teamUpdate: Partial<Team>): Promise<Team | undefined> {
@@ -124,7 +138,7 @@ export class SupabaseStorage implements IStorage {
       .single();
     
     if (error || !data) return undefined;
-    return data as unknown as Team;
+    return data as Team;
   }
 
   async deleteTeam(id: number): Promise<boolean> {
@@ -135,7 +149,7 @@ export class SupabaseStorage implements IStorage {
     
     return !error;
   }
-
+  
   // Team member operations
   async getTeamMembers(teamId: number): Promise<TeamMember[]> {
     const { data, error } = await supabase
@@ -144,7 +158,7 @@ export class SupabaseStorage implements IStorage {
       .eq('teamId', teamId);
     
     if (error || !data) return [];
-    return data as unknown as TeamMember[];
+    return data as TeamMember[];
   }
 
   async getTeamMember(id: number): Promise<TeamMember | undefined> {
@@ -155,21 +169,21 @@ export class SupabaseStorage implements IStorage {
       .single();
     
     if (error || !data) return undefined;
-    return data as unknown as TeamMember;
+    return data as TeamMember;
   }
 
   async addTeamMember(insertMember: InsertTeamMember): Promise<TeamMember> {
     const { data, error } = await supabase
       .from('team_members')
-      .insert([insertMember])
+      .insert(insertMember)
       .select()
       .single();
     
     if (error || !data) {
-      throw new Error(`Failed to add team member: ${error?.message || 'Unknown error'}`);
+      throw new Error(error?.message || 'Failed to add team member');
     }
     
-    return data as unknown as TeamMember;
+    return data as TeamMember;
   }
 
   async updateTeamMember(id: number, memberUpdate: Partial<TeamMember>): Promise<TeamMember | undefined> {
@@ -181,7 +195,7 @@ export class SupabaseStorage implements IStorage {
       .single();
     
     if (error || !data) return undefined;
-    return data as unknown as TeamMember;
+    return data as TeamMember;
   }
 
   async deleteTeamMember(id: number): Promise<boolean> {
@@ -192,7 +206,7 @@ export class SupabaseStorage implements IStorage {
     
     return !error;
   }
-
+  
   // Tournament operations
   async getTournament(id: number): Promise<Tournament | undefined> {
     const { data, error } = await supabase
@@ -202,7 +216,7 @@ export class SupabaseStorage implements IStorage {
       .single();
     
     if (error || !data) return undefined;
-    return data as unknown as Tournament;
+    return data as Tournament;
   }
 
   async getAllTournaments(): Promise<Tournament[]> {
@@ -212,7 +226,7 @@ export class SupabaseStorage implements IStorage {
       .order('date', { ascending: true });
     
     if (error || !data) return [];
-    return data as unknown as Tournament[];
+    return data as Tournament[];
   }
 
   async getTournamentsByStatus(status: string): Promise<Tournament[]> {
@@ -223,21 +237,21 @@ export class SupabaseStorage implements IStorage {
       .order('date', { ascending: true });
     
     if (error || !data) return [];
-    return data as unknown as Tournament[];
+    return data as Tournament[];
   }
 
   async createTournament(insertTournament: InsertTournament): Promise<Tournament> {
     const { data, error } = await supabase
       .from('tournaments')
-      .insert([insertTournament])
+      .insert(insertTournament)
       .select()
       .single();
     
     if (error || !data) {
-      throw new Error(`Failed to create tournament: ${error?.message || 'Unknown error'}`);
+      throw new Error(error?.message || 'Failed to create tournament');
     }
     
-    return data as unknown as Tournament;
+    return data as Tournament;
   }
 
   async updateTournament(id: number, tournamentUpdate: Partial<UpdateTournament>): Promise<Tournament | undefined> {
@@ -249,7 +263,7 @@ export class SupabaseStorage implements IStorage {
       .single();
     
     if (error || !data) return undefined;
-    return data as unknown as Tournament;
+    return data as Tournament;
   }
 
   async deleteTournament(id: number): Promise<boolean> {
@@ -260,7 +274,7 @@ export class SupabaseStorage implements IStorage {
     
     return !error;
   }
-
+  
   // Registration operations
   async getRegistration(id: number): Promise<Registration | undefined> {
     const { data, error } = await supabase
@@ -270,7 +284,7 @@ export class SupabaseStorage implements IStorage {
       .single();
     
     if (error || !data) return undefined;
-    return data as unknown as Registration;
+    return data as Registration;
   }
 
   async getRegistrationsByTournament(tournamentId: number): Promise<Registration[]> {
@@ -280,7 +294,7 @@ export class SupabaseStorage implements IStorage {
       .eq('tournamentId', tournamentId);
     
     if (error || !data) return [];
-    return data as unknown as Registration[];
+    return data as Registration[];
   }
 
   async getRegistrationsByUser(userId: number): Promise<Registration[]> {
@@ -290,7 +304,7 @@ export class SupabaseStorage implements IStorage {
       .eq('userId', userId);
     
     if (error || !data) return [];
-    return data as unknown as Registration[];
+    return data as Registration[];
   }
 
   async getRegistrationsByTeam(teamId: number): Promise<Registration[]> {
@@ -300,7 +314,7 @@ export class SupabaseStorage implements IStorage {
       .eq('teamId', teamId);
     
     if (error || !data) return [];
-    return data as unknown as Registration[];
+    return data as Registration[];
   }
 
   async checkRegistration(tournamentId: number, teamId: number): Promise<boolean> {
@@ -308,24 +322,24 @@ export class SupabaseStorage implements IStorage {
       .from('registrations')
       .select('id')
       .eq('tournamentId', tournamentId)
-      .eq('teamId', teamId);
+      .eq('teamId', teamId)
+      .single();
     
-    if (error || !data) return false;
-    return data.length > 0;
+    return !error && !!data;
   }
 
   async createRegistration(insertRegistration: InsertRegistration): Promise<Registration> {
     const { data, error } = await supabase
       .from('registrations')
-      .insert([insertRegistration])
+      .insert(insertRegistration)
       .select()
       .single();
     
     if (error || !data) {
-      throw new Error(`Failed to create registration: ${error?.message || 'Unknown error'}`);
+      throw new Error(error?.message || 'Failed to create registration');
     }
     
-    return data as unknown as Registration;
+    return data as Registration;
   }
 
   async updateRegistration(id: number, registrationUpdate: Partial<Registration>): Promise<Registration | undefined> {
@@ -337,7 +351,7 @@ export class SupabaseStorage implements IStorage {
       .single();
     
     if (error || !data) return undefined;
-    return data as unknown as Registration;
+    return data as Registration;
   }
 
   async deleteRegistration(id: number): Promise<boolean> {

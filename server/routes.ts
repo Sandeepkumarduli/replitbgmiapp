@@ -10,11 +10,17 @@ import {
   insertRegistrationSchema 
 } from "@shared/schema";
 import { setupAuth } from "./auth";
+import { setupSupabaseAuth } from "./supabase-auth";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Choose which authentication system to use
+  const useSupabase = process.env.USE_SUPABASE === 'true';
+  
   // Setup authentication with middleware
-  const { isAuthenticated, isAdmin } = setupAuth(app);
+  const { isAuthenticated, isAdmin } = useSupabase 
+    ? setupSupabaseAuth(app) 
+    : setupAuth(app);
 
   // Auth routes
   app.post("/api/auth/register", async (req, res) => {

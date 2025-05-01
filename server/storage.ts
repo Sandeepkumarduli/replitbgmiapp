@@ -6,8 +6,11 @@ import {
   type Tournament, type InsertTournament, type UpdateTournament,
   type Registration, type InsertRegistration
 } from "@shared/schema";
+import session from "express-session";
 
 export interface IStorage {
+  // Session storage
+  sessionStore: session.Store;
   // User operations
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -49,6 +52,9 @@ export interface IStorage {
   deleteRegistration(id: number): Promise<boolean>;
 }
 
+import createMemoryStore from "memorystore";
+const MemoryStore = createMemoryStore(session);
+
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private teams: Map<number, Team>;
@@ -62,6 +68,9 @@ export class MemStorage implements IStorage {
   private tournamentId: number;
   private registrationId: number;
 
+  // Session store for express-session
+  sessionStore: session.Store;
+
   constructor() {
     this.users = new Map();
     this.teams = new Map();
@@ -74,6 +83,11 @@ export class MemStorage implements IStorage {
     this.teamMemberId = 1;
     this.tournamentId = 1;
     this.registrationId = 1;
+    
+    // Initialize session store
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000, // 24 hours
+    });
     
     // Add a default admin user
     this.createUser({
@@ -314,4 +328,14 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// Import SupabaseStorage implementation
+import { SupabaseStorage } from './supabase-storage';
+
+// Choose which storage implementation to use
+// For development, you can switch between MemStorage and SupabaseStorage
+const useSupabase = process.env.USE_SUPABASE === 'true';
+
+// Export the appropriate storage implementation
+export const storage = useSupabase 
+  ? new SupabaseStorage() 
+  : new MemStorage();

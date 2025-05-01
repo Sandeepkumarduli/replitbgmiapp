@@ -23,6 +23,21 @@ import {
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { User, Tournament, Team, TeamMember, Registration } from "@shared/schema";
+
+// Extended interfaces with additional properties for UI display
+interface EnhancedUser extends User {
+  status?: string;
+}
+
+interface EnhancedTeam extends Team {
+  members?: number;
+}
+
+interface EnhancedRegistration extends Registration {
+  tournamentTitle?: string;
+  teamName?: string;
+  status?: string;
+}
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export default function UserDetails() {
@@ -34,21 +49,21 @@ export default function UserDetails() {
   const userId = parseInt(location.split("/").pop() || "0");
   
   // Fetch user data
-  const { data: user, isLoading: isUserLoading } = useQuery<User>({
+  const { data: user, isLoading: isUserLoading } = useQuery<EnhancedUser>({
     queryKey: [`/api/admin/users/${userId}`],
     enabled: !!userId && isAuthenticated && isAdmin,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
   
   // Fetch user's teams
-  const { data: teams } = useQuery<Team[]>({
+  const { data: teams } = useQuery<EnhancedTeam[]>({
     queryKey: [`/api/admin/users/${userId}/teams`],
     enabled: !!userId && isAuthenticated && isAdmin,
     staleTime: 5 * 60 * 1000,
   });
   
   // Fetch user's registrations
-  const { data: registrations } = useQuery<Registration[]>({
+  const { data: registrations } = useQuery<EnhancedRegistration[]>({
     queryKey: [`/api/admin/users/${userId}/registrations`],
     enabled: !!userId && isAuthenticated && isAdmin,
     staleTime: 5 * 60 * 1000,
@@ -235,7 +250,7 @@ export default function UserDetails() {
                               </Badge>
                             </div>
                             <p className="text-sm text-gray-400 mt-1">
-                              Created: {new Date(team.createdAt).toLocaleDateString()}
+                              Created: {team.createdAt ? new Date(team.createdAt).toLocaleDateString() : "Unknown"}
                             </p>
                           </div>
                         ))}
@@ -268,7 +283,7 @@ export default function UserDetails() {
                               </Badge>
                             </div>
                             <p className="text-sm text-gray-400 mt-1">
-                              Registered: {new Date(registration.registeredAt).toLocaleDateString()}
+                              Registered: {registration.registeredAt ? new Date(registration.registeredAt).toLocaleDateString() : "Unknown"}
                             </p>
                             <p className="text-sm text-gray-400">
                               Team: {registration.teamName}

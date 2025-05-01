@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Shield, Database, Bell, Lock, Server, Backup, Save } from "lucide-react";
+import { Shield, Database, Bell, Lock, Server, Save, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function AdminSettings() {
@@ -207,7 +207,7 @@ export default function AdminSettings() {
                       });
                     }}
                   >
-                    <Backup className="mr-2 h-4 w-4" />
+                    <Download className="mr-2 h-4 w-4" />
                     Manual Backup
                   </Button>
                   

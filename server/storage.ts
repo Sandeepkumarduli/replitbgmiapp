@@ -208,7 +208,17 @@ export class MemStorage implements IStorage {
   async createTournament(insertTournament: InsertTournament): Promise<Tournament> {
     const id = this.tournamentId++;
     const createdAt = new Date();
-    const tournament: Tournament = { ...insertTournament, id, createdAt };
+    
+    // Set default values
+    const tournament: Tournament = { 
+      ...insertTournament, 
+      id, 
+      createdAt,
+      status: insertTournament.status || "upcoming",
+      roomId: insertTournament.roomId || null,
+      password: insertTournament.password || null
+    };
+    
     this.tournaments.set(id, tournament);
     return tournament;
   }

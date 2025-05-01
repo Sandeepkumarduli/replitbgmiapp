@@ -48,7 +48,7 @@ const profileFormSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 export default function UserProfile() {
-  const { isAuthenticated, isAdmin, isLoading, user } = useAuth();
+  const { isAuthenticated, isAdmin, isLoading, user, updateProfile } = useAuth();
   const [, navigate] = useLocation();
   const { toast } = useToast();
 
@@ -80,8 +80,8 @@ export default function UserProfile() {
       form.reset({
         username: user.username,
         email: user.email,
-        gameId: user.gameId,
-        phone: "", // Phone would be fetched from user data
+        gameId: user.gameId || "",
+        phone: user.phone || "",
         currentPassword: "",
         newPassword: "",
         confirmPassword: "",
@@ -89,12 +89,53 @@ export default function UserProfile() {
     }
   }, [user, form]);
 
-  const onSubmit = (data: ProfileFormValues) => {
-    // This would be an API call to update the user profile
-    toast({
-      title: "Profile updated",
-      description: "Your profile has been updated successfully",
-    });
+  const onSubmit = async (data: ProfileFormValues) => {
+    try {
+      // Extract only the fields we want to update
+      const updateData = {
+        email: data.email !== user?.email ? data.email : undefined,
+        phone: data.phone !== user?.phone ? data.phone : undefined,
+        gameId: data.gameId !== user?.gameId ? data.gameId : undefined,
+        password: data.newPassword ? data.newPassword : undefined,
+      };
+      
+      // Remove any undefined values
+      const cleanedData = Object.fromEntries(
+        Object.entries(updateData).filter(([_, v]) => v !== undefined)
+      );
+      
+      // Only proceed if there are changes to make
+      if (Object.keys(cleanedData).length > 0) {
+        // Check if we're updating password
+        if (cleanedData.password) {
+          // Verify current password matches (this would be checked on the server)
+          if (!data.currentPassword) {
+            toast({
+              title: "Error",
+              description: "Current password is required to set a new password",
+              variant: "destructive",
+            });
+            return;
+          }
+        }
+        
+        // Use the updateProfile method from auth context
+        await updateProfile(cleanedData);
+        
+        // Reset password fields
+        form.setValue("currentPassword", "");
+        form.setValue("newPassword", "");
+        form.setValue("confirmPassword", "");
+      } else {
+        toast({
+          title: "No changes",
+          description: "No changes were made to your profile",
+        });
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      // Error handling is done in the updateProfile method
+    }
   };
 
   if (isLoading) {

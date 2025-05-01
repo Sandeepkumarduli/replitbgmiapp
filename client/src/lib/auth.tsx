@@ -168,6 +168,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     },
   });
+  
+  // Update profile mutation
+  const updateProfileMutation = useMutation({
+    mutationFn: async (data: ProfileUpdateData) => {
+      try {
+        const res = await apiRequest("PATCH", "/api/auth/profile", data);
+        return res.json();
+      } catch (error) {
+        // Handle specific error cases more gracefully
+        if (error instanceof Error) {
+          if (error.message.includes("Email already exists")) {
+            throw new Error("This email is already registered. Please use a different email address.");
+          }
+        }
+        throw error;
+      }
+    },
+    onSuccess: (data: User) => {
+      setUser(data);
+      refetch();
+      toast({
+        title: "Profile updated",
+        description: "Your profile has been successfully updated.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Update failed",
+        description: error.message || "Failed to update profile. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
 
   // Helper functions
   const login = async (credentials: LoginCredentials) => {
@@ -180,6 +213,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     await logoutMutation.mutateAsync();
+  };
+  
+  const updateProfile = async (data: ProfileUpdateData) => {
+    await updateProfileMutation.mutateAsync(data);
   };
 
   const isAuthenticated = !!user;
@@ -195,6 +232,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         register,
         logout,
+        updateProfile,
       }}
     >
       {children}

@@ -10,12 +10,18 @@ import { Trophy } from "lucide-react";
 
 export default function EditTournament({ params }: { params?: { id?: string } }) {
   const tournamentId = params?.id ? parseInt(params.id) : 0;
+  console.log("Edit Tournament - params:", params, "tournamentId:", tournamentId);
   const { isAdmin, isAuthenticated, isLoading } = useAuth();
   const [, navigate] = useLocation();
 
   const { data: tournament, isLoading: isTournamentLoading } = useQuery<Tournament>({
-    queryKey: [`/api/tournaments/${tournamentId}`],
-    enabled: !isLoading && isAuthenticated && isAdmin,
+    queryKey: ["/api/tournaments", tournamentId],
+    queryFn: async () => {
+      const res = await fetch(`/api/tournaments/${tournamentId}`);
+      if (!res.ok) throw new Error("Failed to fetch tournament");
+      return res.json();
+    },
+    enabled: tournamentId > 0 && !isLoading && isAuthenticated && isAdmin,
   });
 
   useEffect(() => {

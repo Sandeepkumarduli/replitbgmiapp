@@ -129,7 +129,13 @@ function Router() {
           {/* Admin Routes - protected and admin only */}
           <ProtectedRoute path="/admin/dashboard" component={AdminDashboard} adminOnly={true}/>
           <ProtectedRoute path="/admin/tournaments/create" component={CreateTournament} adminOnly={true}/>
-          <ProtectedRoute path="/admin/tournaments/edit/:id" component={EditTournament} adminOnly={true}/>
+          <Route path="/admin/tournaments/edit/:id">
+            {(params) => (
+              isAuthenticated ? 
+                <EditTournament params={params} /> : 
+                <Redirect to="/auth" />
+            )}
+          </Route>
           
           {/* User Routes - protected */}
           <ProtectedRoute path="/user/dashboard" component={UserDashboard}/>

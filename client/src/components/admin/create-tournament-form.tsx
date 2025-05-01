@@ -100,11 +100,18 @@ export function TournamentForm({ tournament, isEditing = false }: TournamentForm
       
       console.log(`Making ${method} request to ${url} with data:`, values);
       
-      const res = await apiRequest(method, url, {
+      const dataToSend = {
         ...values,
         // Convert date to ISO string format
         date: values.date.toISOString(),
-      });
+      };
+      
+      // For PATCH requests, we need to include the id in the request body
+      if (isEditing && tournament) {
+        dataToSend.id = tournament.id;
+      }
+      
+      const res = await apiRequest(method, url, dataToSend);
       return res.json();
     },
     onSuccess: () => {
@@ -139,7 +146,20 @@ export function TournamentForm({ tournament, isEditing = false }: TournamentForm
       }
     }
     
-    createMutation.mutateAsync(values);
+    // Log the form submission for debugging
+    console.log("Submitting tournament form:", {
+      isEditing,
+      tournamentId: tournament?.id,
+      values,
+    });
+    
+    createMutation.mutateAsync(values)
+      .then(() => {
+        console.log("Tournament form submission successful");
+      })
+      .catch((error) => {
+        console.error("Tournament form submission failed:", error);
+      });
   }
 
   return (

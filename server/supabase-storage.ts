@@ -82,6 +82,25 @@ export class SupabaseStorage implements IStorage {
     return data as User;
   }
   
+  async deleteUser(id: number): Promise<boolean> {
+    const { error } = await supabase
+      .from('users')
+      .delete()
+      .eq('id', id);
+    
+    return !error;
+  }
+  
+  async getAllUsers(): Promise<User[]> {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .order('id', { ascending: true });
+    
+    if (error || !data) return [];
+    return data as User[];
+  }
+  
   // Team operations
   async getTeam(id: number): Promise<Team | undefined> {
     const { data, error } = await supabase
@@ -148,6 +167,16 @@ export class SupabaseStorage implements IStorage {
       .eq('id', id);
     
     return !error;
+  }
+  
+  async getAllTeams(): Promise<Team[]> {
+    const { data, error } = await supabase
+      .from('teams')
+      .select('*')
+      .order('id', { ascending: true });
+    
+    if (error || !data) return [];
+    return data as Team[];
   }
   
   // Team member operations

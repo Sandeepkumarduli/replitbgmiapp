@@ -914,8 +914,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Delete team (admin only, with enhanced security)
-  app.delete("/api/teams/:id", isEnhancedAdmin, async (req, res) => {
+  // Get all teams with enhanced info (admin only)
+  app.get("/api/admin/teams", isEnhancedAdmin, async (req, res) => {
+    try {
+      logSecurityEvent('Admin requested all teams list', req);
+      
+      // Get all teams
+      const teams = await storage.getAllTeams();
+      
+      // Enhance team info with owner and member counts
+      const enhancedTeams = await Promise.all(teams.map(async (team) => {
+        // Get owner info
+        const owner = await storage.getUser(team.ownerId);
+        
+        // Get member count
+        const members = await storage.getTeamMembers(team.id);
+        const memberCount = members.length;
+        
+        return {
+          ...team,
+          owner: owner ? { 
+            id: owner.id,
+            username: owner.username,
+            role: owner.role,
+            email: owner.email
+          } : null,
+          memberCount
+        };
+      }));
+      
+      res.json(enhancedTeams);
+    } catch (error) {
+      console.error("Error in /api/admin/teams:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Delete team through admin panel (admin only, with enhanced security)
+  app.delete("/api/admin/teams/:id", isEnhancedAdmin, async (req, res) => {
     try {
       const teamId = parseInt(req.params.id);
       const team = await storage.getTeam(teamId);

@@ -313,7 +313,7 @@ export default function AdminUsers() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-gray-300">
-                        {new Date(userData.createdAt).toLocaleDateString()}
+                        {userData.createdAt ? new Date(userData.createdAt).toLocaleDateString() : 'N/A'}
                       </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>

@@ -316,7 +316,7 @@ export default function AdminManagement() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-gray-300">
-                        {new Date(admin.createdAt).toLocaleDateString()}
+                        {admin.createdAt ? new Date(admin.createdAt).toLocaleDateString() : 'N/A'}
                       </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>

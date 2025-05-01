@@ -1,0 +1,126 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  
+  --card: 240 10% 3.9%;
+  --card-foreground: 0 0% 98%;
+  
+  --popover: 240 10% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  
+  --primary: 276 90% 54%;
+  --primary-foreground: 211 100% 99%;
+  
+  --secondary: 24 100% 50%;
+  --secondary-foreground: 0 0% 98%;
+  
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  
+  --accent: 157 90% 50%;
+  --accent-foreground: 0 0% 0%;
+  
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+  --ring: 240 4.9% 83.9%;
+  
+  --radius: 0.5rem;
+
+  --chart-1: 276 90% 54%;
+  --chart-2: 24 100% 50%;
+  --chart-3: 157 90% 50%;
+  --chart-4: 200 90% 50%;
+  --chart-5: 300 90% 50%;
+
+  --sidebar-background: 240 10% 3.9%;
+  --sidebar-foreground: 0 0% 98%;
+  --sidebar-primary: 276 90% 54%;
+  --sidebar-primary-foreground: 211 100% 99%;
+  --sidebar-accent: 157 90% 50%;
+  --sidebar-accent-foreground: 0 0% 0%;
+  --sidebar-border: 240 3.7% 15.9%;
+  --sidebar-ring: 240 4.9% 83.9%;
+}
+
+.dark {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --card: 240 10% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --popover: 240 10% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 276 90% 54%;
+  --primary-foreground: 211 100% 99%;
+  --secondary: 24 100% 50%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --accent: 157 90% 50%;
+  --accent-foreground: 0 0% 0%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+  --ring: 240 4.9% 83.9%;
+}
+
+/* Custom colors */
+:root {
+  --color-dark: #0A0A0F;
+  --color-dark-surface: #171723;
+  --color-dark-card: #1F1F2C;
+  --color-status-live: #00CC66;
+  --color-status-upcoming: #FFCC00;
+  --color-status-closed: #FF3300;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply font-poppins antialiased bg-dark text-foreground;
+  }
+}
+
+@layer components {
+  .hero-bg {
+    background-image: linear-gradient(rgba(10, 10, 15, 0.8), rgba(10, 10, 15, 0.9)), url('https://images.unsplash.com/photo-1542751371-adc38448a05e');
+    background-size: cover;
+    background-position: center;
+  }
+  
+  .status-indicator {
+    @apply w-2.5 h-2.5 rounded-full inline-block mr-1.5;
+  }
+  
+  .status-live {
+    @apply bg-[#00CC66] shadow-[0_0_10px_#00CC66] animate-pulse;
+  }
+  
+  .status-upcoming {
+    @apply bg-[#FFCC00];
+  }
+  
+  .status-closed {
+    @apply bg-[#FF3300];
+  }
+  
+  .tournament-card {
+    @apply bg-dark-card border border-primary/30 rounded-lg overflow-hidden transition-all duration-300 hover:translate-y-[-5px] hover:shadow-[0_0_20px_rgba(108,45,199,0.4)];
+  }
+  
+  .glow-hover {
+    @apply transition-all duration-300 hover:shadow-[0_0_15px_rgba(108,45,199,0.6)];
+  }
+}

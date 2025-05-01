@@ -219,14 +219,23 @@ export class MemStorage implements IStorage {
     const id = this.tournamentId++;
     const createdAt = new Date();
     
-    // Set default values
+    // Set default values with proper typing
     const tournament: Tournament = { 
-      ...insertTournament, 
-      id, 
-      createdAt,
+      id,
+      title: insertTournament.title,
+      description: insertTournament.description,
+      date: insertTournament.date,
+      mapType: insertTournament.mapType,
+      teamType: insertTournament.teamType,
+      isPaid: insertTournament.isPaid,
+      totalSlots: insertTournament.totalSlots,
+      createdBy: insertTournament.createdBy,
       status: insertTournament.status || "upcoming",
-      roomId: insertTournament.roomId || null,
-      password: insertTournament.password || null
+      entryFee: insertTournament.entryFee || 0,
+      prizePool: insertTournament.prizePool || 0,
+      createdAt: createdAt,
+      roomId: null,
+      password: null
     };
     
     this.tournaments.set(id, tournament);

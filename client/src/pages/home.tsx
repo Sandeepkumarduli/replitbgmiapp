@@ -17,7 +17,7 @@ export default function Home() {
               Join competitive tournaments, create teams, and battle for glory in Battlegrounds Mobile India
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <Link href="/signup" className="inline-block">
+              <Link href="/auth" className="inline-block">
                 <Button className="bg-primary hover:bg-primary/90 text-white px-8 py-3 rounded-md text-lg font-medium glow-hover">
                   Register Now
                 </Button>

@@ -665,6 +665,15 @@ export default function TournamentDetails({ params }: { params: { id: string } }
                     ? `₹${tournament.entryFee}` 
                     : "Free"}
                 </span>
+                {tournament.teamType && (
+                  <span className="block mt-2 font-medium text-amber-400">
+                    {tournament.teamType.toLowerCase() === 'squad' 
+                      ? '⚠️ Squad tournaments require at least 4 team members'
+                      : tournament.teamType.toLowerCase() === 'duo'
+                        ? '⚠️ Duo tournaments require at least 2 team members'
+                        : '✓ Solo tournaments don\'t require team members'}
+                  </span>
+                )}
               </p>
             </div>
           </div>

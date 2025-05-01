@@ -57,8 +57,17 @@ export class DatabaseStorage implements IStorage {
   }
   
   async deleteUser(id: number): Promise<boolean> {
-    const result = await db.delete(users).where(eq(users.id, id));
-    return result.rowCount ? result.rowCount > 0 : false;
+    try {
+      // Before deletion, check if the user exists
+      const user = await this.getUser(id);
+      if (!user) return false;
+      
+      await db.delete(users).where(eq(users.id, id));
+      return true;
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      return false;
+    }
   }
   
   async getAllUsers(): Promise<User[]> {
@@ -94,8 +103,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteTeam(id: number): Promise<boolean> {
-    const result = await db.delete(teams).where(eq(teams.id, id));
-    return result.rowCount ? result.rowCount > 0 : false;
+    try {
+      // Before deletion, check if the team exists
+      const team = await this.getTeam(id);
+      if (!team) return false;
+      
+      await db.delete(teams).where(eq(teams.id, id));
+      return true;
+    } catch (error) {
+      console.error('Error deleting team:', error);
+      return false;
+    }
   }
   
   async getAllTeams(): Promise<Team[]> {
@@ -132,9 +150,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteTeamMember(id: number): Promise<boolean> {
-    const result = await db.delete(teamMembers)
-      .where(eq(teamMembers.id, id));
-    return result.rowCount > 0;
+    try {
+      // Before deletion, check if the team member exists
+      const member = await this.getTeamMember(id);
+      if (!member) return false;
+      
+      await db.delete(teamMembers).where(eq(teamMembers.id, id));
+      return true;
+    } catch (error) {
+      console.error('Error deleting team member:', error);
+      return false;
+    }
   }
 
   // Tournament operations
@@ -187,7 +213,7 @@ export class DatabaseStorage implements IStorage {
   async deleteTournament(id: number): Promise<boolean> {
     const result = await db.delete(tournaments)
       .where(eq(tournaments.id, id));
-    return result.rowCount > 0;
+    return result.rowCount ? result.rowCount > 0 : false;
   }
 
   // Registration operations
@@ -255,6 +281,6 @@ export class DatabaseStorage implements IStorage {
   async deleteRegistration(id: number): Promise<boolean> {
     const result = await db.delete(registrations)
       .where(eq(registrations.id, id));
-    return result.rowCount > 0;
+    return result.rowCount ? result.rowCount > 0 : false;
   }
 }

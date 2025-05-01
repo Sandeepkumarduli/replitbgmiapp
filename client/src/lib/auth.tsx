@@ -57,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Check user session
   const { isLoading, refetch, data } = useQuery({
-    queryKey: ["/api/auth/me"],
+    queryKey: ["/api/user"],
     retry: false,
   });
   
@@ -73,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginCredentials) => {
       try {
-        const res = await apiRequest("POST", "/api/auth/login", credentials);
+        const res = await apiRequest("POST", "/api/login", credentials);
         return res.json();
       } catch (error) {
         // Handle specific error cases more gracefully
@@ -109,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const registerMutation = useMutation({
     mutationFn: async (data: RegisterData) => {
       try {
-        const res = await apiRequest("POST", "/api/auth/register", data);
+        const res = await apiRequest("POST", "/api/register", data);
         return res.json();
       } catch (error) {
         // Handle specific error cases more gracefully
@@ -149,7 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Logout mutation
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/auth/logout", {});
+      const res = await apiRequest("POST", "/api/logout", {});
       return res.json();
     },
     onSuccess: () => {
@@ -173,13 +173,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateProfileMutation = useMutation({
     mutationFn: async (data: ProfileUpdateData) => {
       try {
-        const res = await apiRequest("PATCH", "/api/auth/profile", data);
+        const res = await apiRequest("PATCH", "/api/user", data);
         return res.json();
       } catch (error) {
         // Handle specific error cases more gracefully
         if (error instanceof Error) {
           if (error.message.includes("Email already exists")) {
             throw new Error("This email is already registered. Please use a different email address.");
+          }
+          if (error.message.includes("Current password is incorrect")) {
+            throw new Error("Your current password is incorrect. Please try again.");
           }
         }
         throw error;

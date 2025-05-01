@@ -49,7 +49,9 @@ const formSchema = z.object({
   entryFee: z.number().min(0).optional(),
   prizePool: z.number().min(0),
   totalSlots: z.number().min(10).max(100),
-  status: z.string()
+  status: z.string(),
+  roomId: z.string().optional(),
+  password: z.string().optional()
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -71,7 +73,9 @@ export function TournamentForm({ tournament, isEditing = false }: TournamentForm
           entryFee: tournament.entryFee || 0,
           prizePool: tournament.prizePool || 0,
           totalSlots: tournament.totalSlots,
-          status: tournament.status
+          status: tournament.status,
+          roomId: tournament.roomId || "",
+          password: tournament.password || ""
         }
       : {
           title: "",
@@ -83,7 +87,9 @@ export function TournamentForm({ tournament, isEditing = false }: TournamentForm
           entryFee: 0,
           prizePool: 0,
           totalSlots: 100,
-          status: "upcoming"
+          status: "upcoming",
+          roomId: "",
+          password: ""
         }
   });
 
@@ -114,6 +120,18 @@ export function TournamentForm({ tournament, isEditing = false }: TournamentForm
   });
 
   function onSubmit(values: FormValues) {
+    // Add extra validation for live tournaments
+    if (isEditing && values.status === 'live') {
+      if (!values.roomId || !values.password) {
+        toast({
+          title: "Validation Error",
+          description: "Room ID and Password are required for live tournaments",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+    
     createMutation.mutateAsync(values);
   }
 
@@ -413,6 +431,12 @@ export function TournamentForm({ tournament, isEditing = false }: TournamentForm
                     <FormDescription className="text-gray-400 text-xs">
                       Add this before the tournament starts
                     </FormDescription>
+                    {form.watch("status") === "live" && !field.value && (
+                      <p className="text-red-500 text-xs mt-1">
+                        Room ID is required for live tournaments
+                      </p>
+                    )}
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -433,6 +457,12 @@ export function TournamentForm({ tournament, isEditing = false }: TournamentForm
                     <FormDescription className="text-gray-400 text-xs">
                       Add this before the tournament starts
                     </FormDescription>
+                    {form.watch("status") === "live" && !field.value && (
+                      <p className="text-red-500 text-xs mt-1">
+                        Room Password is required for live tournaments
+                      </p>
+                    )}
+                    <FormMessage />
                   </FormItem>
                 )}
               />

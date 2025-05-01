@@ -10,6 +10,7 @@ import Navbar from "./components/navigation/navbar";
 import Home from "@/pages/home";
 import Login from "@/pages/login";
 import Signup from "@/pages/signup";
+import ForgotPassword from "@/pages/forgot-password";
 import AdminLogin from "@/pages/admin/login";
 import AdminSignup from "@/pages/admin/signup";
 import AdminDashboard from "@/pages/admin/dashboard";
@@ -27,6 +28,7 @@ function Router() {
   
   const showNavbar = !location.startsWith("/login") && 
                      !location.startsWith("/signup") && 
+                     !location.startsWith("/forgot-password") &&
                      !location.startsWith("/admin/login") && 
                      !location.startsWith("/admin/signup");
   
@@ -39,6 +41,7 @@ function Router() {
           <Route path="/" component={Home}/>
           <Route path="/login" component={Login}/>
           <Route path="/signup" component={Signup}/>
+          <Route path="/forgot-password" component={ForgotPassword}/>
           <Route path="/admin/login" component={AdminLogin}/>
           <Route path="/admin/signup" component={AdminSignup}/>
           <Route path="/admin/dashboard" component={AdminDashboard}/>

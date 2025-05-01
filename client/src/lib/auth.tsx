@@ -62,8 +62,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Login mutation
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginCredentials) => {
-      const res = await apiRequest("POST", "/api/auth/login", credentials);
-      return res.json();
+      try {
+        const res = await apiRequest("POST", "/api/auth/login", credentials);
+        return res.json();
+      } catch (error) {
+        // Handle specific error cases more gracefully
+        if (error instanceof Error && error.message.includes("Invalid username or password")) {
+          throw new Error("Invalid username or password. Please check your credentials or sign up if you don't have an account.");
+        }
+        throw error;
+      }
     },
     onSuccess: (data: User) => {
       setUser(data);
@@ -90,8 +98,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Register mutation
   const registerMutation = useMutation({
     mutationFn: async (data: RegisterData) => {
-      const res = await apiRequest("POST", "/api/auth/register", data);
-      return res.json();
+      try {
+        const res = await apiRequest("POST", "/api/auth/register", data);
+        return res.json();
+      } catch (error) {
+        // Handle specific error cases more gracefully
+        if (error instanceof Error) {
+          if (error.message.includes("Email already exists")) {
+            throw new Error("This email is already registered. Please login or use a different email address.");
+          }
+          if (error.message.includes("Username already exists")) {
+            throw new Error("This username is already taken. Please choose a different username.");
+          }
+        }
+        throw error;
+      }
     },
     onSuccess: (data: User) => {
       setUser(data);

@@ -9,18 +9,18 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/80 hover:brightness-110",
+        default: "bg-primary text-white hover:bg-primary/80 hover:text-white hover:brightness-110",
         destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90 hover:brightness-110",
+          "bg-destructive text-white hover:bg-destructive/90 hover:text-white hover:brightness-110",
         outline:
-          "border border-input bg-background hover:bg-accent/30 hover:text-accent-foreground hover:border-accent",
+          "border border-input bg-background text-white hover:bg-accent/30 hover:text-white hover:border-accent",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80 hover:brightness-110",
-        ghost: "hover:bg-accent/20 hover:text-accent-foreground",
+          "bg-secondary text-white hover:bg-secondary/80 hover:text-white hover:brightness-110",
+        ghost: "text-white hover:bg-accent/20 hover:text-white",
         link: "text-primary underline-offset-4 hover:underline hover:text-primary/80",
         // Dark theme specific variants
-        dark: "bg-dark-surface border border-gray-700 text-white hover:bg-dark-card hover:border-primary hover:text-primary",
-        darkPrimary: "bg-dark-card text-white border border-primary hover:bg-primary/20 hover:brightness-110",
+        dark: "bg-dark-surface border border-gray-700 text-white hover:bg-dark-card hover:border-primary hover:text-white",
+        darkPrimary: "bg-dark-card text-white border border-primary hover:bg-primary/20 hover:text-white hover:brightness-110",
       },
       size: {
         default: "h-10 px-4 py-2",

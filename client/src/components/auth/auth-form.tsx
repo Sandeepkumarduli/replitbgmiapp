@@ -77,8 +77,8 @@ export function AuthForm({ type, role, initialTab = "user" }: AuthFormProps) {
     const userData = {
       ...values,
       role: activeTab as "user" | "admin",
-      // Set a default gameId for admins as they don't need it
-      gameId: activeTab === 'admin' ? 'admin-' + values.username : values.gameId
+      // Completely remove gameId for admins
+      ...(activeTab === 'admin' ? { gameId: '' } : {})
     };
     
     await register(userData);
@@ -125,6 +125,7 @@ export function AuthForm({ type, role, initialTab = "user" }: AuthFormProps) {
                       <Input
                         className="bg-dark-surface border-gray-700 text-white focus:ring-primary"
                         placeholder="Enter your username"
+                        autoComplete="off"
                         {...field}
                       />
                     </FormControl>
@@ -144,6 +145,7 @@ export function AuthForm({ type, role, initialTab = "user" }: AuthFormProps) {
                         type="password"
                         className="bg-dark-surface border-gray-700 text-white focus:ring-primary"
                         placeholder="Enter your password"
+                        autoComplete="new-password"
                         {...field}
                       />
                     </FormControl>
@@ -211,6 +213,7 @@ export function AuthForm({ type, role, initialTab = "user" }: AuthFormProps) {
                       <Input
                         className="bg-dark-surface border-gray-700 text-white focus:ring-primary"
                         placeholder="Choose a username"
+                        autoComplete="off"
                         {...field}
                       />
                     </FormControl>
@@ -230,6 +233,7 @@ export function AuthForm({ type, role, initialTab = "user" }: AuthFormProps) {
                         type="email"
                         className="bg-dark-surface border-gray-700 text-white focus:ring-primary"
                         placeholder="Enter your email"
+                        autoComplete="off"
                         {...field}
                       />
                     </FormControl>
@@ -248,6 +252,7 @@ export function AuthForm({ type, role, initialTab = "user" }: AuthFormProps) {
                       <Input
                         className="bg-dark-surface border-gray-700 text-white focus:ring-primary"
                         placeholder="Enter your phone number"
+                        autoComplete="off"
                         {...field}
                       />
                     </FormControl>

@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/auth";
 import { useQuery } from "@tanstack/react-query";
 import { TournamentForm } from "@/components/admin/create-tournament-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Tournament } from "@shared/schema";
 import { Trophy } from "lucide-react";
 
@@ -38,7 +39,15 @@ export default function EditTournament({ params }: { params?: { id?: string } })
   if (!tournament) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-red-500">Tournament not found</p>
+        <div className="text-center">
+          <p className="text-red-500 text-xl mb-4">Tournament not found</p>
+          <Button 
+            onClick={() => navigate("/admin/dashboard")} 
+            className="bg-primary hover:bg-primary/90 text-white"
+          >
+            Back to Dashboard
+          </Button>
+        </div>
       </div>
     );
   }

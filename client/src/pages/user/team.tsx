@@ -253,7 +253,7 @@ export default function UserTeam() {
               
               {teams && teams.map((team, index) => (
                 <div key={team.id} className="space-y-8 mb-12">
-                  <Card className="bg-dark-card border-gray-800">
+                  <Card id={`team-${team.id}`} className="bg-dark-card border-gray-800 transition-all duration-300">
                     <CardHeader>
                       <CardTitle className="text-white flex items-center">
                         <Users className="mr-2 h-5 w-5 text-primary" />

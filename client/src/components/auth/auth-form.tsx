@@ -74,10 +74,14 @@ export function AuthForm({ type, role, initialTab = "user" }: AuthFormProps) {
   };
 
   const onSignupSubmit = async (values: SignupValues) => {
-    await register({
+    const userData = {
       ...values,
       role: activeTab as "user" | "admin",
-    });
+      // Set a default gameId for admins as they don't need it
+      gameId: activeTab === 'admin' ? 'admin-' + values.username : values.gameId
+    };
+    
+    await register(userData);
   };
 
   return (
@@ -252,23 +256,25 @@ export function AuthForm({ type, role, initialTab = "user" }: AuthFormProps) {
                 )}
               />
 
-              <FormField
-                control={signupForm.control}
-                name="gameId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-white">Game ID</FormLabel>
-                    <FormControl>
-                      <Input
-                        className="bg-dark-surface border-gray-700 text-white focus:ring-primary"
-                        placeholder="Enter your BGMI game ID"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {activeTab === 'user' && (
+                <FormField
+                  control={signupForm.control}
+                  name="gameId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-white">Game ID</FormLabel>
+                      <FormControl>
+                        <Input
+                          className="bg-dark-surface border-gray-700 text-white focus:ring-primary"
+                          placeholder="Enter your BGMI game ID"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
               <FormField
                 control={signupForm.control}

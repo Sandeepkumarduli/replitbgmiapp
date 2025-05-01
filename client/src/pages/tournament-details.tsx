@@ -106,6 +106,15 @@ export default function TournamentDetails({ params }: { params: { id: string } }
       navigate("/auth");
       return;
     }
+    
+    if (isAdmin) {
+      toast({
+        title: "Registration not allowed",
+        description: "Administrators cannot register for tournaments",
+        variant: "destructive",
+      });
+      return;
+    }
 
     if (!teams || teams.length === 0) {
       toast({

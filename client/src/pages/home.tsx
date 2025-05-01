@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { TournamentList } from "@/components/user/tournament-list";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, UserPlus, Users, Trophy } from "lucide-react";
 
 export default function Home() {
   return (
@@ -77,7 +77,7 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
             <div className="text-center">
               <div className="bg-dark-surface rounded-full h-20 w-20 flex items-center justify-center mx-auto mb-6 border border-primary">
-                <i className="fas fa-user-plus text-primary text-3xl"></i>
+                <UserPlus className="text-primary h-10 w-10" />
               </div>
               <h3 className="text-xl font-bold text-white mb-3">Create Account</h3>
               <p className="text-gray-400">Register with your unique username and BGMI game ID to get started</p>
@@ -85,7 +85,7 @@ export default function Home() {
 
             <div className="text-center">
               <div className="bg-dark-surface rounded-full h-20 w-20 flex items-center justify-center mx-auto mb-6 border border-primary">
-                <i className="fas fa-users text-primary text-3xl"></i>
+                <Users className="text-primary h-10 w-10" />
               </div>
               <h3 className="text-xl font-bold text-white mb-3">Build Your Team</h3>
               <p className="text-gray-400">Create your team by adding up to 4 players plus substitutes</p>
@@ -93,7 +93,7 @@ export default function Home() {
 
             <div className="text-center">
               <div className="bg-dark-surface rounded-full h-20 w-20 flex items-center justify-center mx-auto mb-6 border border-primary">
-                <i className="fas fa-trophy text-primary text-3xl"></i>
+                <Trophy className="text-primary h-10 w-10" />
               </div>
               <h3 className="text-xl font-bold text-white mb-3">Join Tournaments</h3>
               <p className="text-gray-400">Browse and register for tournaments to compete for prizes</p>

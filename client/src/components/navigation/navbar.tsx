@@ -54,12 +54,15 @@ export default function Navbar() {
             {isAuthenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative rounded-full h-10 w-10 bg-primary/10 text-primary">
-                    <User className="h-5 w-5" />
+                  <Button variant="ghost" className="relative flex items-center gap-2 bg-primary/10 text-primary px-3">
+                    <span className="text-white hidden md:inline">{user?.username}</span>
+                    <div className="rounded-full h-10 w-10 flex items-center justify-center">
+                      <User className="h-5 w-5" />
+                    </div>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="bg-dark-card border-gray-800">
-                  <DropdownMenuLabel className="text-white">My Account</DropdownMenuLabel>
+                  <DropdownMenuLabel className="text-white">{user?.username}</DropdownMenuLabel>
                   <DropdownMenuSeparator className="bg-gray-800" />
                   <DropdownMenuItem className="flex items-center text-gray-300 hover:text-white focus:text-white focus:bg-dark-surface">
                     <Link href={isAdmin ? "/admin/dashboard" : "/user/dashboard"} className="flex w-full">
@@ -126,6 +129,10 @@ export default function Navbar() {
           )}
           {isAuthenticated ? (
             <>
+              <div className="block pl-3 pr-4 py-2 text-base font-medium bg-dark-card text-white border-l-4 border-primary">
+                <User className="h-4 w-4 inline mr-2" />
+                {user?.username}
+              </div>
               <Link href={isAdmin ? "/admin/dashboard" : "/user/dashboard"} className={`block pl-3 pr-4 py-2 text-base font-medium ${isActive(isAdmin ? "/admin/dashboard" : "/user/dashboard") ? "bg-primary text-white" : "text-gray-300 hover:bg-dark-card hover:text-white"}`}>
                 <Trophy className="h-4 w-4 inline mr-2" />
                 Dashboard

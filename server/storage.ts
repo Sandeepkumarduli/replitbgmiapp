@@ -346,14 +346,30 @@ export class MemStorage implements IStorage {
   }
 }
 
-// Import SupabaseStorage implementation
+// Import storage implementations
 import { SupabaseStorage } from './supabase-storage';
+import { DatabaseStorage } from './database-storage';
 
 // Choose which storage implementation to use
-// For development, you can switch between MemStorage and SupabaseStorage
+// Production: PostgreSQL database (default)
+// Supabase: When USE_SUPABASE is set to 'true'
+// In-memory: When USE_MEMORY_STORAGE is set to 'true' (for development)
 const useSupabase = process.env.USE_SUPABASE === 'true';
+const useMemoryStorage = process.env.USE_MEMORY_STORAGE === 'true';
 
-// Export the appropriate storage implementation
-export const storage = useSupabase 
-  ? new SupabaseStorage() 
-  : new MemStorage();
+// Select the appropriate storage implementation based on environment variables
+let selectedStorage: IStorage;
+
+if (useMemoryStorage) {
+  console.log('Using in-memory storage (for development only)');
+  selectedStorage = new MemStorage();
+} else if (useSupabase) {
+  console.log('Using Supabase storage');
+  selectedStorage = new SupabaseStorage();
+} else {
+  console.log('Using PostgreSQL database storage (production)');
+  selectedStorage = new DatabaseStorage();
+}
+
+// Export the selected storage implementation
+export const storage = selectedStorage;

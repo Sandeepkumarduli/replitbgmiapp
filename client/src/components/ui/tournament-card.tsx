@@ -110,17 +110,21 @@ export function TournamentCard({ tournament, onRegister, registered = false, reg
           </div>
         </div>
         
-        {/* Room Info for Registered Users */}
-        {registered && tournament.roomId && tournament.password && (
+        {/* Room Info for Registered Users - Now showing if registered regardless of tournament status */}
+        {registered && (
           <div className="border-t border-gray-800 px-4 py-3 bg-dark-surface/60">
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <p className="text-xs text-gray-400 mb-1">Room ID</p>
-                <p className="font-mono bg-dark-card px-2 py-1 rounded-sm text-sm text-white">{tournament.roomId}</p>
+                <p className="font-mono bg-dark-card px-2 py-1 rounded-sm text-sm text-white">
+                  {tournament.roomId || "Will be available soon"}
+                </p>
               </div>
               <div>
                 <p className="text-xs text-gray-400 mb-1">Password</p>
-                <p className="font-mono bg-dark-card px-2 py-1 rounded-sm text-sm text-white">{tournament.password}</p>
+                <p className="font-mono bg-dark-card px-2 py-1 rounded-sm text-sm text-white">
+                  {tournament.password || "Will be available soon"}
+                </p>
               </div>
             </div>
           </div>

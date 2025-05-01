@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "./queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -46,16 +46,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
 
   // Check user session
-  const { isLoading, refetch } = useQuery({
+  const { isLoading, refetch, data } = useQuery({
     queryKey: ["/api/auth/me"],
-    onSuccess: (data: User) => {
-      setUser(data);
-    },
-    onError: () => {
-      setUser(null);
-    },
     retry: false,
   });
+  
+  useEffect(() => {
+    if (data) {
+      setUser(data as User);
+    } else {
+      setUser(null);
+    }
+  }, [data]);
 
   // Login mutation
   const loginMutation = useMutation({

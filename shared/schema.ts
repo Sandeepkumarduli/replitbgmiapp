@@ -82,13 +82,15 @@ export const insertTournamentSchema = createInsertSchema(tournaments).omit({
   createdAt: true,
   roomId: true,
   password: true
+}).extend({
+  date: z.coerce.date()
 });
 
 export const updateTournamentSchema = z.object({
   id: z.number(),
   title: z.string().optional(),
   description: z.string().optional(),
-  date: z.string().optional(),
+  date: z.coerce.date().optional(),
   mapType: z.string().optional(),
   teamType: z.string().optional(),
   isPaid: z.boolean().optional(),

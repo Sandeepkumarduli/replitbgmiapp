@@ -9,7 +9,7 @@ import {
   updateTournamentSchema,
   insertRegistrationSchema 
 } from "@shared/schema";
-import { setupAuth } from "./auth";
+import { setupAuth, hashPassword } from "./auth";
 import { setupSupabaseAuth } from "./supabase-auth";
 import { 
   setupSecurityMiddleware, 
@@ -740,6 +740,111 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin API routes - highly secured
+
+  // Create a new user (admin only)
+  app.post("/api/admin/users", isEnhancedAdmin, async (req, res) => {
+    try {
+      logSecurityEvent('Admin attempting to create user', req);
+      
+      const { username, email, password, phone, gameId, role = "user" } = req.body;
+      
+      // Validate required fields
+      if (!username || !password || !email || !phone) {
+        return res.status(400).json({ message: "Username, password, email and phone are required" });
+      }
+      
+      // Prevent creating an account with hardcoded admin username
+      if (username === "Sandeepkumarduli") {
+        logSecurityEvent('Admin attempted to create system admin account', req);
+        return res.status(400).json({ message: "This username is reserved" });
+      }
+      
+      // Check if username already exists
+      const existingUsername = await storage.getUserByUsername(username);
+      if (existingUsername) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+      
+      // Check if email already exists
+      const existingEmail = await storage.getUserByEmail(email);
+      if (existingEmail) {
+        return res.status(400).json({ message: "Email already exists" });
+      }
+      
+      // Hash password
+      const hashedPassword = await hashPassword(password);
+      
+      // Create the user
+      const user = await storage.createUser({
+        username,
+        password: hashedPassword,
+        email,
+        phone,
+        gameId: gameId || username, // Default gameId to username if not provided
+        role
+      });
+      
+      // Log the action
+      logSecurityEvent('Admin created new user', req, {
+        createdUserId: user.id,
+        createdUsername: user.username,
+        assignedRole: role
+      });
+      
+      // Return the user without password
+      const safeUser = { ...user, password: undefined };
+      res.status(201).json(safeUser);
+    } catch (error) {
+      console.error("Error in POST /api/admin/users:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Create a new team (admin only)
+  app.post("/api/admin/teams", isEnhancedAdmin, async (req, res) => {
+    try {
+      logSecurityEvent('Admin attempting to create team', req);
+      
+      const { name, ownerId, gameType } = req.body;
+      
+      // Validate required fields
+      if (!name || !ownerId) {
+        return res.status(400).json({ message: "Team name and owner ID are required" });
+      }
+      
+      // Check if the owner exists
+      const owner = await storage.getUser(ownerId);
+      if (!owner) {
+        return res.status(404).json({ message: "Owner not found" });
+      }
+      
+      // Check if team name already exists
+      const existingTeam = await storage.getTeamByName(name);
+      if (existingTeam) {
+        return res.status(400).json({ message: "Team name already exists" });
+      }
+      
+      // Create the team
+      const team = await storage.createTeam({
+        name,
+        ownerId,
+        gameType: gameType || 'BGMI' // Default to BGMI if not specified
+      });
+      
+      // Log the action
+      logSecurityEvent('Admin created new team', req, {
+        teamId: team.id,
+        teamName: team.name,
+        ownerId,
+        ownerUsername: owner.username
+      });
+      
+      res.status(201).json(team);
+    } catch (error) {
+      console.error("Error in POST /api/admin/teams:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
   
   // Get all users (admin only, with enhanced security)
   app.get("/api/admin/users", isEnhancedAdmin, async (req, res) => {

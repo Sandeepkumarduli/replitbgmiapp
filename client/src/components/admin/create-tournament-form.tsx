@@ -38,6 +38,7 @@ type TournamentFormProps = {
 
 const mapTypes = ["Erangel", "Miramar", "Sanhok", "Vikendi"];
 const teamTypes = ["Solo", "Duo", "Squad"];
+const gameTypes = ["BGMI", "FREEFIRE", "COD"];
 
 const formSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),

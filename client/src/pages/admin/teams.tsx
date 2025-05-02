@@ -64,7 +64,11 @@ export default function AdminTeams() {
     description: "",
     ownerId: 0, // Will be set in form
     ownerUsername: "", // For display only
+    gameType: "BGMI", // Default game type
   });
+  
+  // Game filter state
+  const [gameFilter, setGameFilter] = useState<string>("all");
   const [teamOwners, setTeamOwners] = useState<any[]>([]);
 
   useEffect(() => {
@@ -229,19 +233,38 @@ export default function AdminTeams() {
 
         <Card className="bg-dark-card border-gray-800">
           <CardHeader>
-            <CardTitle className="text-white flex items-center">
-              <Users className="mr-2 h-5 w-5 text-primary" />
-              All Teams
-            </CardTitle>
-            <CardDescription className="text-gray-400">
-              View and manage teams and their members
-            </CardDescription>
+            <div className="flex justify-between items-center">
+              <div>
+                <CardTitle className="text-white flex items-center">
+                  <Users className="mr-2 h-5 w-5 text-primary" />
+                  All Teams
+                </CardTitle>
+                <CardDescription className="text-gray-400">
+                  View and manage teams and their members
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="gameFilter" className="text-white">Filter by Game:</Label>
+                <select
+                  id="gameFilter"
+                  value={gameFilter}
+                  onChange={(e) => setGameFilter(e.target.value)}
+                  className="bg-dark-surface border border-gray-700 text-white rounded-md px-3 py-2 text-sm"
+                >
+                  <option value="all">All Games</option>
+                  <option value="BGMI">BGMI</option>
+                  <option value="COD">COD</option>
+                  <option value="FREEFIRE">FREEFIRE</option>
+                </select>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader className="bg-dark-surface">
                 <TableRow className="hover:bg-dark-surface/80 border-gray-800">
                   <TableHead className="text-gray-400">Team Name</TableHead>
+                  <TableHead className="text-gray-400">Game</TableHead>
                   <TableHead className="text-gray-400">Owner</TableHead>
                   <TableHead className="text-gray-400">Members</TableHead>
                   <TableHead className="text-gray-400">Created</TableHead>
@@ -253,6 +276,17 @@ export default function AdminTeams() {
                   <TableRow key={team.id} className="hover:bg-dark-surface/50 border-gray-800">
                     <TableCell className="font-medium text-white">
                       {team.name}
+                    </TableCell>
+                    <TableCell className="text-gray-300">
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                        team.gameType === "BGMI" 
+                          ? "bg-blue-900/50 text-blue-300 border border-blue-800" 
+                          : team.gameType === "COD" 
+                            ? "bg-amber-900/50 text-amber-300 border border-amber-800"
+                            : "bg-emerald-900/50 text-emerald-300 border border-emerald-800"
+                      }`}>
+                        {team.gameType || "BGMI"}
+                      </span>
                     </TableCell>
                     <TableCell className="text-gray-300">
                       <div className="flex items-center gap-2">
@@ -305,7 +339,7 @@ export default function AdminTeams() {
                 ))}
                 {teams.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-gray-400">
+                    <TableCell colSpan={6} className="text-center py-8 text-gray-400">
                       No teams found. Create new teams to begin tournament registrations.
                     </TableCell>
                   </TableRow>
@@ -348,6 +382,21 @@ export default function AdminTeams() {
                 onChange={(e) => setNewTeam({...newTeam, description: e.target.value})}
                 className="col-span-3 bg-dark-surface border-gray-700 text-white"
               />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="gameType" className="text-right">
+                Game
+              </Label>
+              <select
+                id="gameType"
+                value={newTeam.gameType}
+                onChange={(e) => setNewTeam({...newTeam, gameType: e.target.value})}
+                className="col-span-3 bg-dark-surface border border-gray-700 text-white rounded-md px-3 py-2"
+              >
+                <option value="BGMI">BGMI</option>
+                <option value="COD">COD</option>
+                <option value="FREEFIRE">FREEFIRE</option>
+              </select>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="teamOwner" className="text-right">

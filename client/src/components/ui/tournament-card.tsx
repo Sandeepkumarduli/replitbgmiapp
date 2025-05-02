@@ -53,17 +53,17 @@ export function TournamentCard({ tournament, onRegister, registered = false, reg
           {/* Status Badge */}
           <div className="flex items-center justify-between mb-3">
             {status === "live" ? (
-              <Badge className="bg-[#00CC66] text-white hover:bg-[#00CC66]">
+              <Badge className="bg-primary text-white hover:bg-primary/90">
                 <span className="w-2 h-2 bg-white rounded-full animate-pulse mr-1.5"></span>
                 LIVE NOW
               </Badge>
             ) : status === "upcoming" ? (
-              <Badge className="bg-[#FFCC00] text-dark hover:bg-[#FFCC00]">
+              <Badge className="bg-accent text-dark hover:bg-accent/90">
                 <span className="w-2 h-2 bg-dark rounded-full mr-1.5"></span>
                 UPCOMING
               </Badge>
             ) : (
-              <Badge className="bg-[#FF3300] text-white hover:bg-[#FF3300]">
+              <Badge className="bg-destructive text-white hover:bg-destructive/90">
                 <span className="w-2 h-2 bg-white rounded-full mr-1.5"></span>
                 COMPLETED
               </Badge>
@@ -85,9 +85,9 @@ export function TournamentCard({ tournament, onRegister, registered = false, reg
           <div className="flex items-center mb-3">
             <h3 className="text-xl font-bold text-white mr-2">{title}</h3>
             <Badge className={`
-              ${gameType === 'BGMI' ? 'bg-blue-600' : 
-                gameType === 'COD' ? 'bg-green-600' : 
-                  gameType === 'FREEFIRE' ? 'bg-red-600' : 'bg-primary'} 
+              ${gameType === 'BGMI' ? 'bg-primary' : 
+                gameType === 'COD' ? 'bg-primary/80' : 
+                  gameType === 'FREEFIRE' ? 'bg-accent' : 'bg-primary'} 
               text-white hover:bg-opacity-90
             `}>
               {gameType}
@@ -147,7 +147,7 @@ export function TournamentCard({ tournament, onRegister, registered = false, reg
               Registered
             </Button>
           ) : status === "live" ? (
-            <Button className="w-full bg-[#00CC66] hover:bg-[#00CC66]/80 text-white font-medium">
+            <Button className="w-full bg-primary hover:bg-primary/90 text-white font-medium">
               Join Now
             </Button>
           ) : status === "upcoming" ? (

@@ -73,19 +73,19 @@ export default function Tournaments() {
         <div className="flex flex-wrap gap-3 mb-6">
           <Button 
             variant="outline" 
-            className={`${gameFilter === 'BGMI' ? 'bg-blue-600' : 'bg-blue-600/20'} border-blue-600 text-white hover:bg-blue-600/30 focus:ring-blue-500`}
+            className={`${gameFilter === 'BGMI' ? 'bg-primary' : 'bg-primary/20'} border-primary text-white hover:bg-primary/30 focus:ring-primary/50`}
             onClick={() => setGameFilter('BGMI')}>
             BGMI
           </Button>
           <Button 
             variant="outline" 
-            className={`${gameFilter === 'COD' ? 'bg-green-600' : 'bg-green-600/20'} border-green-600 text-white hover:bg-green-600/30 focus:ring-green-500`}
+            className={`${gameFilter === 'COD' ? 'bg-primary/90' : 'bg-primary/15'} border-primary/70 text-white hover:bg-primary/25 focus:ring-primary/40`}
             onClick={() => setGameFilter('COD')}>
             COD
           </Button>
           <Button 
             variant="outline" 
-            className={`${gameFilter === 'FREEFIRE' ? 'bg-red-600' : 'bg-red-600/20'} border-red-600 text-white hover:bg-red-600/30 focus:ring-red-500`}
+            className={`${gameFilter === 'FREEFIRE' ? 'bg-accent' : 'bg-accent/20'} border-accent text-white hover:bg-accent/30 focus:ring-accent/50`}
             onClick={() => setGameFilter('FREEFIRE')}>
             FREEFIRE
           </Button>

@@ -41,7 +41,7 @@ export default function Home() {
           <div className="flex flex-col md:flex-row md:items-center justify-between mb-12">
             <div className="mb-6 md:mb-0">
               <h2 className="text-3xl md:text-4xl font-bold text-white">
-                <span className="text-[#FFCC00]">Upcoming</span> Tournaments
+                Upcoming Tournaments
               </h2>
               <p className="text-gray-400 mt-3 max-w-2xl">
                 Register for our upcoming tournaments and show your skills on the battlefield. All tournaments feature cash prizes and exclusive rewards.
@@ -56,6 +56,42 @@ export default function Home() {
           </div>
 
           <div className="bg-dark-card border border-gray-800 p-6 rounded-xl mb-10">
+            {/* Game Filters */}
+            <div className="flex flex-wrap gap-3 mb-6">
+              <Button 
+                variant="outline" 
+                className="bg-blue-600/20 border-blue-600 text-white hover:bg-blue-600/30 focus:ring-blue-500"
+                onClick={() => {
+                  // Should apply BGMI filter
+                }}>
+                BGMI
+              </Button>
+              <Button 
+                variant="outline" 
+                className="bg-green-600/20 border-green-600 text-white hover:bg-green-600/30 focus:ring-green-500"
+                onClick={() => {
+                  // Should apply COD filter
+                }}>
+                COD
+              </Button>
+              <Button 
+                variant="outline" 
+                className="bg-red-600/20 border-red-600 text-white hover:bg-red-600/30 focus:ring-red-500"
+                onClick={() => {
+                  // Should apply FREEFIRE filter
+                }}>
+                FREEFIRE
+              </Button>
+              <Button 
+                variant="outline" 
+                className="bg-gray-700/70 border-gray-600 text-white hover:bg-gray-600 focus:ring-gray-500"
+                onClick={() => {
+                  // Should clear filters
+                }}>
+                All Games
+              </Button>
+            </div>
+
             <TournamentList filter="upcoming" limit={6} />
           </div>
         </div>

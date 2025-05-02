@@ -26,9 +26,10 @@ type TournamentListProps = {
   filter?: 'upcoming' | 'live' | 'completed';
   showRegisteredOnly?: boolean;
   limit?: number;
+  gameTypeFilter?: 'BGMI' | 'COD' | 'FREEFIRE' | null;
 };
 
-export function TournamentList({ filter, showRegisteredOnly = false, limit }: TournamentListProps) {
+export function TournamentList({ filter, showRegisteredOnly = false, limit, gameTypeFilter = null }: TournamentListProps) {
   const [registerDialogOpen, setRegisterDialogOpen] = useState(false);
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
   const [selectedTeamId, setSelectedTeamId] = useState<string>("");
@@ -172,6 +173,11 @@ export function TournamentList({ filter, showRegisteredOnly = false, limit }: To
     // Filter tournaments that the user has registered for
     const registeredTournamentIds = registrations.map((reg: any) => reg.tournamentId);
     displayTournaments = displayTournaments.filter(t => registeredTournamentIds.includes(t.id));
+  }
+
+  // Apply game type filter if specified
+  if (gameTypeFilter) {
+    displayTournaments = displayTournaments.filter(t => t.gameType === gameTypeFilter);
   }
 
   // Limit number of tournaments if specified

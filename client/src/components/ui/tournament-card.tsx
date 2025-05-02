@@ -15,7 +15,7 @@ type TournamentCardProps = {
 };
 
 export function TournamentCard({ tournament, onRegister, registered = false, registrationsCount = 0 }: TournamentCardProps) {
-  const { id, title, description, date, mapType, teamType, isPaid, prizePool, totalSlots, status } = tournament;
+  const { id, title, description, date, mapType, teamType, gameType = "BGMI", gameMode, isPaid, prizePool, totalSlots, status } = tournament;
   
   // Use the actual registrations count
   const slotsTaken = registrationsCount;
@@ -81,8 +81,18 @@ export function TournamentCard({ tournament, onRegister, registered = false, reg
             ) : null}
           </div>
           
-          {/* Tournament Title */}
-          <h3 className="text-xl font-bold text-white mb-3">{title}</h3>
+          {/* Tournament Title with Game Type Badge */}
+          <div className="flex items-center mb-3">
+            <h3 className="text-xl font-bold text-white mr-2">{title}</h3>
+            <Badge className={`
+              ${gameType === 'BGMI' ? 'bg-blue-600' : 
+                gameType === 'COD' ? 'bg-green-600' : 
+                  gameType === 'FREEFIRE' ? 'bg-red-600' : 'bg-primary'} 
+              text-white hover:bg-opacity-90
+            `}>
+              {gameType}
+            </Badge>
+          </div>
           
           {/* Date/Time */}
           <div className="flex items-center text-gray-400 text-sm mb-3">

@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Gamepad2, Trophy, Clock, Users, ArrowRight } from "lucide-react";
+import { Gamepad, Trophy, Clock, Users, ArrowRight } from "lucide-react";
 
 export default function GamesPage() {
   return (
@@ -32,7 +32,7 @@ export default function GamesPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2">
               <div className="bg-gradient-to-br from-blue-900/30 to-transparent p-8 lg:p-12">
                 <div className="flex items-center mb-6">
-                  <Gamepad2 className="text-primary h-10 w-10 mr-4" />
+                  <Gamepad className="text-primary h-10 w-10 mr-4" />
                   <h3 className="text-3xl font-bold text-white">Battlegrounds Mobile India</h3>
                 </div>
                 
@@ -89,7 +89,7 @@ export default function GamesPage() {
               
               <div className="order-1 lg:order-2 bg-gradient-to-br from-red-900/30 to-transparent p-8 lg:p-12">
                 <div className="flex items-center mb-6">
-                  <Gamepad2 className="text-primary h-10 w-10 mr-4" />
+                  <Gamepad className="text-primary h-10 w-10 mr-4" />
                   <h3 className="text-3xl font-bold text-white">Garena Free Fire</h3>
                 </div>
                 
@@ -129,7 +129,7 @@ export default function GamesPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2">
               <div className="bg-gradient-to-br from-green-900/30 to-transparent p-8 lg:p-12">
                 <div className="flex items-center mb-6">
-                  <GameController className="text-primary h-10 w-10 mr-4" />
+                  <Gamepad className="text-primary h-10 w-10 mr-4" />
                   <h3 className="text-3xl font-bold text-white">Call of Duty Mobile</h3>
                 </div>
                 
@@ -185,7 +185,7 @@ export default function GamesPage() {
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             <div className="bg-dark-card border border-gray-800 rounded-lg p-8 text-center">
-              <GameController className="text-primary h-12 w-12 mx-auto mb-4" />
+              <Gamepad className="text-primary h-12 w-12 mx-auto mb-4" />
               <h3 className="text-xl font-bold text-white mb-2">Valorant Mobile</h3>
               <p className="text-gray-400">
                 Tactical shooter with unique character abilities and precise gunplay
@@ -193,7 +193,7 @@ export default function GamesPage() {
             </div>
             
             <div className="bg-dark-card border border-gray-800 rounded-lg p-8 text-center">
-              <GameController className="text-primary h-12 w-12 mx-auto mb-4" />
+              <Gamepad2 className="text-primary h-12 w-12 mx-auto mb-4" />
               <h3 className="text-xl font-bold text-white mb-2">Mobile Legends</h3>
               <p className="text-gray-400">
                 5v5 MOBA with fast-paced matches and diverse heroes
@@ -201,7 +201,7 @@ export default function GamesPage() {
             </div>
             
             <div className="bg-dark-card border border-gray-800 rounded-lg p-8 text-center">
-              <GameController className="text-primary h-12 w-12 mx-auto mb-4" />
+              <Gamepad2 className="text-primary h-12 w-12 mx-auto mb-4" />
               <h3 className="text-xl font-bold text-white mb-2">Apex Legends Mobile</h3>
               <p className="text-gray-400">
                 Hero-based battle royale with unique abilities and team dynamics

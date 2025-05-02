@@ -51,6 +51,10 @@ export function TournamentTable() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [roomData, setRoomData] = useState({ roomId: "", password: "" });
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [gameFilter, setGameFilter] = useState<string | null>(null);
+  
+  // Game types for filtering
+  const gameTypes = ["BGMI", "FREEFIRE", "COD"];
 
   const { data: tournaments, isLoading, refetch } = useQuery<Tournament[]>({
     queryKey: ["/api/tournaments"],
@@ -59,6 +63,11 @@ export function TournamentTable() {
   const { data: registrationCounts = {} as Record<string, number> } = useQuery<Record<string, number>>({
     queryKey: ["/api/registrations/counts"],
   });
+  
+  // Filter tournaments by game type if filter is active
+  const filteredTournaments = tournaments ? 
+    (gameFilter ? tournaments.filter(t => t.gameType === gameFilter) : tournaments) : 
+    [];
   
   const refreshTournaments = async () => {
     setIsRefreshing(true);
@@ -197,6 +206,42 @@ export function TournamentTable() {
             >
               Add New
             </Button>
+          </div>
+        </div>
+        
+        {/* Game filters */}
+        <div className="px-4 pb-2 flex gap-2 items-center">
+          <span className="text-sm text-gray-400">Filter by game:</span>
+          <div className="flex gap-1">
+            {gameTypes.map(game => (
+              <Button
+                key={game}
+                size="sm"
+                variant={gameFilter === game ? "default" : "outline"}
+                className={`text-xs ${
+                  gameFilter === game 
+                    ? `${game === 'BGMI' 
+                        ? 'bg-blue-600 hover:bg-blue-700' 
+                        : game === 'FREEFIRE' 
+                          ? 'bg-red-600 hover:bg-red-700' 
+                          : 'bg-green-600 hover:bg-green-700'}`
+                    : "bg-transparent border-gray-700 text-gray-300 hover:bg-gray-800"
+                }`}
+                onClick={() => gameFilter === game ? setGameFilter(null) : setGameFilter(game)}
+              >
+                {game}
+              </Button>
+            ))}
+            {gameFilter && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-xs bg-transparent border-gray-700 text-gray-300 hover:bg-gray-800"
+                onClick={() => setGameFilter(null)}
+              >
+                Clear
+              </Button>
+            )}
           </div>
         </div>
         

@@ -44,6 +44,7 @@ const formSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
   description: z.string().min(10, "Description must be at least 10 characters"),
   date: z.date(),
+  gameType: z.string().refine((val) => gameTypes.includes(val), "Please select a valid game"),
   mapType: z.string().refine((val) => mapTypes.includes(val), "Please select a valid map"),
   teamType: z.string().refine((val) => teamTypes.includes(val), "Please select a valid team type"),
   isPaid: z.boolean(),
@@ -68,6 +69,7 @@ export function TournamentForm({ tournament, isEditing = false }: TournamentForm
           title: tournament.title,
           description: tournament.description,
           date: new Date(tournament.date),
+          gameType: tournament.gameType || "BGMI",
           mapType: tournament.mapType,
           teamType: tournament.teamType,
           isPaid: tournament.isPaid,
@@ -82,6 +84,7 @@ export function TournamentForm({ tournament, isEditing = false }: TournamentForm
           title: "",
           description: "",
           date: new Date(),
+          gameType: "BGMI",
           mapType: "Erangel",
           teamType: "Squad",
           isPaid: false,
@@ -101,7 +104,10 @@ export function TournamentForm({ tournament, isEditing = false }: TournamentForm
       
       console.log(`Making ${method} request to ${url} with data:`, values);
       
-      const dataToSend = {
+      // Create a type with optional id for our data 
+      type DataToSend = FormValues & { date: string; id?: number };
+      
+      const dataToSend: DataToSend = {
         ...values,
         // Convert date to ISO string format
         date: values.date.toISOString(),
@@ -256,6 +262,34 @@ export function TournamentForm({ tournament, isEditing = false }: TournamentForm
           </div>
 
           <div className="space-y-6">
+            <FormField
+              control={form.control}
+              name="gameType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-white">Game</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="bg-dark-surface border-gray-700 text-white">
+                        <SelectValue placeholder="Select game" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent className="bg-dark-card border-gray-700">
+                      {gameTypes.map((game) => (
+                        <SelectItem key={game} value={game} className="text-white focus:bg-dark-surface focus:text-white">
+                          {game}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}

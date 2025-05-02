@@ -272,7 +272,7 @@ export default function TeamMembers() {
             <div>
               <h1 className="text-3xl font-bold text-white">{team?.name}: Members</h1>
               <p className="text-gray-400 mt-1">
-                {members.length} / {getMaxTeamSizeByGameType(team?.gameType)} members
+                {members.length} / {getMaxTeamSizeByGameType(team?.gameType || "BGMI")} members
               </p>
             </div>
           </div>
@@ -289,7 +289,7 @@ export default function TeamMembers() {
             <Button 
               className="flex items-center gap-2 bg-indigo-700 hover:bg-indigo-800 text-white"
               onClick={() => setIsAddMemberOpen(true)}
-              disabled={members.length >= getMaxTeamSizeByGameType(team?.gameType)}
+              disabled={members.length >= getMaxTeamSizeByGameType(team?.gameType || "BGMI")}
             >
               <UserPlus className="h-4 w-4" />
               Add Member
@@ -387,6 +387,18 @@ export default function TeamMembers() {
                 onChange={(e) => setNewMember({...newMember, username: e.target.value})}
                 className="col-span-3 bg-dark-surface border-gray-700 text-white"
                 placeholder="Enter player name"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="gameId" className="text-right">
+                Game ID
+              </Label>
+              <Input
+                id="gameId"
+                value={newMember.gameId}
+                onChange={(e) => setNewMember({...newMember, gameId: e.target.value})}
+                className="col-span-3 bg-dark-surface border-gray-700 text-white"
+                placeholder="Enter player game ID"
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">

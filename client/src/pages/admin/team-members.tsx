@@ -48,7 +48,8 @@ export default function TeamMembers() {
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [newMember, setNewMember] = useState({
-    playerName: "",
+    username: "",
+    gameId: "",
     role: "Player"
   });
 
@@ -99,7 +100,7 @@ export default function TeamMembers() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/admin/teams/${teamId}/members`] });
       setIsAddMemberOpen(false);
-      setNewMember({ playerName: "", role: "Player" });
+      setNewMember({ username: "", gameId: "", role: "Player" });
       toast({
         title: "Member added",
         description: "The team member has been added successfully",
@@ -162,7 +163,7 @@ export default function TeamMembers() {
   };
 
   const handleAddMember = () => {
-    if (!newMember.playerName) {
+    if (!newMember.username) {
       toast({
         title: "Missing information",
         description: "Please provide a player name",
@@ -173,12 +174,12 @@ export default function TeamMembers() {
 
     // Validate team size based on game type
     const currentMemberCount = members.length;
-    const maxMembers = getMaxTeamSizeByGameType(team?.gameType);
+    const maxMembers = getMaxTeamSizeByGameType(team?.gameType || "BGMI");
     
     if (currentMemberCount >= maxMembers) {
       toast({
         title: "Team is full",
-        description: `Maximum ${maxMembers} members allowed for ${team?.gameType} teams`,
+        description: `Maximum ${maxMembers} members allowed for ${team?.gameType || "BGMI"} teams`,
         variant: "destructive",
       });
       return;
@@ -186,13 +187,14 @@ export default function TeamMembers() {
 
     addMemberMutation.mutate({
       teamId,
-      playerName: newMember.playerName,
+      username: newMember.username,
+      gameId: newMember.gameId || team?.gameType || "BGMI",
       role: newMember.role
     });
   };
 
-  const handleDeleteMember = (memberId: number, memberName: string) => {
-    if (confirm(`Are you sure you want to remove ${memberName} from the team?`)) {
+  const handleDeleteMember = (memberId: number, username: string) => {
+    if (confirm(`Are you sure you want to remove ${username} from the team?`)) {
       deleteMemberMutation.mutate(memberId);
     }
   };
@@ -329,7 +331,7 @@ export default function TeamMembers() {
                       <TableCell className="font-medium text-white">
                         <div className="flex items-center gap-2">
                           <UserSquare2 className="h-4 w-4 text-indigo-400" />
-                          {member.playerName}
+                          {member.username}
                         </div>
                       </TableCell>
                       <TableCell className="text-gray-300">
@@ -341,7 +343,7 @@ export default function TeamMembers() {
                         <Button 
                           variant="ghost" 
                           size="sm"
-                          onClick={() => handleDeleteMember(member.id, member.playerName)}
+                          onClick={() => handleDeleteMember(member.id, member.username)}
                           className="h-8 text-red-500 hover:text-red-700 hover:bg-red-500/10"
                         >
                           <Trash className="mr-2 h-4 w-4" />
@@ -376,13 +378,13 @@ export default function TeamMembers() {
 
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="playerName" className="text-right">
+              <Label htmlFor="username" className="text-right">
                 Player Name
               </Label>
               <Input
-                id="playerName"
-                value={newMember.playerName}
-                onChange={(e) => setNewMember({...newMember, playerName: e.target.value})}
+                id="username"
+                value={newMember.username}
+                onChange={(e) => setNewMember({...newMember, username: e.target.value})}
                 className="col-span-3 bg-dark-surface border-gray-700 text-white"
                 placeholder="Enter player name"
               />

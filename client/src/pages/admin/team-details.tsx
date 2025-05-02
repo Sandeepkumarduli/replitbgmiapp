@@ -292,55 +292,127 @@ export default function TeamDetails() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="bg-dark-card border-gray-800 md:col-span-2">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className="text-white flex items-center">
-                    <Users className="mr-2 h-5 w-5 text-primary" />
-                    Team Details
-                  </CardTitle>
-                  <CardDescription className="text-gray-400">
-                    View and edit team information
-                  </CardDescription>
+        {/* Banner Card with Team Info */}
+        <Card className="bg-gradient-to-r from-dark-card to-dark-surface border-gray-800 overflow-hidden mb-6">
+          <div className="relative">
+            <div className="absolute inset-0 bg-primary/5 pointer-events-none"></div>
+            <CardContent className="p-6">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="h-16 w-16 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center">
+                    <Users className="h-8 w-8 text-primary" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-white">
+                      {team?.name}
+                    </h2>
+                    <div className="flex items-center mt-1 gap-3">
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium bg-primary/20 text-primary border border-primary/30`}>
+                        {team?.gameType || "BGMI"}
+                      </span>
+                      <span className="text-sm text-gray-400">
+                        {members.length} {members.length === 1 ? 'member' : 'members'}
+                      </span>
+                      <span className="text-sm text-gray-400">
+                        Created {team?.createdAt ? format(new Date(team.createdAt), "MMM d, yyyy") : "Unknown"}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div className="mt-1">
-                  <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-                    team?.gameType === "BGMI" 
-                      ? "bg-indigo-900/50 text-indigo-300 border border-indigo-800" 
-                      : team?.gameType === "COD" 
-                        ? "bg-amber-900/50 text-amber-300 border border-amber-800"
-                        : "bg-emerald-900/50 text-emerald-300 border border-emerald-800"
-                  }`}>
-                    {team?.gameType || "BGMI"}
-                  </span>
+                <div className="flex flex-wrap gap-2 mt-4 md:mt-0">
+                  <Button 
+                    onClick={() => navigate(`/admin/teams/${teamId}/members`)}
+                    className="flex items-center gap-2 bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30"
+                  >
+                    <UserCog className="h-4 w-4" />
+                    Manage Members
+                  </Button>
+                  {!isEditing ? (
+                    <Button 
+                      onClick={() => setIsEditing(true)}
+                      className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white"
+                    >
+                      <Edit className="h-4 w-4" />
+                      Edit Team
+                    </Button>
+                  ) : (
+                    <Button 
+                      onClick={handleUpdate}
+                      className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white"
+                      disabled={updateTeamMutation.isPending}
+                    >
+                      {updateTeamMutation.isPending ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4" />
+                          Save Changes
+                        </>
+                      )}
+                    </Button>
+                  )}
+                  <Button 
+                    onClick={handleDelete}
+                    variant="destructive"
+                    className="flex items-center gap-2"
+                    disabled={deleteTeamMutation.isPending}
+                  >
+                    {deleteTeamMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Deleting...
+                      </>
+                    ) : (
+                      <>
+                        <Trash className="h-4 w-4" />
+                        Delete
+                      </>
+                    )}
+                  </Button>
                 </div>
               </div>
+            </CardContent>
+          </div>
+        </Card>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Team Details Card */}
+          <Card className="bg-dark-card border-gray-800 lg:col-span-2">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center">
+                <Users className="mr-2 h-5 w-5 text-primary" />
+                Team Details
+              </CardTitle>
+              <CardDescription className="text-gray-400">
+                View and edit team information
+              </CardDescription>
             </CardHeader>
             <CardContent>
               {isEditing ? (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="teamName" className="text-right text-white">
+                <div className="space-y-6 p-2">
+                  <div className="grid grid-cols-1 md:grid-cols-4 items-center gap-4">
+                    <Label htmlFor="teamName" className="md:text-right text-white">
                       Team Name
                     </Label>
                     <Input
                       id="teamName"
                       value={editableTeam.name}
                       onChange={(e) => setEditableTeam({...editableTeam, name: e.target.value})}
-                      className="col-span-3 bg-dark-surface border-gray-700 text-white"
+                      className="md:col-span-3 bg-dark-surface border-gray-700 text-white"
                     />
                   </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="gameType" className="text-right text-white">
+                  <div className="grid grid-cols-1 md:grid-cols-4 items-center gap-4">
+                    <Label htmlFor="gameType" className="md:text-right text-white">
                       Game
                     </Label>
                     <Select
                       value={editableTeam.gameType}
                       onValueChange={(value) => setEditableTeam({...editableTeam, gameType: value})}
                     >
-                      <SelectTrigger className="col-span-3 bg-dark-surface border-gray-700 text-white">
+                      <SelectTrigger className="md:col-span-3 bg-dark-surface border-gray-700 text-white">
                         <SelectValue placeholder="Select game" />
                       </SelectTrigger>
                       <SelectContent className="bg-dark-surface border-gray-700 text-white">
@@ -350,31 +422,32 @@ export default function TeamDetails() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="grid grid-cols-4 items-start gap-4">
-                    <Label htmlFor="teamDescription" className="text-right mt-2 text-white">
+                  <div className="grid grid-cols-1 md:grid-cols-4 items-start gap-4">
+                    <Label htmlFor="teamDescription" className="md:text-right mt-2 text-white">
                       Description
                     </Label>
                     <Textarea
                       id="teamDescription"
                       value={editableTeam.description}
                       onChange={(e) => setEditableTeam({...editableTeam, description: e.target.value})}
-                      className="col-span-3 min-h-[100px] bg-dark-surface border-gray-700 text-white"
+                      className="md:col-span-3 min-h-[120px] bg-dark-surface border-gray-700 text-white"
+                      placeholder="Enter a description for your team"
                     />
                   </div>
                 </div>
               ) : (
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-400 mb-1">Description</h3>
+                <div className="space-y-6 p-2">
+                  <div className="bg-dark-surface p-4 rounded-md border border-gray-700">
+                    <h3 className="text-sm font-medium text-primary mb-2">Description</h3>
                     <p className="text-white">{team?.description || "No description provided."}</p>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-400 mb-1">Created</h3>
+                    <div className="bg-dark-surface p-4 rounded-md border border-gray-700">
+                      <h3 className="text-sm font-medium text-primary mb-2">Created</h3>
                       <p className="text-white">{team?.createdAt ? format(new Date(team.createdAt), "MMMM d, yyyy") : "Unknown"}</p>
                     </div>
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-400 mb-1">Team ID</h3>
+                    <div className="bg-dark-surface p-4 rounded-md border border-gray-700">
+                      <h3 className="text-sm font-medium text-primary mb-2">Team ID</h3>
                       <p className="text-white">{team?.id}</p>
                     </div>
                   </div>
@@ -383,9 +456,13 @@ export default function TeamDetails() {
             </CardContent>
           </Card>
 
+          {/* Team Owner Card */}
           <Card className="bg-dark-card border-gray-800">
             <CardHeader>
-              <CardTitle className="text-white">Team Owner</CardTitle>
+              <CardTitle className="text-white flex items-center">
+                <UserCog className="mr-2 h-5 w-5 text-primary" />
+                Team Owner
+              </CardTitle>
               <CardDescription className="text-gray-400">
                 The user who manages this team
               </CardDescription>
@@ -396,31 +473,39 @@ export default function TeamDetails() {
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 </div>
               ) : owner ? (
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-400 mb-1">Username</h3>
-                    <p className="text-white font-medium">{owner.username}</p>
+                <div className="bg-dark-surface p-4 rounded-md border border-gray-700">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="h-12 w-12 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center">
+                      <span className="text-primary font-bold text-lg">
+                        {(owner.username || "?")[0]?.toUpperCase() || "?"}
+                      </span>
+                    </div>
+                    <div>
+                      <h3 className="text-white font-semibold">{owner.username}</h3>
+                      <p className="text-gray-400 text-sm capitalize">{owner.role}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-400 mb-1">Email</h3>
-                    <p className="text-white">{owner.email}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-400 mb-1">Role</h3>
-                    <p className="text-white capitalize">{owner.role}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-400 mb-1">ID</h3>
-                    <p className="text-white">{owner.id}</p>
+                  <div className="space-y-3 mt-4">
+                    <div>
+                      <h3 className="text-xs font-medium text-gray-400 mb-1">Email</h3>
+                      <p className="text-white text-sm bg-dark-card p-2 rounded border border-gray-800">{owner.email}</p>
+                    </div>
+                    <div>
+                      <h3 className="text-xs font-medium text-gray-400 mb-1">User ID</h3>
+                      <p className="text-white text-sm bg-dark-card p-2 rounded border border-gray-800">{owner.id}</p>
+                    </div>
                   </div>
                 </div>
               ) : (
-                <p className="text-gray-400 py-4">No owner information available</p>
+                <div className="text-center py-6 text-gray-400 bg-dark-surface p-4 rounded-md border border-gray-700">
+                  <p>No owner information available</p>
+                </div>
               )}
             </CardContent>
           </Card>
         </div>
 
+        {/* Team Members Card */}
         <Card className="bg-dark-card border-gray-800 mt-6">
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -430,12 +515,12 @@ export default function TeamDetails() {
                   Team Members
                 </CardTitle>
                 <CardDescription className="text-gray-400">
-                  Current members of this team
+                  Current members of this team ({members.length} / {team?.gameType === "BGMI" ? 4 : team?.gameType === "COD" ? 4 : 4})
                 </CardDescription>
               </div>
               <Button 
                 onClick={() => navigate(`/admin/teams/${teamId}/members`)}
-                className="flex items-center gap-2 bg-indigo-700 hover:bg-indigo-800 text-white"
+                className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white"
               >
                 <UserCog className="h-4 w-4" />
                 Manage Members
@@ -448,30 +533,43 @@ export default function TeamDetails() {
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : members.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {members.map((member: any) => (
-                  <Card key={member.id} className="bg-dark-surface border-gray-700">
-                    <CardContent className="pt-6">
-                      <div className="flex items-start space-x-4">
-                        <div className="h-10 w-10 rounded-full bg-indigo-700 flex items-center justify-center">
-                          <span className="text-white font-semibold">
-                            {(member.playerName || "?")[0]?.toUpperCase() || "?"}
+                  <div key={member.id} className="bg-dark-surface border border-gray-700 rounded-md p-4 hover:border-primary/30 transition-colors">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="h-10 w-10 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center flex-shrink-0">
+                        <span className="text-primary font-semibold">
+                          {(member.playerName || "?")[0]?.toUpperCase() || "?"}
+                        </span>
+                      </div>
+                      <div>
+                        <h3 className="text-white font-medium truncate">{member.playerName}</h3>
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full">
+                            {member.role || "Player"}
                           </span>
                         </div>
-                        <div className="space-y-1">
-                          <h3 className="text-white font-medium">{member.playerName}</h3>
-                          <p className="text-sm text-gray-400">{member.role || "Member"}</p>
-                          <p className="text-xs text-gray-500">ID: {member.id}</p>
-                        </div>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                    <div className="text-xs text-gray-500 pt-2 border-t border-gray-700">
+                      Member ID: {member.id}
+                    </div>
+                  </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-gray-400">
-                <p>No team members found.</p>
-                <p className="mt-2">Add team members to participate in tournaments.</p>
+              <div className="text-center py-10 bg-dark-surface border border-gray-700 rounded-md">
+                <Users className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+                <p className="text-white font-medium">No team members found</p>
+                <p className="mt-2 text-gray-400 max-w-md mx-auto">
+                  Add team members to participate in tournaments. Team size requirements depend on the tournament type.
+                </p>
+                <Button 
+                  onClick={() => navigate(`/admin/teams/${teamId}/members`)}
+                  className="mt-4 bg-primary hover:bg-primary/90 text-white"
+                >
+                  Add Members
+                </Button>
               </div>
             )}
           </CardContent>

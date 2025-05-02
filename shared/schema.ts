@@ -19,6 +19,7 @@ export const teams = pgTable("teams", {
   id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),
   ownerId: integer("owner_id").notNull().references(() => users.id),
+  gameType: text("game_type").notNull().default("BGMI"), // BGMI, COD, FREEFIRE
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -39,8 +40,9 @@ export const tournaments = pgTable("tournaments", {
   description: text("description").notNull(),
   date: timestamp("date").notNull(),
   mapType: text("map_type").notNull(), // Erangel, Miramar, Sanhok, Vikendi
-  gameType: text("game_type").notNull().default("Squad"), // Solo, Duo, Squad
-  teamType: text("team_type").notNull(), // Solo, Duo, Squad (legacy field - use gameType instead)
+  gameMode: text("game_mode").notNull().default("Squad"), // Solo, Duo, Squad
+  teamType: text("team_type").notNull(), // Solo, Duo, Squad (legacy field - use gameMode instead)
+  gameType: text("game_type").notNull().default("BGMI"), // BGMI, COD, FREEFIRE
   isPaid: boolean("is_paid").notNull(),
   entryFee: integer("entry_fee").default(0),
   prizePool: integer("prize_pool").default(0),
@@ -94,6 +96,7 @@ export const updateTournamentSchema = z.object({
   description: z.string().optional(),
   date: z.coerce.date().optional(),
   mapType: z.string().optional(),
+  gameMode: z.string().optional(),
   gameType: z.string().optional(),
   teamType: z.string().optional(),
   isPaid: z.boolean().optional(),

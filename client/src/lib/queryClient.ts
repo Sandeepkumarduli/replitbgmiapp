@@ -6,15 +6,25 @@ async function throwIfResNotOk(res: Response) {
     try {
       const textData = await res.text();
       if (textData) {
-        const jsonData = JSON.parse(textData);
-        if (jsonData.message) {
-          errorMessage = typeof jsonData.message === 'string' 
-            ? jsonData.message 
-            : JSON.stringify(jsonData.message);
+        // Skip parse if it looks like HTML (contains <!DOCTYPE or <html)
+        if (textData.includes('<!DOCTYPE') || textData.includes('<html')) {
+          errorMessage = 'Server returned an HTML response instead of JSON. Please try again.';
+        } else {
+          try {
+            const jsonData = JSON.parse(textData);
+            if (jsonData.message) {
+              errorMessage = typeof jsonData.message === 'string' 
+                ? jsonData.message 
+                : JSON.stringify(jsonData.message);
+            }
+          } catch (parseError) {
+            // If JSON parsing fails, use the text data as the error message
+            errorMessage = textData;
+          }
         }
       }
     } catch (e) {
-      // If parsing fails, use the status text
+      // If any error happens during text extraction, use the status text
       errorMessage = res.statusText;
     }
     throw new Error(errorMessage);
@@ -33,7 +43,11 @@ export async function apiRequest(
     credentials: "include",
   });
 
-  await throwIfResNotOk(res);
+  // Clone the response before checking its status/ok
+  // so we can still return the original response after checks
+  const resClone = res.clone();
+  await throwIfResNotOk(resClone);
+  
   return res;
 }
 
@@ -52,7 +66,13 @@ export const getQueryFn: <T>(options: {
     }
 
     await throwIfResNotOk(res);
-    return await res.json();
+    
+    try {
+      return await res.json();
+    } catch (error) {
+      console.error("Failed to parse JSON response:", error);
+      throw new Error("Failed to parse server response. Please try again.");
+    }
   };
 
 export const queryClient = new QueryClient({

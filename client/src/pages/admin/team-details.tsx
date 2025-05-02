@@ -330,7 +330,7 @@ export default function TeamDetails() {
                   {!isEditing ? (
                     <Button 
                       onClick={() => setIsEditing(true)}
-                      className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white"
+                      className="flex items-center gap-2 bg-[#6c2dc7] hover:bg-[#6c2dc7]/90 text-white"
                     >
                       <Edit className="h-4 w-4" />
                       Edit Team
@@ -338,7 +338,7 @@ export default function TeamDetails() {
                   ) : (
                     <Button 
                       onClick={handleUpdate}
-                      className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white"
+                      className="flex items-center gap-2 bg-[#6c2dc7] hover:bg-[#6c2dc7]/90 text-white"
                       disabled={updateTeamMutation.isPending}
                     >
                       {updateTeamMutation.isPending ? (
@@ -447,7 +447,7 @@ export default function TeamDetails() {
                       <p className="text-white">{team?.createdAt ? format(new Date(team.createdAt), "MMMM d, yyyy") : "Unknown"}</p>
                     </div>
                     <div className="bg-dark-surface p-4 rounded-md border border-gray-700">
-                      <h3 className="text-sm font-medium text-primary mb-2">Team ID</h3>
+                      <h3 className="text-sm font-medium text-[#9f6dff] mb-2">Team ID</h3>
                       <p className="text-white">{team?.id}</p>
                     </div>
                   </div>
@@ -470,13 +470,13 @@ export default function TeamDetails() {
             <CardContent>
               {isOwnerLoading ? (
                 <div className="flex justify-center py-4">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  <Loader2 className="h-6 w-6 animate-spin text-[#6c2dc7]" />
                 </div>
               ) : owner ? (
                 <div className="bg-dark-surface p-4 rounded-md border border-gray-700">
                   <div className="flex items-center gap-4 mb-4">
-                    <div className="h-12 w-12 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center">
-                      <span className="text-primary font-bold text-lg">
+                    <div className="h-12 w-12 rounded-full bg-[#6c2dc7]/20 border border-[#6c2dc7]/30 flex items-center justify-center">
+                      <span className="text-[#6c2dc7] font-bold text-lg">
                         {(owner.username || "?")[0]?.toUpperCase() || "?"}
                       </span>
                     </div>
@@ -520,7 +520,7 @@ export default function TeamDetails() {
               </div>
               <Button 
                 onClick={() => navigate(`/admin/teams/${teamId}/members`)}
-                className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white"
+                className="flex items-center gap-2 bg-[#6c2dc7] hover:bg-[#6c2dc7]/90 text-white"
               >
                 <UserCog className="h-4 w-4" />
                 Manage Members
@@ -530,22 +530,22 @@ export default function TeamDetails() {
           <CardContent>
             {isMembersLoading ? (
               <div className="flex justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <Loader2 className="h-8 w-8 animate-spin text-[#6c2dc7]" />
               </div>
             ) : members.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {members.map((member: any) => (
-                  <div key={member.id} className="bg-dark-surface border border-gray-700 rounded-md p-4 hover:border-primary/30 transition-colors">
+                  <div key={member.id} className="bg-dark-surface border border-gray-700 rounded-md p-4 hover:border-[#6c2dc7]/30 transition-colors">
                     <div className="flex items-center gap-3 mb-3">
-                      <div className="h-10 w-10 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center flex-shrink-0">
-                        <span className="text-primary font-semibold">
+                      <div className="h-10 w-10 rounded-full bg-[#6c2dc7]/20 border border-[#6c2dc7]/30 flex items-center justify-center flex-shrink-0">
+                        <span className="text-[#6c2dc7] font-semibold">
                           {(member.playerName || "?")[0]?.toUpperCase() || "?"}
                         </span>
                       </div>
                       <div>
                         <h3 className="text-white font-medium truncate">{member.playerName}</h3>
                         <div className="flex items-center gap-2">
-                          <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full">
+                          <span className="px-2 py-0.5 bg-[#6c2dc7]/10 text-[#9f6dff] text-xs rounded-full">
                             {member.role || "Player"}
                           </span>
                         </div>
@@ -566,7 +566,7 @@ export default function TeamDetails() {
                 </p>
                 <Button 
                   onClick={() => navigate(`/admin/teams/${teamId}/members`)}
-                  className="mt-4 bg-primary hover:bg-primary/90 text-white"
+                  className="mt-4 bg-[#6c2dc7] hover:bg-[#6c2dc7]/90 text-white"
                 >
                   Add Members
                 </Button>

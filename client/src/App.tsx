@@ -19,6 +19,8 @@ import AdminDashboard from "@/pages/admin/dashboard";
 import CreateTournament from "@/pages/admin/create-tournament";
 import EditTournament from "@/pages/admin/edit-tournament";
 import AdminTeams from "@/pages/admin/teams";
+import AdminTeamDetails from "@/pages/admin/team-details";
+import AdminTeamMembers from "@/pages/admin/team-members";
 import AdminUsers from "@/pages/admin/users";
 import AdminManagement from "@/pages/admin/admins";
 import AdminUserDetails from "@/pages/admin/user-details";
@@ -140,6 +142,8 @@ function Router() {
           <ProtectedRoute path="/admin/tournaments" component={AdminTournaments} adminOnly={true}/>
           <ProtectedRoute path="/admin/tournaments/create" component={CreateTournament} adminOnly={true}/>
           <ProtectedRoute path="/admin/teams" component={AdminTeams} adminOnly={true}/>
+          <ProtectedRoute path="/admin/teams/:id" component={AdminTeamDetails} adminOnly={true}/>
+          <ProtectedRoute path="/admin/teams/:id/members" component={AdminTeamMembers} adminOnly={true}/>
           <ProtectedRoute path="/admin/users" component={AdminUsers} adminOnly={true}/>
           <ProtectedRoute path="/admin/users/:id" component={AdminUserDetails} adminOnly={true}/>
           <ProtectedRoute path="/admin/admins" component={AdminManagement} adminOnly={true}/>

@@ -31,6 +31,9 @@ import Tournaments from "@/pages/tournaments";
 import TournamentDetails from "@/pages/tournament-details";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
+import AboutPage from "@/pages/about";
+import ContactPage from "@/pages/contact";
+import GamesPage from "@/pages/games";
 
 // Protected Routes Components
 function ProtectedRoute({ component: Component, adminOnly = false, ...rest }: { 
@@ -158,6 +161,9 @@ function Router() {
           {/* Public Routes */}
           <Route path="/tournaments" component={Tournaments}/>
           <Route path="/tournaments/:id" component={TournamentDetails}/>
+          <Route path="/about" component={AboutPage}/>
+          <Route path="/contact" component={ContactPage}/>
+          <Route path="/games" component={GamesPage}/>
           <Route component={NotFound} />
         </Switch>
       </div>

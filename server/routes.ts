@@ -1133,6 +1133,128 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get specific team details (admin only)
+  app.get("/api/admin/teams/:id", isEnhancedAdmin, async (req, res) => {
+    try {
+      const teamId = parseInt(req.params.id);
+      
+      if (isNaN(teamId)) {
+        return res.status(400).json({ message: "Invalid team ID" });
+      }
+      
+      const team = await storage.getTeam(teamId);
+      
+      if (!team) {
+        return res.status(404).json({ message: "Team not found" });
+      }
+      
+      res.json(team);
+    } catch (error) {
+      console.error("Error in GET /api/admin/teams/:id:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Get team members for a specific team (admin only)
+  app.get("/api/admin/teams/:id/members", isEnhancedAdmin, async (req, res) => {
+    try {
+      const teamId = parseInt(req.params.id);
+      
+      if (isNaN(teamId)) {
+        return res.status(400).json({ message: "Invalid team ID" });
+      }
+      
+      const team = await storage.getTeam(teamId);
+      
+      if (!team) {
+        return res.status(404).json({ message: "Team not found" });
+      }
+      
+      const members = await storage.getTeamMembers(teamId);
+      res.json(members);
+    } catch (error) {
+      console.error("Error in GET /api/admin/teams/:id/members:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Delete team member (admin only)
+  app.delete("/api/admin/teams/:teamId/members/:memberId", isEnhancedAdmin, async (req, res) => {
+    try {
+      const teamId = parseInt(req.params.teamId);
+      const memberId = parseInt(req.params.memberId);
+      
+      if (isNaN(teamId) || isNaN(memberId)) {
+        return res.status(400).json({ message: "Invalid ID format" });
+      }
+      
+      const teamMember = await storage.getTeamMember(memberId);
+      
+      if (!teamMember) {
+        return res.status(404).json({ message: "Team member not found" });
+      }
+      
+      if (teamMember.teamId !== teamId) {
+        return res.status(400).json({ message: "Member does not belong to this team" });
+      }
+      
+      const result = await storage.deleteTeamMember(memberId);
+      
+      if (result) {
+        res.status(200).json({ message: "Team member deleted successfully" });
+      } else {
+        res.status(500).json({ message: "Failed to delete team member" });
+      }
+    } catch (error) {
+      console.error("Error in DELETE /api/admin/teams/:teamId/members/:memberId:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Add team member (admin only)
+  app.post("/api/admin/teams/:id/members", isEnhancedAdmin, async (req, res) => {
+    try {
+      const teamId = parseInt(req.params.id);
+      
+      if (isNaN(teamId)) {
+        return res.status(400).json({ message: "Invalid team ID" });
+      }
+      
+      const team = await storage.getTeam(teamId);
+      
+      if (!team) {
+        return res.status(404).json({ message: "Team not found" });
+      }
+      
+      // Get current team members
+      const currentMembers = await storage.getTeamMembers(teamId);
+      
+      // Check if team is full (4 members for squad, 2 for duo)
+      if (team.gameType === 'Squad' && currentMembers.length >= 4) {
+        return res.status(400).json({ message: "Squad teams can have maximum 4 members" });
+      } else if (team.gameType === 'Duo' && currentMembers.length >= 2) {
+        return res.status(400).json({ message: "Duo teams can have maximum 2 members" });
+      }
+      
+      // Check if player name already exists in the team
+      if (currentMembers.some(member => member.username === req.body.playerName)) {
+        return res.status(400).json({ message: "Player already exists in this team" });
+      }
+      
+      const newMember = await storage.addTeamMember({
+        teamId,
+        username: req.body.playerName,
+        role: req.body.role || "Player",
+        gameId: req.body.gameId || ""
+      });
+      
+      res.status(201).json(newMember);
+    } catch (error) {
+      console.error("Error in POST /api/admin/teams/:id/members:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
   // Delete team through admin panel (admin only, with enhanced security)
   app.delete("/api/admin/teams/:id", isEnhancedAdmin, async (req, res) => {
     try {

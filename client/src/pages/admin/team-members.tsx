@@ -64,7 +64,8 @@ export default function TeamMembers() {
   interface TeamMember {
     id: number;
     teamId: number;
-    playerName: string;
+    username: string;
+    gameId: string;
     role: string;
   }
 

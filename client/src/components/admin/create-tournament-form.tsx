@@ -110,7 +110,7 @@ export function TournamentForm({ tournament, isEditing = false }: TournamentForm
       const dataToSend: DataToSend = {
         ...values,
         // Convert date to ISO string format
-        date: values.date.toISOString(),
+        date: values.date instanceof Date ? values.date.toISOString() : values.date,
       };
       
       // For PATCH requests, we need to include the id in the request body

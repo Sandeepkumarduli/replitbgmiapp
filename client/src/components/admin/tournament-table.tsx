@@ -250,6 +250,7 @@ export function TournamentTable() {
             <TableRow className="border-gray-800 hover:bg-transparent">
               <TableHead className="text-gray-400 w-[250px]">Title</TableHead>
               <TableHead className="text-gray-400">Date</TableHead>
+              <TableHead className="text-gray-400">Game</TableHead>
               <TableHead className="text-gray-400">Type</TableHead>
               <TableHead className="text-gray-400">Map</TableHead>
               <TableHead className="text-gray-400">Status</TableHead>
@@ -258,12 +259,23 @@ export function TournamentTable() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {tournaments && tournaments.length > 0 ? (
-              tournaments.map((tournament) => (
+            {filteredTournaments && filteredTournaments.length > 0 ? (
+              filteredTournaments.map((tournament) => (
                 <TableRow key={tournament.id} className="border-gray-800 hover:bg-dark-surface/50">
                   <TableCell className="font-medium text-white">{tournament.title}</TableCell>
                   <TableCell className="text-gray-300">
                     {format(parseISO(tournament.date.toString()), "MMM d, yyyy h:mm a")}
+                  </TableCell>
+                  <TableCell>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      tournament.gameType === 'BGMI' 
+                        ? 'bg-blue-600/20 text-blue-400'
+                        : tournament.gameType === 'FREEFIRE'
+                          ? 'bg-red-600/20 text-red-400'
+                          : 'bg-green-600/20 text-green-400'
+                    }`}>
+                      {tournament.gameType}
+                    </span>
                   </TableCell>
                   <TableCell className="text-gray-300">{tournament.teamType}</TableCell>
                   <TableCell className="text-gray-300">{tournament.mapType}</TableCell>
@@ -317,7 +329,7 @@ export function TournamentTable() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-gray-400">
+                <TableCell colSpan={8} className="text-center py-8 text-gray-400">
                   No tournaments found. Create your first tournament.
                 </TableCell>
               </TableRow>

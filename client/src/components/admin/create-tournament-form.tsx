@@ -104,13 +104,13 @@ export function TournamentForm({ tournament, isEditing = false }: TournamentForm
       
       console.log(`Making ${method} request to ${url} with data:`, values);
       
-      // Create a type with optional id for our data 
-      type DataToSend = FormValues & { date: string; id?: number };
+      // Create a type with optional id for our data and a date that can be string
+      type DataToSend = Omit<FormValues, 'date'> & { date: string; id?: number };
       
       const dataToSend: DataToSend = {
         ...values,
         // Convert date to ISO string format
-        date: values.date instanceof Date ? values.date.toISOString() : values.date,
+        date: values.date instanceof Date ? values.date.toISOString() : String(values.date),
       };
       
       // For PATCH requests, we need to include the id in the request body

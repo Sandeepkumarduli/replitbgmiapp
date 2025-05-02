@@ -43,15 +43,21 @@ export default function Navbar() {
               <Link href="/tournaments" className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${isActive("/tournaments") ? "border-primary text-white" : "border-transparent text-gray-300 hover:text-white hover:border-accent"}`}>
                 Tournaments
               </Link>
-              <Link href="/games" className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${isActive("/games") ? "border-primary text-white" : "border-transparent text-gray-300 hover:text-white hover:border-accent"}`}>
-                Games
-              </Link>
-              <Link href="/about" className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${isActive("/about") ? "border-primary text-white" : "border-transparent text-gray-300 hover:text-white hover:border-accent"}`}>
-                About
-              </Link>
-              <Link href="/contact" className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${isActive("/contact") ? "border-primary text-white" : "border-transparent text-gray-300 hover:text-white hover:border-accent"}`}>
-                Contact
-              </Link>
+              
+              {/* Only show Games, About, Contact for non-admin users */}
+              {!isAdmin && (
+                <>
+                  <Link href="/games" className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${isActive("/games") ? "border-primary text-white" : "border-transparent text-gray-300 hover:text-white hover:border-accent"}`}>
+                    Games
+                  </Link>
+                  <Link href="/about" className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${isActive("/about") ? "border-primary text-white" : "border-transparent text-gray-300 hover:text-white hover:border-accent"}`}>
+                    About
+                  </Link>
+                  <Link href="/contact" className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${isActive("/contact") ? "border-primary text-white" : "border-transparent text-gray-300 hover:text-white hover:border-accent"}`}>
+                    Contact
+                  </Link>
+                </>
+              )}
               {isAuthenticated && !isAdmin && (
                 <Link href="/user/team" className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${isActive("/user/team") ? "border-primary text-white" : "border-transparent text-gray-300 hover:text-white hover:border-accent"}`}>
                   Teams
@@ -143,18 +149,24 @@ export default function Navbar() {
             <Trophy className="h-4 w-4 inline mr-2" />
             Tournaments
           </Link>
-          <Link href="/games" className={`block pl-3 pr-4 py-2 text-base font-medium ${isActive("/games") ? "bg-primary text-white" : "text-gray-300 hover:bg-dark-card hover:text-white"}`}>
-            <Gamepad className="h-4 w-4 inline mr-2" />
-            Games
-          </Link>
-          <Link href="/about" className={`block pl-3 pr-4 py-2 text-base font-medium ${isActive("/about") ? "bg-primary text-white" : "text-gray-300 hover:bg-dark-card hover:text-white"}`}>
-            <Info className="h-4 w-4 inline mr-2" />
-            About
-          </Link>
-          <Link href="/contact" className={`block pl-3 pr-4 py-2 text-base font-medium ${isActive("/contact") ? "bg-primary text-white" : "text-gray-300 hover:bg-dark-card hover:text-white"}`}>
-            <Mail className="h-4 w-4 inline mr-2" />
-            Contact
-          </Link>
+          
+          {/* Only show Games, About, Contact for non-admin users */}
+          {!isAdmin && (
+            <>
+              <Link href="/games" className={`block pl-3 pr-4 py-2 text-base font-medium ${isActive("/games") ? "bg-primary text-white" : "text-gray-300 hover:bg-dark-card hover:text-white"}`}>
+                <Gamepad className="h-4 w-4 inline mr-2" />
+                Games
+              </Link>
+              <Link href="/about" className={`block pl-3 pr-4 py-2 text-base font-medium ${isActive("/about") ? "bg-primary text-white" : "text-gray-300 hover:bg-dark-card hover:text-white"}`}>
+                <Info className="h-4 w-4 inline mr-2" />
+                About
+              </Link>
+              <Link href="/contact" className={`block pl-3 pr-4 py-2 text-base font-medium ${isActive("/contact") ? "bg-primary text-white" : "text-gray-300 hover:bg-dark-card hover:text-white"}`}>
+                <Mail className="h-4 w-4 inline mr-2" />
+                Contact
+              </Link>
+            </>
+          )}
           {isAuthenticated && !isAdmin && (
             <Link href="/user/team" className={`block pl-3 pr-4 py-2 text-base font-medium ${isActive("/user/team") ? "bg-primary text-white" : "text-gray-300 hover:bg-dark-card hover:text-white"}`}>
               <Users className="h-4 w-4 inline mr-2" />

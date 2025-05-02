@@ -27,9 +27,16 @@ type TournamentListProps = {
   showRegisteredOnly?: boolean;
   limit?: number;
   gameTypeFilter?: 'BGMI' | 'COD' | 'FREEFIRE' | null;
+  searchTerm?: string;
 };
 
-export function TournamentList({ filter, showRegisteredOnly = false, limit, gameTypeFilter = null }: TournamentListProps) {
+export function TournamentList({ 
+  filter, 
+  showRegisteredOnly = false, 
+  limit, 
+  gameTypeFilter = null,
+  searchTerm = ""
+}: TournamentListProps) {
   const [registerDialogOpen, setRegisterDialogOpen] = useState(false);
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
   const [selectedTeamId, setSelectedTeamId] = useState<string>("");
@@ -179,6 +186,18 @@ export function TournamentList({ filter, showRegisteredOnly = false, limit, game
   if (gameTypeFilter) {
     displayTournaments = displayTournaments.filter(t => t.gameType === gameTypeFilter);
   }
+  
+  // Apply search filter if specified
+  if (searchTerm.trim()) {
+    const lowercaseSearch = searchTerm.toLowerCase().trim();
+    displayTournaments = displayTournaments.filter(t => 
+      t.title.toLowerCase().includes(lowercaseSearch) || 
+      (t.description && t.description.toLowerCase().includes(lowercaseSearch)) ||
+      t.mapType.toLowerCase().includes(lowercaseSearch) ||
+      t.teamType.toLowerCase().includes(lowercaseSearch) ||
+      (t.gameType && t.gameType.toLowerCase().includes(lowercaseSearch))
+    );
+  }
 
   // Limit number of tournaments if specified
   if (limit && displayTournaments.length > limit) {
@@ -287,7 +306,12 @@ export function TournamentList({ filter, showRegisteredOnly = false, limit, game
   );
 }
 
-export function TournamentListWithTabs() {
+type TournamentListWithTabsProps = {
+  gameTypeFilter?: 'BGMI' | 'COD' | 'FREEFIRE' | null;
+  searchTerm?: string;
+};
+
+export function TournamentListWithTabs({ gameTypeFilter = null, searchTerm = "" }: TournamentListWithTabsProps) {
   return (
     <Tabs defaultValue="all" className="w-full">
       <TabsList className="mb-6 bg-dark-surface border border-gray-800">
@@ -306,19 +330,19 @@ export function TournamentListWithTabs() {
       </TabsList>
       
       <TabsContent value="all" className="mt-0">
-        <TournamentList />
+        <TournamentList gameTypeFilter={gameTypeFilter} searchTerm={searchTerm} />
       </TabsContent>
       
       <TabsContent value="live" className="mt-0">
-        <TournamentList filter="live" />
+        <TournamentList filter="live" gameTypeFilter={gameTypeFilter} searchTerm={searchTerm} />
       </TabsContent>
       
       <TabsContent value="upcoming" className="mt-0">
-        <TournamentList filter="upcoming" />
+        <TournamentList filter="upcoming" gameTypeFilter={gameTypeFilter} searchTerm={searchTerm} />
       </TabsContent>
       
       <TabsContent value="completed" className="mt-0">
-        <TournamentList filter="completed" />
+        <TournamentList filter="completed" gameTypeFilter={gameTypeFilter} searchTerm={searchTerm} />
       </TabsContent>
     </Tabs>
   );

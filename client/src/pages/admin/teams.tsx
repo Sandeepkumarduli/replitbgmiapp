@@ -277,18 +277,20 @@ export default function AdminTeams() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="bg-dark-card border-gray-700 text-white">
-                          <Link href={`/admin/teams/${team.id}`}>
-                            <DropdownMenuItem className="cursor-pointer hover:bg-dark-surface">
-                              <Eye className="mr-2 h-4 w-4" />
-                              <span>View Details</span>
-                            </DropdownMenuItem>
-                          </Link>
-                          <Link href={`/admin/teams/${team.id}/members`}>
-                            <DropdownMenuItem className="cursor-pointer hover:bg-dark-surface">
-                              <UserCog className="mr-2 h-4 w-4" />
-                              <span>Manage Members</span>
-                            </DropdownMenuItem>
-                          </Link>
+                          <DropdownMenuItem 
+                            className="cursor-pointer hover:bg-dark-surface"
+                            onClick={() => navigate(`/admin/teams/${team.id}`)}
+                          >
+                            <Eye className="mr-2 h-4 w-4" />
+                            <span>View Details</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="cursor-pointer hover:bg-dark-surface"
+                            onClick={() => navigate(`/admin/teams/${team.id}/members`)}
+                          >
+                            <UserCog className="mr-2 h-4 w-4" />
+                            <span>Manage Members</span>
+                          </DropdownMenuItem>
                           <DropdownMenuItem 
                             className="cursor-pointer hover:bg-dark-surface text-red-500"
                             onClick={() => handleDeleteTeam(team.id, team.name)}

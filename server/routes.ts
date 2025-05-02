@@ -558,10 +558,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Get tournament details and type (Squad, Duo, Solo)
-      const tournamentType = tournament.gameType || 'Squad'; // Default to Squad if not specified
+      const tournamentType = tournament.teamType?.toLowerCase() || 'squad'; // Default to Squad if not specified
       
       // Check if team registration is needed (Solo tournaments don't need teams)
-      if (tournamentType.toLowerCase() === 'solo') {
+      if (tournamentType === 'solo') {
         // For Solo tournaments, the user registers directly without a team
         // The teamId will be the same as userId (user represents themselves)
         // Check if user is already registered
@@ -574,7 +574,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Check if tournament is already full
         const registrations = await storage.getRegistrationsByTournament(tournamentId);
-        if (registrations.length >= tournament.slots) {
+        if (registrations.length >= tournament.totalSlots) {
           return res.status(400).json({ message: "Tournament is already full" });
         }
         
@@ -607,13 +607,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const teamMembers = await storage.getTeamMembers(teamId);
       
       // Validate team size based on tournament type
-      if (tournamentType.toLowerCase() === 'squad' && teamMembers.length < 4) {
+      if (tournamentType === 'squad' && teamMembers.length < 4) {
         return res.status(400).json({ 
           message: "Squad tournaments require at least 4 team members", 
           currentSize: teamMembers.length,
           requiredSize: 4
         });
-      } else if (tournamentType.toLowerCase() === 'duo' && teamMembers.length < 2) {
+      } else if (tournamentType === 'duo' && teamMembers.length < 2) {
         return res.status(400).json({ 
           message: "Duo tournaments require at least 2 team members", 
           currentSize: teamMembers.length,
@@ -623,7 +623,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if tournament is already full
       const registrations = await storage.getRegistrationsByTournament(tournamentId);
-      if (registrations.length >= tournament.slots) {
+      if (registrations.length >= tournament.totalSlots) {
         return res.status(400).json({ message: "Tournament is already full" });
       }
       

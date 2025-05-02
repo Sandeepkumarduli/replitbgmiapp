@@ -33,18 +33,28 @@ export default function Home() {
       </div>
 
       {/* Upcoming Tournaments Section */}
-      <section className="py-12 px-4 sm:px-6 lg:px-8 bg-dark-surface">
+      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-dark to-dark-surface">
         <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-3xl font-bold text-white">
-              <span className="inline-block mr-2 text-[#FFCC00]">●</span> Upcoming Tournaments
-            </h2>
-            <Link href="/tournaments" className="text-accent hover:text-accent/80 font-medium">
-              View All <i className="fas fa-arrow-right ml-1"></i>
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-12">
+            <div className="mb-6 md:mb-0">
+              <h2 className="text-3xl md:text-4xl font-bold text-white">
+                <span className="text-[#FFCC00]">Upcoming</span> Tournaments
+              </h2>
+              <p className="text-gray-400 mt-3 max-w-2xl">
+                Register for our upcoming tournaments and show your skills on the battlefield. All tournaments feature cash prizes and exclusive rewards.
+              </p>
+            </div>
+            <Link href="/tournaments" className="inline-flex items-center px-5 py-2.5 bg-dark-card hover:bg-dark rounded-md border border-gray-700 text-white font-medium group">
+              <span>View All Tournaments</span>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
             </Link>
           </div>
 
-          <TournamentList filter="upcoming" limit={6} />
+          <div className="bg-dark-card border border-gray-800 p-6 rounded-xl mb-10">
+            <TournamentList filter="upcoming" limit={6} />
+          </div>
         </div>
       </section>
 

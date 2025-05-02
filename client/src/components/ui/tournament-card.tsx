@@ -142,7 +142,7 @@ export function TournamentCard({ tournament, onRegister, registered = false, reg
             </Button>
           ) : status === "upcoming" ? (
             <Button 
-              className="w-full bg-secondary hover:bg-secondary/80 text-white font-medium"
+              className="w-full bg-gray-700 hover:bg-gray-800 text-white font-medium"
               onClick={() => onRegister && onRegister(id)}
             >
               Register

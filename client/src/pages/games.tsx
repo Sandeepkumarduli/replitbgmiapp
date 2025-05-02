@@ -193,7 +193,7 @@ export default function GamesPage() {
             </div>
             
             <div className="bg-dark-card border border-gray-800 rounded-lg p-8 text-center">
-              <Gamepad2 className="text-primary h-12 w-12 mx-auto mb-4" />
+              <Gamepad className="text-primary h-12 w-12 mx-auto mb-4" />
               <h3 className="text-xl font-bold text-white mb-2">Mobile Legends</h3>
               <p className="text-gray-400">
                 5v5 MOBA with fast-paced matches and diverse heroes
@@ -201,7 +201,7 @@ export default function GamesPage() {
             </div>
             
             <div className="bg-dark-card border border-gray-800 rounded-lg p-8 text-center">
-              <Gamepad2 className="text-primary h-12 w-12 mx-auto mb-4" />
+              <Gamepad className="text-primary h-12 w-12 mx-auto mb-4" />
               <h3 className="text-xl font-bold text-white mb-2">Apex Legends Mobile</h3>
               <p className="text-gray-400">
                 Hero-based battle royale with unique abilities and team dynamics

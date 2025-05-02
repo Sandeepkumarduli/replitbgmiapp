@@ -122,10 +122,10 @@
   }
   
   .tournament-card {
-    @apply bg-dark-card border border-primary/30 rounded-lg overflow-hidden transition-all duration-300 hover:translate-y-[-5px] hover:shadow-[0_0_20px_rgba(63,81,181,0.5)];
+    @apply bg-dark-card border border-primary/30 rounded-lg overflow-hidden transition-all duration-300 hover:translate-y-[-5px] hover:shadow-[0_0_20px_rgba(108,45,199,0.4)];
   }
   
   .glow-hover {
-    @apply transition-all duration-300 hover:shadow-[0_0_15px_rgba(63,81,181,0.6)];
+    @apply transition-all duration-300 hover:shadow-[0_0_15px_rgba(108,45,199,0.6)];
   }
 }

@@ -295,19 +295,19 @@ export default function TeamDetails() {
         {/* Banner Card with Team Info */}
         <Card className="bg-gradient-to-r from-dark-card to-dark-surface border-gray-800 overflow-hidden mb-6">
           <div className="relative">
-            <div className="absolute inset-0 bg-primary/5 pointer-events-none"></div>
+            <div className="absolute inset-0 bg-[#6c2dc7]/5 pointer-events-none"></div>
             <CardContent className="p-6">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
-                  <div className="h-16 w-16 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center">
-                    <Users className="h-8 w-8 text-primary" />
+                  <div className="h-16 w-16 rounded-lg bg-[#6c2dc7]/20 border border-[#6c2dc7]/30 flex items-center justify-center">
+                    <Users className="h-8 w-8 text-[#6c2dc7]" />
                   </div>
                   <div>
                     <h2 className="text-2xl font-bold text-white">
                       {team?.name}
                     </h2>
                     <div className="flex items-center mt-1 gap-3">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium bg-primary/20 text-primary border border-primary/30`}>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium bg-[#6c2dc7]/20 text-[#9f6dff] border border-[#6c2dc7]/30`}>
                         {team?.gameType || "BGMI"}
                       </span>
                       <span className="text-sm text-gray-400">
@@ -322,7 +322,7 @@ export default function TeamDetails() {
                 <div className="flex flex-wrap gap-2 mt-4 md:mt-0">
                   <Button 
                     onClick={() => navigate(`/admin/teams/${teamId}/members`)}
-                    className="flex items-center gap-2 bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30"
+                    className="flex items-center gap-2 bg-[#6c2dc7]/20 hover:bg-[#6c2dc7]/30 text-[#9f6dff] border border-[#6c2dc7]/30"
                   >
                     <UserCog className="h-4 w-4" />
                     Manage Members
@@ -383,7 +383,7 @@ export default function TeamDetails() {
           <Card className="bg-dark-card border-gray-800 lg:col-span-2">
             <CardHeader>
               <CardTitle className="text-white flex items-center">
-                <Users className="mr-2 h-5 w-5 text-primary" />
+                <Users className="mr-2 h-5 w-5 text-[#6c2dc7]" />
                 Team Details
               </CardTitle>
               <CardDescription className="text-gray-400">
@@ -438,12 +438,12 @@ export default function TeamDetails() {
               ) : (
                 <div className="space-y-6 p-2">
                   <div className="bg-dark-surface p-4 rounded-md border border-gray-700">
-                    <h3 className="text-sm font-medium text-primary mb-2">Description</h3>
+                    <h3 className="text-sm font-medium text-[#9f6dff] mb-2">Description</h3>
                     <p className="text-white">{team?.description || "No description provided."}</p>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="bg-dark-surface p-4 rounded-md border border-gray-700">
-                      <h3 className="text-sm font-medium text-primary mb-2">Created</h3>
+                      <h3 className="text-sm font-medium text-[#9f6dff] mb-2">Created</h3>
                       <p className="text-white">{team?.createdAt ? format(new Date(team.createdAt), "MMMM d, yyyy") : "Unknown"}</p>
                     </div>
                     <div className="bg-dark-surface p-4 rounded-md border border-gray-700">
@@ -460,7 +460,7 @@ export default function TeamDetails() {
           <Card className="bg-dark-card border-gray-800">
             <CardHeader>
               <CardTitle className="text-white flex items-center">
-                <UserCog className="mr-2 h-5 w-5 text-primary" />
+                <UserCog className="mr-2 h-5 w-5 text-[#6c2dc7]" />
                 Team Owner
               </CardTitle>
               <CardDescription className="text-gray-400">
@@ -511,7 +511,7 @@ export default function TeamDetails() {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-white flex items-center">
-                  <Users className="mr-2 h-5 w-5 text-primary" />
+                  <Users className="mr-2 h-5 w-5 text-[#6c2dc7]" />
                   Team Members
                 </CardTitle>
                 <CardDescription className="text-gray-400">

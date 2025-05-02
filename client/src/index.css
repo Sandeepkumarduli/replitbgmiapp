@@ -14,19 +14,19 @@
   --popover: 240 10% 3.9%;
   --popover-foreground: 0 0% 98%;
   
-  /* Changed from purple (276) to blue-violet (250) */
-  --primary: 250 84% 54%;
+  /* Reverted back to purple */
+  --primary: 276 84% 54%;
   --primary-foreground: 211 100% 99%;
   
-  /* Changed from orange to gold */
+  /* Keeping the gold color for secondary */
   --secondary: 45 93% 47%;
   --secondary-foreground: 0 0% 98%;
   
   --muted: 240 3.7% 15.9%;
   --muted-foreground: 240 5% 64.9%;
   
-  /* Changed from green to blue */
-  --accent: 220 85% 57%;
+  /* Reverted back to original accent */
+  --accent: 267 68% 54%;
   --accent-foreground: 0 0% 100%;
   
   --destructive: 0 62.8% 30.6%;
@@ -38,19 +38,19 @@
   
   --radius: 0.5rem;
 
-  /* Updated chart colors to match the new scheme */
-  --chart-1: 250 84% 54%; /* Blue-violet */
+  /* Reverted chart colors to match purple theme */
+  --chart-1: 276 84% 54%; /* Purple */
   --chart-2: 45 93% 47%;  /* Gold */
-  --chart-3: 220 85% 57%; /* Blue */
-  --chart-4: 270 70% 60%; /* Purple */
-  --chart-5: 200 90% 50%; /* Cyan */
+  --chart-3: 267 68% 54%; /* Purple-accent */
+  --chart-4: 290 70% 60%; /* Violet */
+  --chart-5: 260 90% 50%; /* Lavender */
 
-  /* Updated sidebar colors */
+  /* Reverted sidebar colors to purple theme */
   --sidebar-background: 240 10% 3.9%;
   --sidebar-foreground: 0 0% 98%;
-  --sidebar-primary: 250 84% 54%;
+  --sidebar-primary: 276 84% 54%;
   --sidebar-primary-foreground: 211 100% 99%;
-  --sidebar-accent: 220 85% 57%;
+  --sidebar-accent: 267 68% 54%;
   --sidebar-accent-foreground: 0 0% 100%;
   --sidebar-border: 240 3.7% 15.9%;
   --sidebar-ring: 240 4.9% 83.9%;
@@ -63,13 +63,13 @@
   --card-foreground: 0 0% 98%;
   --popover: 240 10% 3.9%;
   --popover-foreground: 0 0% 98%;
-  --primary: 250 84% 54%;
+  --primary: 276 84% 54%;
   --primary-foreground: 211 100% 99%;
   --secondary: 45 93% 47%;
   --secondary-foreground: 0 0% 98%;
   --muted: 240 3.7% 15.9%;
   --muted-foreground: 240 5% 64.9%;
-  --accent: 220 85% 57%;
+  --accent: 267 68% 54%;
   --accent-foreground: 0 0% 100%;
   --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 0 0% 98%;

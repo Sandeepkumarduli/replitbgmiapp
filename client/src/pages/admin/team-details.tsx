@@ -43,13 +43,36 @@ export default function TeamDetails() {
     gameType: "BGMI"
   });
 
+  interface Team {
+    id: number;
+    name: string;
+    description: string;
+    gameType: string;
+    ownerId: number;
+    createdAt: string;
+  }
+
+  interface User {
+    id: number;
+    username: string;
+    email: string;
+    role: string;
+  }
+
+  interface TeamMember {
+    id: number;
+    teamId: number;
+    playerName: string;
+    role: string;
+  }
+
   // Fetch team details
   const { 
     data: team, 
     isLoading: isTeamLoading, 
     isError,
     error
-  } = useQuery({
+  } = useQuery<Team>({
     queryKey: [`/api/admin/teams/${teamId}`],
     enabled: !!teamId && !!isAdmin,
   });
@@ -58,16 +81,16 @@ export default function TeamDetails() {
   const { 
     data: owner, 
     isLoading: isOwnerLoading 
-  } = useQuery({
+  } = useQuery<User>({
     queryKey: [`/api/admin/users/${team?.ownerId}`],
     enabled: !!team?.ownerId && !!isAdmin,
   });
 
   // Fetch team members
   const { 
-    data: members = [], 
+    data: members = [] as TeamMember[], 
     isLoading: isMembersLoading 
-  } = useQuery({
+  } = useQuery<TeamMember[]>({
     queryKey: [`/api/admin/teams/${teamId}/members`],
     enabled: !!teamId && !!isAdmin,
   });

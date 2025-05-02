@@ -52,23 +52,39 @@ export default function TeamMembers() {
     role: "Player"
   });
 
+  interface Team {
+    id: number;
+    name: string;
+    description: string;
+    gameType: string;
+    ownerId: number;
+    createdAt: string;
+  }
+
+  interface TeamMember {
+    id: number;
+    teamId: number;
+    playerName: string;
+    role: string;
+  }
+
   // Fetch team details
   const { 
     data: team, 
     isLoading: isTeamLoading, 
     isError,
     error
-  } = useQuery({
+  } = useQuery<Team>({
     queryKey: [`/api/admin/teams/${teamId}`],
     enabled: !!teamId && !!isAdmin,
   });
 
   // Fetch team members
   const { 
-    data: members = [], 
+    data: members = [] as TeamMember[], 
     isLoading: isMembersLoading,
     refetch: refetchMembers
-  } = useQuery({
+  } = useQuery<TeamMember[]>({
     queryKey: [`/api/admin/teams/${teamId}/members`],
     enabled: !!teamId && !!isAdmin,
   });

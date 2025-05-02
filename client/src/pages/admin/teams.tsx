@@ -1,15 +1,16 @@
-import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/lib/auth";
 import { useLocation } from "wouter";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import AdminLayout from "@/components/layouts/admin-layout";
 import {
   Card,
+  CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
 } from "@/components/ui/card";
 import {
   Table,
@@ -20,280 +21,379 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogClose,
 } from "@/components/ui/dialog";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Team as BaseTeam, User } from "@shared/schema";
-
-// Extend the Team type to include owner and memberCount properties
-interface EnhancedTeam extends BaseTeam {
-  owner?: {
-    id: number;
-    username: string;
-    role: string;
-    email: string;
-  };
-  memberCount?: number;
-}
-
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/lib/auth";
-import { Filter, MoreVertical, Search, Trash, Users, UsersRound, Eye, Shield } from "lucide-react";
-import AdminLayout from "../../components/layouts/admin-layout";
-
-type Team = EnhancedTeam;
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { 
+  Loader2, 
+  MoreVertical, 
+  Users, 
+  RefreshCw, 
+  UserPlus, 
+  Trash, 
+  Eye, 
+  User,
+  UserCog,
+} from "lucide-react";
+import { Link } from "wouter";
+import { format } from "date-fns";
 
 export default function AdminTeams() {
-  const [_, navigate] = useLocation();
+  const { isAdmin, isAuthenticated, isLoading } = useAuth();
+  const [, navigate] = useLocation();
   const { toast } = useToast();
-  const { user } = useAuth();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+  const queryClient = useQueryClient();
   
-  // Fetch all teams
-  const { data: teams, isLoading } = useQuery({
-    queryKey: ['/api/admin/teams'],
-    queryFn: async () => {
-      const res = await apiRequest('GET', '/api/admin/teams');
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Failed to fetch teams');
-      }
-      return res.json() as Promise<Team[]>;
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isAddTeamOpen, setIsAddTeamOpen] = useState(false);
+  const [newTeam, setNewTeam] = useState({
+    name: "",
+    description: "",
+    ownerId: 0, // Will be set in form
+    ownerUsername: "", // For display only
+  });
+  const [teamOwners, setTeamOwners] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!isLoading && (!isAuthenticated || !isAdmin)) {
+      navigate("/auth");
     }
+  }, [isAdmin, isAuthenticated, isLoading, navigate]);
+
+  const { data: teams = [], isLoading: isTeamsLoading, refetch } = useQuery<any[]>({
+    queryKey: ["/api/admin/teams"],
+  });
+
+  // Fetch users to select team owner
+  const { data: users = [] } = useQuery<any[]>({
+    queryKey: ["/api/admin/users"],
   });
   
-  // Delete team mutation
-  const deleteTeamMutation = useMutation({
-    mutationFn: async (teamId: number) => {
-      const res = await apiRequest('DELETE', `/api/admin/teams/${teamId}`);
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Failed to delete team');
-      }
-      return true;
+  // Update teamOwners when users data changes
+  useEffect(() => {
+    if (users.length > 0) {
+      setTeamOwners(users.filter((user: any) => user.role !== "admin"));
+    }
+  }, [users]);
+
+  const refreshTeams = async () => {
+    setIsRefreshing(true);
+    try {
+      await refetch();
+      toast({
+        title: "Teams list refreshed",
+        description: "The teams list has been refreshed successfully"
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to refresh teams",
+        description: "There was an error refreshing the teams list",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const addTeamMutation = useMutation({
+    mutationFn: async (teamData: any) => {
+      const res = await apiRequest("POST", "/api/admin/teams", teamData);
+      return res.json();
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/teams"] });
+      setIsAddTeamOpen(false);
+      setNewTeam({ name: "", description: "", ownerId: 0, ownerUsername: "" });
       toast({
-        title: "Team deleted",
-        description: "The team has been successfully deleted",
-        variant: "default",
+        title: "Team added",
+        description: "The new team has been added successfully",
       });
-      
-      // Invalidate teams query to refresh the list
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/teams'] });
-      
-      // Close the dialog
-      setIsDeleteOpen(false);
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
+        title: "Failed to add team",
         description: error.message,
         variant: "destructive",
       });
-    }
+    },
   });
-  
-  const handleDeleteTeam = (team: Team) => {
-    setSelectedTeam(team);
-    setIsDeleteOpen(true);
+
+  const deleteTeamMutation = useMutation({
+    mutationFn: async (teamId: number) => {
+      const res = await apiRequest("DELETE", `/api/admin/teams/${teamId}`, {});
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/teams"] });
+      toast({
+        title: "Team deleted",
+        description: "The team has been deleted successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to delete team",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleAddTeam = () => {
+    if (!newTeam.name || !newTeam.ownerId) {
+      toast({
+        title: "Missing information",
+        description: "Please provide team name and owner",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Submit only the necessary data
+    addTeamMutation.mutate({
+      name: newTeam.name,
+      description: newTeam.description,
+      ownerId: newTeam.ownerId
+    });
   };
-  
-  const confirmDelete = () => {
-    if (selectedTeam) {
-      deleteTeamMutation.mutate(selectedTeam.id);
+
+  const handleDeleteTeam = (teamId: number, teamName: string) => {
+    if (confirm(`Are you sure you want to delete team ${teamName}?`)) {
+      deleteTeamMutation.mutate(teamId);
     }
   };
-  
-  const filteredTeams = teams ? teams.filter(team => 
-    team.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    String(team.id).includes(searchTerm)
-  ) : [];
-  
+
+  const handleOwnerChange = (userId: number) => {
+    const selectedUser = users.find(user => user.id === parseInt(userId.toString()));
+    if (selectedUser) {
+      setNewTeam({
+        ...newTeam,
+        ownerId: userId,
+        ownerUsername: selectedUser.username
+      });
+    }
+  };
+
+  if (isLoading || isTeamsLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !isAdmin) {
+    return null;
+  }
+
   return (
     <AdminLayout>
-      <div className="space-y-6 p-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="container mx-auto py-8 px-4">
+        <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight text-white">Teams Management</h2>
-            <p className="text-gray-400 mt-1">
-              View and manage all registered teams in the system
-            </p>
+            <h1 className="text-3xl font-bold text-white mb-2">Teams</h1>
+            <p className="text-gray-400">Manage all teams and their members in the system</p>
           </div>
-          <div className="flex flex-col sm:flex-row gap-2 self-stretch sm:self-auto">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-              <Input
-                type="search"
-                placeholder="Search teams..."
-                className="pl-8 bg-dark-surface border-gray-800 text-white w-full sm:w-[250px]"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2 border-gray-700 text-white hover:bg-dark-card"
+              onClick={refreshTeams}
+              disabled={isRefreshing}
+            >
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+            <Button 
+              className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white"
+              onClick={() => setIsAddTeamOpen(true)}
+            >
+              <UserPlus className="h-4 w-4" />
+              Add Team
+            </Button>
           </div>
         </div>
-      
-        <Card className="bg-dark-card border-gray-800 overflow-hidden">
-          <CardHeader className="bg-dark-surface border-b border-gray-800 pb-3">
-            <div className="flex justify-between items-center">
-              <CardTitle className="text-xl text-white">Team List</CardTitle>
-              <Badge variant="outline" className="text-primary border-primary">
-                <UsersRound className="h-3 w-3 mr-1" />
-                {teams?.length || 0} Teams
-              </Badge>
-            </div>
-            <CardDescription>
-              All teams registered on the platform
+
+        <Card className="bg-dark-card border-gray-800">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center">
+              <Users className="mr-2 h-5 w-5 text-primary" />
+              All Teams
+            </CardTitle>
+            <CardDescription className="text-gray-400">
+              View and manage teams and their members
             </CardDescription>
           </CardHeader>
-          <CardContent className="p-0">
-            {isLoading ? (
-              <div className="p-6 space-y-4">
-                <Skeleton className="h-12 w-full bg-dark-surface" />
-                <Skeleton className="h-12 w-full bg-dark-surface" />
-                <Skeleton className="h-12 w-full bg-dark-surface" />
-              </div>
-            ) : (
-              <Table>
-                <TableHeader className="bg-dark-surface">
-                  <TableRow className="hover:bg-dark-surface/80 border-gray-800">
-                    <TableHead className="text-gray-400">ID</TableHead>
-                    <TableHead className="text-gray-400">Team Name</TableHead>
-                    <TableHead className="text-gray-400">Owner</TableHead>
-                    <TableHead className="text-gray-400">Members</TableHead>
-                    <TableHead className="text-gray-400">Created</TableHead>
-                    <TableHead className="text-right text-gray-400">Actions</TableHead>
+          <CardContent>
+            <Table>
+              <TableHeader className="bg-dark-surface">
+                <TableRow className="hover:bg-dark-surface/80 border-gray-800">
+                  <TableHead className="text-gray-400">Team Name</TableHead>
+                  <TableHead className="text-gray-400">Owner</TableHead>
+                  <TableHead className="text-gray-400">Members</TableHead>
+                  <TableHead className="text-gray-400">Created</TableHead>
+                  <TableHead className="text-gray-400 text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {teams?.map((team: any) => (
+                  <TableRow key={team.id} className="hover:bg-dark-surface/50 border-gray-800">
+                    <TableCell className="font-medium text-white">
+                      {team.name}
+                    </TableCell>
+                    <TableCell className="text-gray-300">
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-gray-400" />
+                        {team.ownerName || "Unknown"}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-gray-300">
+                      <span className="px-2 py-1 bg-gray-700/50 text-gray-300 rounded-full text-xs">
+                        {team.memberCount || 0} members
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-gray-300">
+                      {team.createdAt ? format(new Date(team.createdAt), "MMM d, yyyy") : "Unknown"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0 text-gray-400 hover:text-white">
+                            <span className="sr-only">Open menu</span>
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="bg-dark-card border-gray-700 text-white">
+                          <Link href={`/admin/teams/${team.id}`}>
+                            <DropdownMenuItem className="cursor-pointer hover:bg-dark-surface">
+                              <Eye className="mr-2 h-4 w-4" />
+                              <span>View Details</span>
+                            </DropdownMenuItem>
+                          </Link>
+                          <Link href={`/admin/teams/${team.id}/members`}>
+                            <DropdownMenuItem className="cursor-pointer hover:bg-dark-surface">
+                              <UserCog className="mr-2 h-4 w-4" />
+                              <span>Manage Members</span>
+                            </DropdownMenuItem>
+                          </Link>
+                          <DropdownMenuItem 
+                            className="cursor-pointer hover:bg-dark-surface text-red-500"
+                            onClick={() => handleDeleteTeam(team.id, team.name)}
+                          >
+                            <Trash className="mr-2 h-4 w-4" />
+                            <span>Delete Team</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredTeams.length > 0 ? (
-                    filteredTeams.map((team) => (
-                      <TableRow 
-                        key={team.id} 
-                        className="hover:bg-dark-surface/50 border-gray-800 hover:cursor-pointer"
-                      >
-                        <TableCell className="font-mono text-gray-400">
-                          {team.id}
-                        </TableCell>
-                        <TableCell className="font-semibold text-white">
-                          {team.name}
-                        </TableCell>
-                        <TableCell className="text-gray-300">
-                          <span className="flex items-center">
-                            <Shield className={`h-3.5 w-3.5 mr-1.5 ${team.owner?.role === 'admin' ? 'text-accent' : 'text-primary'}`} />
-                            {team.owner?.username || `User #${team.ownerId}`}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="bg-dark-surface border-gray-700 text-gray-300">
-                            <Users className="h-3 w-3 mr-1 text-primary" />
-                            {team.memberCount || 1} {(team.memberCount || 1) === 1 ? 'member' : 'members'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-gray-300">
-                          {team.createdAt ? new Date(team.createdAt).toLocaleDateString() : 'N/A'}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0 text-gray-300 hover:bg-dark-surface">
-                                <span className="sr-only">Open menu</span>
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="bg-dark-card border-gray-800 text-white">
-                              <DropdownMenuItem 
-                                className="hover:bg-dark-surface cursor-pointer"
-                                onClick={() => navigate(`/admin/teams/${team.id}`)}
-                              >
-                                <Eye className="mr-2 h-4 w-4 text-primary" />
-                                View Details
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator className="bg-gray-800" />
-                              <DropdownMenuItem 
-                                className="hover:bg-dark-surface text-red-500 cursor-pointer"
-                                onClick={() => handleDeleteTeam(team)}
-                              >
-                                <Trash className="mr-2 h-4 w-4" />
-                                Delete Team
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center text-gray-400 py-6">
-                        {searchTerm ? "No teams match your search" : "No teams found"}
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            )}
+                ))}
+                {teams.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-8 text-gray-400">
+                      No teams found. Create new teams to begin tournament registrations.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
           </CardContent>
-          <CardFooter className="border-t border-gray-800 p-4">
-            <div className="text-xs text-gray-400 flex items-center">
-              <Filter className="h-3.5 w-3.5 mr-1.5" />
-              Manage teams efficiently to ensure fair tournament participation
-            </div>
-          </CardFooter>
         </Card>
-
-        {/* Delete Confirmation Dialog */}
-        <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-          <DialogContent className="bg-dark-card border-gray-800 text-white">
-            <DialogHeader>
-              <DialogTitle>Confirm Team Deletion</DialogTitle>
-              <DialogDescription className="text-gray-400">
-                This action will permanently delete the team &quot;{selectedTeam?.name}&quot; and remove all its members.
-                This action cannot be undone.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="p-4 bg-dark-surface rounded-md border border-gray-800 mt-2">
-              <p className="font-semibold text-primary">Important:</p>
-              <ul className="list-disc pl-5 mt-2 text-sm text-gray-300 space-y-1">
-                <li>All team members will be removed</li>
-                <li>All tournament registrations for this team will be deleted</li>
-                <li>The team owner will be notified of this action</li>
-              </ul>
-            </div>
-            <DialogFooter className="mt-4">
-              <DialogClose asChild>
-                <Button variant="outline" className="border-gray-700 text-white hover:bg-dark-surface">
-                  Cancel
-                </Button>
-              </DialogClose>
-              <Button 
-                variant="destructive" 
-                onClick={confirmDelete}
-                disabled={deleteTeamMutation.isPending}
-              >
-                {deleteTeamMutation.isPending ? "Deleting..." : "Delete Team"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
+
+      {/* Add Team Dialog */}
+      <Dialog open={isAddTeamOpen} onOpenChange={setIsAddTeamOpen}>
+        <DialogContent className="bg-dark-card border-gray-800 text-white">
+          <DialogHeader>
+            <DialogTitle>Add New Team</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Create a new team with an owner and description
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="teamName" className="text-right">
+                Team Name
+              </Label>
+              <Input
+                id="teamName"
+                value={newTeam.name}
+                onChange={(e) => setNewTeam({...newTeam, name: e.target.value})}
+                className="col-span-3 bg-dark-surface border-gray-700 text-white"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="teamDescription" className="text-right">
+                Description
+              </Label>
+              <Input
+                id="teamDescription"
+                value={newTeam.description}
+                onChange={(e) => setNewTeam({...newTeam, description: e.target.value})}
+                className="col-span-3 bg-dark-surface border-gray-700 text-white"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="teamOwner" className="text-right">
+                Team Owner
+              </Label>
+              <select
+                id="teamOwner"
+                value={newTeam.ownerId}
+                onChange={(e) => handleOwnerChange(parseInt(e.target.value))}
+                className="col-span-3 bg-dark-surface border border-gray-700 text-white rounded-md px-3 py-2"
+              >
+                <option value="0">Select an owner</option>
+                {teamOwners.map(user => (
+                  <option key={user.id} value={user.id}>
+                    {user.username} ({user.email})
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => setIsAddTeamOpen(false)}
+              className="border-gray-700 text-white hover:bg-dark-surface"
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="button" 
+              onClick={handleAddTeam}
+              className="bg-primary hover:bg-primary/90 text-white"
+              disabled={addTeamMutation.isPending}
+            >
+              {addTeamMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                "Create Team"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 }

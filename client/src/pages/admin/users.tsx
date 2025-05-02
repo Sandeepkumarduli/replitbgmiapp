@@ -73,7 +73,7 @@ export default function AdminUsers() {
     }
   }, [isAdmin, isAuthenticated, isLoading, navigate]);
 
-  const { data: users, isLoading: isUsersLoading, refetch } = useQuery({
+  const { data: users = [], isLoading: isUsersLoading, refetch } = useQuery<any[]>({
     queryKey: ["/api/admin/users"],
   });
 
@@ -322,7 +322,7 @@ export default function AdminUsers() {
                     </TableCell>
                   </TableRow>
                 ))}
-                {!users || users.length === 0 && (
+                {users.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-8 text-gray-400">
                       No users found. Add new users to populate the system.

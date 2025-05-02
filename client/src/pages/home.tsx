@@ -11,10 +11,13 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
-              <span className="text-primary">BGMI</span> Tournament Platform
+              <span className="text-primary">RD TOURNAMENTS</span> HUB
             </h1>
-            <p className="text-xl md:text-2xl text-gray-300 mb-10 max-w-3xl mx-auto">
-              Join competitive tournaments, create teams, and battle for glory in Battlegrounds Mobile India
+            <p className="text-xl md:text-2xl text-gray-300 mb-4 max-w-3xl mx-auto">
+              An Ultimate Gaming Hub
+            </p>
+            <p className="text-lg md:text-xl text-gray-400 mb-10 max-w-3xl mx-auto">
+              Join competitive tournaments for BGMI, FREEFIRE, COD and more games. Create teams and battle for glory!
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
               <Link href="/auth" className="inline-block">
@@ -199,9 +202,9 @@ export default function Home() {
       {/* CTA Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-primary/20 to-secondary/20">
         <div className="max-w-5xl mx-auto text-center">
-          <h2 className="text-4xl font-bold text-white mb-6">Ready to Join BGMI Tournaments?</h2>
+          <h2 className="text-4xl font-bold text-white mb-6">Ready to Join RD TOURNAMENTS HUB?</h2>
           <p className="text-xl text-gray-300 mb-10 max-w-3xl mx-auto">
-            Create an account, build your team, and start competing in exciting tournaments today
+            Create an account, build your team, and start competing in exciting gaming tournaments across multiple games today
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link href="/auth" className="inline-block">

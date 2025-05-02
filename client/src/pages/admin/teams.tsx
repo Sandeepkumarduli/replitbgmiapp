@@ -120,7 +120,7 @@ export default function AdminTeams() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/teams"] });
       setIsAddTeamOpen(false);
-      setNewTeam({ name: "", description: "", ownerId: 0, ownerUsername: "" });
+      setNewTeam({ name: "", description: "", ownerId: 0, ownerUsername: "", gameType: "BGMI" });
       toast({
         title: "Team added",
         description: "The new team has been added successfully",
@@ -170,7 +170,8 @@ export default function AdminTeams() {
     addTeamMutation.mutate({
       name: newTeam.name,
       description: newTeam.description,
-      ownerId: newTeam.ownerId
+      ownerId: newTeam.ownerId,
+      gameType: newTeam.gameType
     });
   };
 
@@ -272,7 +273,8 @@ export default function AdminTeams() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {teams?.map((team: any) => (
+                {teams?.filter(team => gameFilter === "all" || team.gameType === gameFilter)
+                  .map((team: any) => (
                   <TableRow key={team.id} className="hover:bg-dark-surface/50 border-gray-800">
                     <TableCell className="font-medium text-white">
                       {team.name}
@@ -337,10 +339,12 @@ export default function AdminTeams() {
                     </TableCell>
                   </TableRow>
                 ))}
-                {teams.length === 0 && (
+                {(teams.filter(team => gameFilter === "all" || team.gameType === gameFilter).length === 0) && (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-8 text-gray-400">
-                      No teams found. Create new teams to begin tournament registrations.
+                      {gameFilter === "all" 
+                        ? "No teams found. Create new teams to begin tournament registrations."
+                        : `No ${gameFilter} teams found. Try a different filter or create a new team.`}
                     </TableCell>
                   </TableRow>
                 )}

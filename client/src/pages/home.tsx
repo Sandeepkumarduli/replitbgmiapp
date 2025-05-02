@@ -2,8 +2,10 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { TournamentList } from "@/components/user/tournament-list";
 import { CheckCircle, UserPlus, Users, Trophy } from "lucide-react";
+import { useState } from "react";
 
 export default function Home() {
+  const [gameFilter, setGameFilter] = useState<'BGMI' | 'COD' | 'FREEFIRE' | null>(null);
   return (
     <div className="min-h-screen bg-dark text-white font-poppins">
       {/* Hero Section */}
@@ -60,39 +62,31 @@ export default function Home() {
             <div className="flex flex-wrap gap-3 mb-6">
               <Button 
                 variant="outline" 
-                className="bg-blue-600/20 border-blue-600 text-white hover:bg-blue-600/30 focus:ring-blue-500"
-                onClick={() => {
-                  // Should apply BGMI filter
-                }}>
+                className={`${gameFilter === 'BGMI' ? 'bg-blue-600' : 'bg-blue-600/20'} border-blue-600 text-white hover:bg-blue-600/30 focus:ring-blue-500`}
+                onClick={() => setGameFilter('BGMI')}>
                 BGMI
               </Button>
               <Button 
                 variant="outline" 
-                className="bg-green-600/20 border-green-600 text-white hover:bg-green-600/30 focus:ring-green-500"
-                onClick={() => {
-                  // Should apply COD filter
-                }}>
+                className={`${gameFilter === 'COD' ? 'bg-green-600' : 'bg-green-600/20'} border-green-600 text-white hover:bg-green-600/30 focus:ring-green-500`}
+                onClick={() => setGameFilter('COD')}>
                 COD
               </Button>
               <Button 
                 variant="outline" 
-                className="bg-red-600/20 border-red-600 text-white hover:bg-red-600/30 focus:ring-red-500"
-                onClick={() => {
-                  // Should apply FREEFIRE filter
-                }}>
+                className={`${gameFilter === 'FREEFIRE' ? 'bg-red-600' : 'bg-red-600/20'} border-red-600 text-white hover:bg-red-600/30 focus:ring-red-500`}
+                onClick={() => setGameFilter('FREEFIRE')}>
                 FREEFIRE
               </Button>
               <Button 
                 variant="outline" 
-                className="bg-gray-700/70 border-gray-600 text-white hover:bg-gray-600 focus:ring-gray-500"
-                onClick={() => {
-                  // Should clear filters
-                }}>
+                className={`${gameFilter === null ? 'bg-gray-700' : 'bg-gray-700/70'} border-gray-600 text-white hover:bg-gray-600 focus:ring-gray-500`}
+                onClick={() => setGameFilter(null)}>
                 All Games
               </Button>
             </div>
 
-            <TournamentList filter="upcoming" limit={6} />
+            <TournamentList filter="upcoming" limit={6} gameTypeFilter={gameFilter} />
           </div>
         </div>
       </section>

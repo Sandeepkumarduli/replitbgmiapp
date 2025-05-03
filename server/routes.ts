@@ -1680,6 +1680,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to create notification" });
     }
   });
+  
+  // Create a broadcast notification for all users
+  app.post("/api/notifications", isAdmin, async (req, res) => {
+    try {
+      const { title, message, type = "broadcast" } = req.body;
+      
+      if (!title || !message) {
+        return res.status(400).json({ 
+          message: "Missing required fields", 
+          required: ["title", "message"] 
+        });
+      }
+      
+      // Create broadcast notification (userId = null means it's for all users)
+      const notification = await storage.createNotification({
+        title,
+        message,
+        type,
+        userId: null,
+        relatedId: null
+      });
+      
+      // Log the broadcast notification creation
+      logSecurityEvent('Admin created broadcast notification', req, { 
+        notificationId: notification.id,
+        title
+      });
+      
+      res.status(201).json({ 
+        success: true, 
+        notification
+      });
+    } catch (error) {
+      console.error("Error creating broadcast notification:", error);
+      res.status(500).json({ message: "Failed to create broadcast notification" });
+    }
+  });
 
   // Add notification for tournament room info update
   app.post("/api/tournaments/:id/room-notification", isAdmin, async (req, res) => {

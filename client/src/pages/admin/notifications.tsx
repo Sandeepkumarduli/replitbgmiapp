@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -8,6 +9,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import AdminLayout from "@/components/layouts/admin-layout";
+import { AlertTriangle, Megaphone, Send, Users } from "lucide-react";
 
 // Define User type locally for this component
 interface User {
@@ -16,12 +19,11 @@ interface User {
   email: string;
   role: string;
 }
-import AdminLayout from "@/components/layouts/admin-layout";
-import { AlertTriangle, Send, Users } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function AdminNotificationsPage() {
   const { toast } = useToast();
+  const [, navigate] = useLocation();
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
   const [notificationType, setNotificationType] = useState("all");

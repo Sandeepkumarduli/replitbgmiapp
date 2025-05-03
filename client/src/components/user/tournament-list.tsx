@@ -54,6 +54,13 @@ export function TournamentList({
     refetchOnMount: true,
     refetchOnWindowFocus: true,
     retry: 2, // Try up to 3 times total (initial + 2 retries)
+    // Add a debug callback to check what data is being returned
+    onSuccess: (data) => {
+      console.log(`Tournament data fetched with filter=${filter}:`, data?.length || 0, "tournaments");
+    },
+    onError: (error) => {
+      console.error(`Error fetching tournaments with filter=${filter}:`, error);
+    },
   });
   
   // Immediately refetch once on component mount to ensure fresh data

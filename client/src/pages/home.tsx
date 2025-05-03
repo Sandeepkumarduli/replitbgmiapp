@@ -1,11 +1,40 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { TournamentList } from "@/components/user/tournament-list";
-import { CheckCircle, UserPlus, Users, Trophy } from "lucide-react";
-import { useState } from "react";
+import { CheckCircle, UserPlus, Users, Trophy, RefreshCw } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function Home() {
   const [gameFilter, setGameFilter] = useState<'BGMI' | 'COD' | 'FREEFIRE' | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const queryClient = useQueryClient();
+  
+  // Function to refresh tournaments
+  const refreshTournaments = async () => {
+    setIsRefreshing(true);
+    try {
+      await queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/tournaments?status=upcoming'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/registrations/counts'] });
+      
+      // Force refetch immediately
+      await Promise.allSettled([
+        queryClient.fetchQuery({ queryKey: ['/api/tournaments'] }),
+        queryClient.fetchQuery({ queryKey: ['/api/tournaments?status=upcoming'] }),
+        queryClient.fetchQuery({ queryKey: ['/api/registrations/counts'] }),
+      ]);
+    } catch (error) {
+      console.log('Error refreshing tournaments, but continuing');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+  
+  // Load tournaments when component mounts
+  useEffect(() => {
+    refreshTournaments();
+  }, []);
   return (
     <div className="min-h-screen bg-dark text-white font-poppins">
       {/* Hero Section */}
@@ -49,12 +78,24 @@ export default function Home() {
                 Register for our upcoming tournaments and show your skills on the battlefield. All tournaments feature cash prizes and exclusive rewards.
               </p>
             </div>
-            <Link href="/tournaments" className="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-indigo-900/30 to-purple-900/30 hover:from-indigo-900/50 hover:to-purple-900/50 rounded-md border border-indigo-600 text-white font-medium group shadow-md">
-              <span>View All Tournaments</span>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
-            </Link>
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="outline"
+                size="icon"
+                className="bg-dark-surface border-gray-700 text-white hover:bg-dark-card"
+                onClick={refreshTournaments}
+                disabled={isRefreshing}
+              >
+                <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              </Button>
+              
+              <Link href="/tournaments" className="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-indigo-900/30 to-purple-900/30 hover:from-indigo-900/50 hover:to-purple-900/50 rounded-md border border-indigo-600 text-white font-medium group shadow-md">
+                <span>View All Tournaments</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </Link>
+            </div>
           </div>
 
           <div className="bg-dark-card border border-gray-800 p-6 rounded-xl mb-10">
@@ -86,7 +127,8 @@ export default function Home() {
               </Button>
             </div>
 
-            <TournamentList filter="upcoming" limit={6} gameTypeFilter={gameFilter} />
+            {/* Tournament list will be refreshed via the useEffect on component mount */}
+            <TournamentList key={gameFilter} filter="upcoming" limit={6} gameTypeFilter={gameFilter} />
           </div>
         </div>
       </section>

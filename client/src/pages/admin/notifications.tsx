@@ -32,9 +32,25 @@ export default function AdminNotificationsPage() {
   const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
 
   // Fetch all users for the user selection
-  const { data: users, isLoading: loadingUsers } = useQuery<User[]>({
+  const { 
+    data: users, 
+    isLoading: loadingUsers, 
+    error: userError 
+  } = useQuery<User[]>({
     queryKey: ["/api/users"],
+    retry: 1, // Only retry once
+    refetchOnWindowFocus: false
   });
+  
+  // Show error toast if user fetch fails
+  if (userError) {
+    console.error("Error fetching users:", userError);
+    toast({
+      title: "Error",
+      description: "Failed to load users. Please try again.",
+      variant: "destructive",
+    });
+  }
 
   // Filter users based on search query
   const filteredUsers = users?.filter(user => 

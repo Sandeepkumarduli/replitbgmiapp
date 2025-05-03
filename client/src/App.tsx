@@ -130,7 +130,7 @@ function Router() {
       
       {showNavbar && <Navbar />}
       
-      <div className="pt-16 flex-grow">
+      <div className={`flex-grow ${!location.startsWith("/admin") ? "pt-16" : ""}`}>
         <Switch>
           <Route path="/" component={Home}/>
           

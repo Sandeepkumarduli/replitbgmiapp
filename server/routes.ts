@@ -1806,10 +1806,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (userId === null) {
           // For broadcast notifications, we need to notify all users with their specific counts
           // Get all connected clients
+          console.log("Broadcasting notification to all connected clients");
           for (const [ws, client] of clients.entries()) {
             if (ws.readyState === WebSocket.OPEN && client.userId) {
               // Get the unread count for this specific user
               const userCount = await storage.getUnreadNotificationsCount(client.userId);
+              console.log(`Sending notification count ${userCount} to user ${client.userId}`);
+              
               // Send their personal count
               ws.send(JSON.stringify({
                 type: 'notification_update',

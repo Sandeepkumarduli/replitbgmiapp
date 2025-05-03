@@ -59,6 +59,7 @@ export function NotificationDropdown() {
           }
           // If this is a regular notification update with new notifications
           else if (data.count > 0 && user && !data.isHideAction) {
+            console.log(`Received new notifications for user ${user.id}, count: ${data.count}`);
             // Remove the localStorage flag so new notifications can be seen
             localStorage.removeItem(`notifications_cleared_${user.id}`);
             setHiddenNotifications(false);
@@ -140,14 +141,21 @@ export function NotificationDropdown() {
   
   // When notifications load, check if they should be hidden based on previous user action
   useEffect(() => {
-    if (!user || !notifications) return;
+    if (!user) return;
     
-    if (localStorage.getItem(`notifications_cleared_${user.id}`) === 'true') {
-      // If notifications were cleared by this user before, hide them and set count to 0
-      queryClient.setQueryData(["/api/notifications/count"], { count: 0 });
+    const wasCleared = localStorage.getItem(`notifications_cleared_${user.id}`) === 'true';
+    
+    if (wasCleared) {
+      console.log(`User ${user.id} has previously cleared notifications`);
+      // If notifications were cleared by this user before, hide them but DON'T set count to 0
+      // This allows new notifications to show up even if old ones were cleared
       setHiddenNotifications(true);
+    } else {
+      console.log(`User ${user.id} has NOT cleared notifications`);
+      // If not cleared, make sure they're shown
+      setHiddenNotifications(false);
     }
-  }, [user, notifications, queryClient]);
+  }, [user]);
   
   // This function clears notifications by calling the hide API
   const clearAllNotifications = async () => {

@@ -580,13 +580,13 @@ type TournamentListWithTabsProps = {
 
 export function TournamentListWithTabs({ gameTypeFilter = null, searchTerm = "", dateFilter }: TournamentListWithTabsProps) {
   return (
-    <Tabs defaultValue="upcoming" className="w-full">
+    <Tabs defaultValue="all" className="w-full">
       <TabsList className="mb-6 bg-dark-surface border border-gray-800">
-        <TabsTrigger value="upcoming" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-yellow-500 data-[state=active]:text-white">
-          Upcoming
-        </TabsTrigger>
         <TabsTrigger value="live" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-600 data-[state=active]:to-emerald-600 data-[state=active]:text-white">
           Live
+        </TabsTrigger>
+        <TabsTrigger value="upcoming" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-yellow-500 data-[state=active]:text-white">
+          Upcoming
         </TabsTrigger>
         <TabsTrigger value="all" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-600 data-[state=active]:to-purple-600 data-[state=active]:text-white">
           All
@@ -596,12 +596,12 @@ export function TournamentListWithTabs({ gameTypeFilter = null, searchTerm = "",
         </TabsTrigger>
       </TabsList>
       
-      <TabsContent value="upcoming" className="mt-0">
-        <TournamentList filter="upcoming" gameTypeFilter={gameTypeFilter} searchTerm={searchTerm} dateFilter={dateFilter} />
-      </TabsContent>
-      
       <TabsContent value="live" className="mt-0">
         <TournamentList filter="live" gameTypeFilter={gameTypeFilter} searchTerm={searchTerm} dateFilter={dateFilter} />
+      </TabsContent>
+      
+      <TabsContent value="upcoming" className="mt-0">
+        <TournamentList filter="upcoming" gameTypeFilter={gameTypeFilter} searchTerm={searchTerm} dateFilter={dateFilter} />
       </TabsContent>
       
       <TabsContent value="all" className="mt-0">

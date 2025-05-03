@@ -80,20 +80,27 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-dark">
+      {/* Background gradient effect */}
+      <div className="absolute inset-0 bg-gradient-to-br from-indigo-950/30 via-dark to-purple-950/20 pointer-events-none"></div>
+      
       {/* Left side - Auth form */}
-      <div className="w-full lg:w-1/2 p-6 flex flex-col justify-center items-center">
-        <Card className="w-full max-w-md bg-card-dark border-accent">
+      <div className="w-full lg:w-1/2 p-6 flex flex-col justify-center items-center relative z-10">
+        <Card className="w-full max-w-md bg-dark-card border-gray-800 shadow-xl overflow-hidden">
+          {/* Top gradient border */}
+          <div className="h-1 w-full bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600"></div>
           <CardHeader className="space-y-1">
             <div className="flex justify-between items-center">
-              <CardTitle className="text-2xl text-primary font-bold">
-                {activeTab === "login" ? "Login" : "Create an account"}
+              <CardTitle className="text-2xl font-bold">
+                <span className="bg-gradient-to-r from-indigo-400 to-purple-400 text-transparent bg-clip-text">
+                  {activeTab === "login" ? "Login" : "Create an account"}
+                </span>
               </CardTitle>
             </div>
-            <CardDescription>
+            <CardDescription className="text-gray-400">
               {activeTab === "login" 
                 ? "Enter your credentials to access your account" 
-                : "Create your BGMI tournament account"}
+                : "Create your tournament account"}
             </CardDescription>
           </CardHeader>
           <CardContent>

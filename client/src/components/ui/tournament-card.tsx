@@ -143,22 +143,25 @@ export function TournamentCard({ tournament, onRegister, registered = false, reg
         {/* Action Button */}
         <div className="border-t border-gray-800 p-4 pt-3">
           {registered ? (
-            <Button variant="outline" className="w-full">
+            <Button className="w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-medium">
               Registered
             </Button>
           ) : status === "live" ? (
-            <Button className="w-full bg-primary hover:bg-primary/90 text-white font-medium">
+            <Button 
+              className="w-full bg-gradient-to-r from-primary to-indigo-600 hover:from-indigo-600 hover:to-primary text-white font-medium shadow-md"
+              onClick={() => onRegister && onRegister(id)}
+            >
               Join Now
             </Button>
           ) : status === "upcoming" ? (
             <Button 
-              className="w-full bg-gray-700 hover:bg-gray-800 text-white font-medium"
+              className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-medium shadow-md"
               onClick={() => onRegister && onRegister(id)}
             >
               Register
             </Button>
           ) : (
-            <Button variant="outline" className="w-full" disabled>
+            <Button className="w-full bg-gradient-to-r from-gray-700 to-gray-800 text-gray-300 font-medium opacity-80" disabled>
               Completed
             </Button>
           )}

@@ -15,11 +15,13 @@ import { Notification } from "@shared/schema";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
 import { useAuth } from "@/lib/auth";
+import { useToast } from "@/hooks/use-toast";
 
 export function NotificationDropdown() {
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const { user } = useAuth();
+  const { toast } = useToast();
   const wsRef = useRef<WebSocket | null>(null);
   
   // WebSocket connection for real-time notifications
@@ -106,18 +108,23 @@ export function NotificationDropdown() {
     },
   });
   
-  // Mutation to delete all notifications
-  const deleteAllNotifications = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest("DELETE", "/api/notifications/all", {});
-      return response.json();
-    },
-    onSuccess: () => {
-      // Invalidate queries to refresh notification data
-      queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/notifications/count"] });
-    },
-  });
+  // Frontend-only clear all notifications 
+  const [hiddenNotifications, setHiddenNotifications] = useState<boolean>(false);
+  
+  // This function clears notifications only on the frontend (no server request)
+  const clearAllNotifications = () => {
+    // Hide notifications in the UI
+    setHiddenNotifications(true);
+    
+    // Update the count to zero in the cache (frontend only)
+    queryClient.setQueryData(["/api/notifications/count"], { count: 0 });
+    
+    // Show success toast
+    toast({
+      title: "Notifications cleared",
+      description: "All notifications have been cleared from your view.",
+    });
+  };
 
   // Count of unread notifications
   const unreadCount = countData?.count || 0;
@@ -163,12 +170,12 @@ export function NotificationDropdown() {
                 <Check className="h-4 w-4 mr-1" />
                 Mark all read
               </Button>
-              {notifications && notifications.length > 0 && (
+              {notifications && notifications.length > 0 && !hiddenNotifications && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => deleteAllNotifications.mutate()}
-                  disabled={isLoadingNotifications || deleteAllNotifications.isPending}
+                  onClick={clearAllNotifications}
+                  disabled={isLoadingNotifications}
                   className="text-xs h-8 text-red-400 hover:text-red-300"
                 >
                   <Trash2 className="h-4 w-4 mr-1" />
@@ -182,7 +189,7 @@ export function NotificationDropdown() {
             <div className="flex items-center justify-center p-8">
               <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
             </div>
-          ) : notifications && notifications.length > 0 ? (
+          ) : notifications && notifications.length > 0 && !hiddenNotifications ? (
             <>
               <ScrollArea className="h-[300px]">
                 <div className="flex flex-col">

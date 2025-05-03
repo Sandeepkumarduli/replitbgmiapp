@@ -187,10 +187,10 @@ export default function Home() {
                 </Link>
               </div>
             </div>
-            <div className="bg-dark-card border border-gray-800 rounded-lg shadow-lg p-6">
+            <div className="bg-dark-card border border-indigo-700/30 rounded-lg shadow-lg p-6 bg-gradient-to-br from-dark-card to-gray-900/70">
               <div className="flex items-center justify-between mb-6">
                 <h4 className="text-xl font-bold text-white">Your Registered Tournaments</h4>
-                <span className="text-gray-400">3 Tournaments</span>
+                <span className="text-indigo-400">3 Tournaments</span>
               </div>
               <div className="space-y-4">
                 <div className="bg-dark-surface p-4 rounded-lg border border-green-700/40 flex justify-between items-center shadow-md bg-gradient-to-r from-green-900/10 to-emerald-900/10">
@@ -203,7 +203,7 @@ export default function Home() {
                     <span className="text-[#00CC66] text-sm font-medium">LIVE</span>
                   </div>
                 </div>
-                <div className="bg-dark-surface p-4 rounded-lg border border-gray-800 flex justify-between items-center">
+                <div className="bg-dark-surface p-4 rounded-lg border border-green-700/40 flex justify-between items-center shadow-md bg-gradient-to-r from-green-900/10 to-emerald-900/10">
                   <div>
                     <h5 className="text-white font-medium">Weekend Warriors</h5>
                     <p className="text-gray-400 text-sm">Today, 6:00 PM • Duo</p>
@@ -213,7 +213,7 @@ export default function Home() {
                     <span className="text-[#00CC66] text-sm font-medium">LIVE</span>
                   </div>
                 </div>
-                <div className="bg-dark-surface p-4 rounded-lg border border-gray-800 flex justify-between items-center">
+                <div className="bg-dark-surface p-4 rounded-lg border border-amber-600/40 flex justify-between items-center shadow-md bg-gradient-to-r from-amber-900/10 to-yellow-900/10">
                   <div>
                     <h5 className="text-white font-medium">BGMI Championship</h5>
                     <p className="text-gray-400 text-sm">July 25, 2:00 PM • Squad</p>

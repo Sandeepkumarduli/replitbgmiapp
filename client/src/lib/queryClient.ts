@@ -95,11 +95,14 @@ export const queryClient = new QueryClient({
       refetchInterval: false,
       refetchOnWindowFocus: true,
       refetchOnMount: true,
-      staleTime: 30000, // 30 seconds - allows some caching but ensures freshness
+      staleTime: 15000, // 15 seconds - more frequent refresh for tournament data
       retry: 1,        // Try once more if it fails
     },
     mutations: {
       retry: false,
+      onError: (error: Error) => {
+        handleError(error.message || "An error occurred during the operation");
+      },
     },
   },
 });

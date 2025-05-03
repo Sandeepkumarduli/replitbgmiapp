@@ -3,32 +3,44 @@ import { useLocation } from 'wouter';
 import { useQueryClient } from '@tanstack/react-query';
 
 /**
- * Custom hook that automatically refreshes data when navigating between pages
- * This ensures the user always sees the latest data without manual refresh
+ * A custom hook that refreshes data when navigating between pages
+ * This helps ensure we always have fresh data, especially for tournament lists
  */
 export function useNavigationRefresh() {
   const [location] = useLocation();
   const queryClient = useQueryClient();
-
-  // When location changes, invalidate all queries to force refresh
+  
   useEffect(() => {
-    const refreshAllQueries = async () => {
-      // Invalidate all queries
-      await queryClient.invalidateQueries();
+    // Invalidate key queries when navigation happens
+    const refreshData = async () => {
+      // Invalidate tournaments data
+      await queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/tournaments?status=live'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/tournaments?status=upcoming'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/tournaments?status=completed'] });
       
-      // Force a refetch of common endpoints
+      // Also invalidate registration counts and user registrations
+      await queryClient.invalidateQueries({ queryKey: ['/api/registrations/counts'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/registrations/user'] });
+      
+      // Fetch the data right away
       await Promise.all([
-        queryClient.refetchQueries({ queryKey: ['/api/tournaments'] }),
-        queryClient.refetchQueries({ queryKey: ['/api/teams/my'] }),
-        queryClient.refetchQueries({ queryKey: ['/api/registrations/user'] }),
-        queryClient.refetchQueries({ queryKey: ['/api/registrations/counts'] })
+        queryClient.fetchQuery({ queryKey: ['/api/tournaments'] }),
+        queryClient.fetchQuery({ queryKey: ['/api/registrations/counts'] }),
       ]);
       
       console.log('Data refreshed after navigation to:', location);
     };
-
-    refreshAllQueries();
+    
+    refreshData();
   }, [location, queryClient]);
+}
 
+/**
+ * A component that uses the useNavigationRefresh hook
+ * Include this component in your app layout to enable automatic data refresh
+ */
+export function NavigationRefresh() {
+  useNavigationRefresh();
   return null;
 }

@@ -148,7 +148,7 @@ export function TournamentCard({ tournament, onRegister, registered = false, reg
             </Button>
           ) : status === "live" ? (
             <Button 
-              className="w-full bg-gradient-to-r from-primary to-indigo-600 hover:from-indigo-600 hover:to-primary text-white font-medium shadow-md"
+              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-medium shadow-md"
               onClick={() => onRegister && onRegister(id)}
             >
               Join Now

@@ -46,6 +46,9 @@ export function TournamentList({
   // Fetch tournaments
   const { data: tournaments, isLoading: isLoadingTournaments } = useQuery<Tournament[]>({
     queryKey: [filter ? `/api/tournaments?status=${filter}` : "/api/tournaments"],
+    initialData: [], // Initialize with empty array
+    refetchOnMount: true, // Force refetch when component mounts
+    refetchOnWindowFocus: true, // Refetch when window is focused
   });
 
   // Fetch user's teams

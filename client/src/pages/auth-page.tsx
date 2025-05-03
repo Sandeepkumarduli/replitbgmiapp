@@ -143,7 +143,7 @@ export default function AuthPage() {
                     
                     <Button 
                       type="submit" 
-                      className="w-full mt-4"
+                      className="w-full mt-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-medium shadow-md"
                       disabled={loginForm.formState.isSubmitting}
                     >
                       {loginForm.formState.isSubmitting ? (
@@ -234,7 +234,7 @@ export default function AuthPage() {
                     
                     <Button 
                       type="submit" 
-                      className="w-full mt-4"
+                      className="w-full mt-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-medium shadow-md"
                       disabled={signupForm.formState.isSubmitting}
                     >
                       {signupForm.formState.isSubmitting ? (
@@ -265,17 +265,26 @@ export default function AuthPage() {
       </div>
       
       {/* Right side - Hero section */}
-      <div className="hidden lg:flex w-1/2 bg-gradient-to-r from-primary/20 to-accent/20 flex-col justify-center items-center p-10">
-        <div className="max-w-md text-center">
-          <h1 className="text-4xl font-bold text-white mb-6">
-            BGMI Tournament Management Platform
+      <div className="hidden lg:flex w-1/2 bg-gradient-to-br from-indigo-900/40 via-purple-900/30 to-dark flex-col justify-center items-center p-10 relative">
+        {/* Add subtle animated gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/5 via-purple-600/5 to-dark opacity-70"></div>
+        
+        <div className="max-w-md text-center relative z-10">
+          <h1 className="text-5xl font-bold mb-2">
+            <span className="bg-gradient-to-r from-indigo-400 to-purple-400 text-transparent bg-clip-text">
+              RD TOURNAMENTS
+            </span>
+            <span className="text-white"> HUB</span>
           </h1>
-          <p className="text-gray-300 mb-8">
-            Create teams, join tournaments, and compete with players from around the country. 
-            Manage your BGMI competitive journey all in one place.
+          <p className="text-xl text-indigo-300 mb-6 italic">
+            An Ultimate Gaming Hub
           </p>
-          <div className="bg-black/40 p-6 rounded-lg backdrop-blur-sm">
-            <h3 className="text-primary font-semibold text-xl mb-3">
+          <p className="text-gray-300 mb-8">
+            Create teams, join tournaments, and compete with players from around the country.
+            Experience gaming excellence across BGMI, FREEFIRE, and COD Mobile.
+          </p>
+          <div className="bg-black/40 p-6 rounded-lg backdrop-blur-sm border border-indigo-900/30">
+            <h3 className="bg-gradient-to-r from-indigo-400 to-purple-400 text-transparent bg-clip-text font-semibold text-xl mb-3">
               Player Features:
             </h3>
             <ul className="text-left text-gray-300 space-y-2">

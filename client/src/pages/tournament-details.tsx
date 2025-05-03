@@ -50,6 +50,7 @@ export default function TournamentDetails({ params }: { params: { id: string } }
   const queryClient = useQueryClient();
   const [registerDialogOpen, setRegisterDialogOpen] = useState(false);
   const [selectedTeamId, setSelectedTeamId] = useState<string>("");
+  const [isLocalRegistered, setIsLocalRegistered] = useState(false);
 
   // Fetch tournament details
   const { data: tournament, isLoading: isTournamentLoading } = useQuery<Tournament>({
@@ -79,8 +80,13 @@ export default function TournamentDetails({ params }: { params: { id: string } }
       return res.json();
     },
     onSuccess: () => {
+      // Set local registration state immediately
+      setIsLocalRegistered(true);
+      
+      // Update cache in the background
       queryClient.invalidateQueries({ queryKey: ["/api/registrations/user"] });
       queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournamentId}/registrations`] });
+      
       toast({
         title: "Registration successful",
         description: "You have successfully registered for the tournament",

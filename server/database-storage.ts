@@ -606,4 +606,18 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
+  
+  async cleanupOldNotifications(olderThan: Date): Promise<number> {
+    try {
+      // Delete notifications older than the specified date
+      const result = await db.delete(notifications)
+        .where(lt(notifications.createdAt, olderThan))
+        .returning();
+      
+      return result.length;
+    } catch (error) {
+      console.error('Error cleaning up old notifications:', error);
+      return 0; // Return 0 instead of throwing to prevent disrupting the application
+    }
+  }
 }

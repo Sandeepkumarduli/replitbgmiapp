@@ -66,6 +66,7 @@ export interface IStorage {
   markNotificationAsRead(id: number): Promise<Notification | undefined>;
   markAllNotificationsAsRead(userId: number): Promise<void>;
   deleteNotification(id: number): Promise<boolean>;
+  cleanupOldNotifications(olderThan: Date): Promise<number>; // Returns count of deleted notifications
 }
 
 import createMemoryStore from "memorystore";
@@ -424,6 +425,21 @@ export class MemStorage implements IStorage {
 
   async deleteNotification(id: number): Promise<boolean> {
     return this.notifications.delete(id);
+  }
+  
+  async cleanupOldNotifications(olderThan: Date): Promise<number> {
+    const notificationsToDelete = Array.from(this.notifications.values())
+      .filter(notification => notification.createdAt < olderThan);
+    
+    // Delete each old notification
+    let deletedCount = 0;
+    for (const notification of notificationsToDelete) {
+      if (this.notifications.delete(notification.id)) {
+        deletedCount++;
+      }
+    }
+    
+    return deletedCount;
   }
 }
 

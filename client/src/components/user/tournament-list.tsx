@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -43,13 +43,23 @@ export function TournamentList({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch tournaments
-  const { data: tournaments, isLoading: isLoadingTournaments } = useQuery<Tournament[]>({
+  // Fetch tournaments with proper error handling
+  const { 
+    data: tournaments = [], // Default to empty array if no data
+    isLoading: isLoadingTournaments,
+    error: tournamentsError,
+    refetch: refetchTournaments
+  } = useQuery<Tournament[]>({
     queryKey: [filter ? `/api/tournaments?status=${filter}` : "/api/tournaments"],
-    initialData: [], // Initialize with empty array
-    refetchOnMount: true, // Force refetch when component mounts
-    refetchOnWindowFocus: true, // Refetch when window is focused
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    retry: 2, // Try up to 3 times total (initial + 2 retries)
   });
+  
+  // Immediately refetch once on component mount to ensure fresh data
+  useEffect(() => {
+    refetchTournaments();
+  }, []);
 
   // Fetch user's teams
   const { data: teams, isLoading: isLoadingTeams } = useQuery<Team[]>({
@@ -291,13 +301,13 @@ export function TournamentList({
             <Button
               variant="outline"
               onClick={() => setRegisterDialogOpen(false)}
-              className="border-gray-700 text-white hover:bg-dark-surface"
+              className="border-gray-700 text-white hover:bg-dark-surface bg-gradient-to-r from-gray-900/30 to-slate-900/30"
             >
               Cancel
             </Button>
             <Button
               onClick={confirmRegistration}
-              className="bg-primary hover:bg-primary/90 text-white"
+              className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-md"
               disabled={registerMutation.isPending || !selectedTeamId}
             >
               {registerMutation.isPending ? "Registering..." : "Confirm Registration"}
@@ -318,16 +328,16 @@ export function TournamentListWithTabs({ gameTypeFilter = null, searchTerm = "" 
   return (
     <Tabs defaultValue="all" className="w-full">
       <TabsList className="mb-6 bg-dark-surface border border-gray-800">
-        <TabsTrigger value="all" className="data-[state=active]:bg-primary data-[state=active]:text-white">
+        <TabsTrigger value="all" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-600 data-[state=active]:to-purple-600 data-[state=active]:text-white">
           All
         </TabsTrigger>
-        <TabsTrigger value="live" className="data-[state=active]:bg-primary data-[state=active]:text-white">
+        <TabsTrigger value="live" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-600 data-[state=active]:to-emerald-600 data-[state=active]:text-white">
           Live
         </TabsTrigger>
-        <TabsTrigger value="upcoming" className="data-[state=active]:bg-primary data-[state=active]:text-white">
+        <TabsTrigger value="upcoming" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-yellow-500 data-[state=active]:text-white">
           Upcoming
         </TabsTrigger>
-        <TabsTrigger value="completed" className="data-[state=active]:bg-primary data-[state=active]:text-white">
+        <TabsTrigger value="completed" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-gray-600 data-[state=active]:to-slate-700 data-[state=active]:text-white">
           Completed
         </TabsTrigger>
       </TabsList>

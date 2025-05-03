@@ -961,11 +961,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Team name already exists" });
       }
       
+      // Generate a unique 6-digit invite code
+      const inviteCode = await generate6DigitCode(storage);
+      
       // Create the team
       const team = await storage.createTeam({
         name,
         ownerId,
-        gameType: gameType || 'BGMI' // Default to BGMI if not specified
+        gameType: gameType || 'BGMI', // Default to BGMI if not specified
+        inviteCode
       });
       
       // Log the action

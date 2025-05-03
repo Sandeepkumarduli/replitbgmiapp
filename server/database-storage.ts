@@ -146,6 +146,16 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
+  
+  async getTeamByInviteCode(inviteCode: string): Promise<Team | undefined> {
+    try {
+      const [team] = await db.select().from(teams).where(eq(teams.inviteCode, inviteCode));
+      return team;
+    } catch (error) {
+      console.error(`Error fetching team with invite code ${inviteCode}:`, error);
+      throw error;
+    }
+  }
 
   async getTeamsByOwnerId(ownerId: number): Promise<Team[]> {
     try {
@@ -156,7 +166,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createTeam(insertTeam: InsertTeam): Promise<Team> {
+  async createTeam(insertTeam: InsertTeam & { inviteCode: string }): Promise<Team> {
     try {
       const [team] = await db.insert(teams).values(insertTeam).returning();
       return team;

@@ -808,7 +808,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(201).json(registration);
     } catch (error) {
-      res.status(500).json({ message: "Internal server error" });
+      console.error("Tournament registration error:", error);
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to register for tournament. Please try again." });
     }
   });
 

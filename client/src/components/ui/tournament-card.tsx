@@ -143,15 +143,20 @@ export function TournamentCard({ tournament, onRegister, registered = false, reg
         {/* Action Button */}
         <div className="border-t border-gray-800/50 p-4 pt-3 bg-gradient-to-b from-dark-card to-dark-surface/90">
           {registered ? (
-            <Button className="w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-medium">
-              Registered
-            </Button>
+            status === "live" ? (
+              <Link href={`/tournaments/${id}`}>
+                <Button className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-medium shadow-md">
+                  View Room ID & Pass
+                </Button>
+              </Link>
+            ) : (
+              <Button className="w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-medium">
+                Registered
+              </Button>
+            )
           ) : status === "live" ? (
-            <Button 
-              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-medium shadow-md"
-              onClick={() => onRegister && onRegister(id)}
-            >
-              Join Now
+            <Button className="w-full bg-gradient-to-r from-rose-600 to-red-600 text-white font-medium opacity-90" disabled>
+              Match Started
             </Button>
           ) : status === "upcoming" ? (
             <Button 

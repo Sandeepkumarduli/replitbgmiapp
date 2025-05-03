@@ -28,6 +28,7 @@ import AdminUserDetails from "@/pages/admin/user-details";
 import AdminSettings from "@/pages/admin/settings";
 import AdminTournaments from "@/pages/admin/tournaments";
 import AdminNotifications from "@/pages/admin/notifications";
+import AdminNotificationsBroadcast from "@/pages/admin/notifications-broadcast";
 import UserDashboard from "@/pages/user/dashboard";
 import UserProfile from "@/pages/user/profile";
 import UserTeam from "@/pages/user/team";
@@ -159,6 +160,7 @@ function Router() {
           <ProtectedRoute path="/admin/users/:id" component={AdminUserDetails} adminOnly={true}/>
           <ProtectedRoute path="/admin/admins" component={AdminManagement} adminOnly={true}/>
           <ProtectedRoute path="/admin/notifications" component={AdminNotifications} adminOnly={true}/>
+          <ProtectedRoute path="/admin/notifications/broadcast" component={AdminNotificationsBroadcast} adminOnly={true}/>
           <ProtectedRoute path="/admin/settings" component={AdminSettings} adminOnly={true}/>
           <Route path="/admin/tournaments/edit/:id">
             {(params) => (

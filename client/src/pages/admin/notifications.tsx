@@ -92,8 +92,14 @@ export default function AdminNotificationsPage() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-white">Notifications Management</h1>
-            <p className="text-gray-400">Send notifications to users or broadcast to everyone</p>
+            <p className="text-gray-400">Send notifications to specific users</p>
           </div>
+          <Button 
+            onClick={() => navigate('/admin/notifications/broadcast')}
+            className="bg-primary hover:bg-primary/90 text-white"
+          >
+            <Megaphone className="h-4 w-4 mr-2" /> Broadcast to All Users
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

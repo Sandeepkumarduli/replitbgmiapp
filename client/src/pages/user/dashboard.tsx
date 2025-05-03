@@ -315,7 +315,7 @@ export default function UserDashboard() {
                   variant="default" 
                   size="sm" 
                   className={`${tournamentFilter === 'upcoming' 
-                    ? 'bg-amber-600 text-white hover:bg-amber-700' 
+                    ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700' 
                     : 'bg-dark-surface border-gray-700 hover:bg-dark-surface/80 text-gray-300'}`}
                   onClick={() => setTournamentFilter('upcoming')}
                 >
@@ -325,7 +325,7 @@ export default function UserDashboard() {
                   variant="default" 
                   size="sm" 
                   className={`${tournamentFilter === 'live' 
-                    ? 'bg-green-600 text-white hover:bg-green-700' 
+                    ? 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700' 
                     : 'bg-dark-surface border-gray-700 hover:bg-dark-surface/80 text-gray-300'}`}
                   onClick={() => setTournamentFilter('live')}
                 >
@@ -345,7 +345,7 @@ export default function UserDashboard() {
                   variant="default" 
                   size="sm" 
                   className={`${tournamentFilter === 'completed' 
-                    ? 'bg-gray-600 text-white hover:bg-gray-700' 
+                    ? 'bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700' 
                     : 'bg-dark-surface border-gray-700 hover:bg-dark-surface/80 text-gray-300'}`}
                   onClick={() => setTournamentFilter('completed')}
                 >

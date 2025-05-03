@@ -304,11 +304,18 @@ export function TournamentList({
     }
     
     // Apply status filter (filter is 'upcoming', 'live', 'completed', or undefined)
-    if (filter) {
+    if (filter === 'completed') {
+      // Only show completed tournaments when specifically selected
+      displayTournaments = displayTournaments.filter(t => t.status === 'completed');
+    } else if (filter && filter !== 'all') {
+      // Filter for specific status (upcoming or live)
       displayTournaments = displayTournaments.filter(t => t.status === filter);
-    } else if (!filter && !showRegisteredOnly) {
-      // Default behavior: If no filter is explicitly specified, and not showing registered only,
-      // then show live and upcoming tournaments (hide completed)
+    } else if (filter === 'all' && showRegisteredOnly) {
+      // When showing 'all' for registered tournaments, show everything including completed
+      // This is only for the user's registered tournaments where they want to see all statuses
+    } else {
+      // Default behavior in all other cases:
+      // Only show live and upcoming tournaments (hide completed)
       displayTournaments = displayTournaments.filter(t => t.status === 'live' || t.status === 'upcoming');
     }
     
@@ -582,16 +589,16 @@ export function TournamentListWithTabs({ gameTypeFilter = null, searchTerm = "",
   return (
     <Tabs defaultValue="all" className="w-full">
       <TabsList className="mb-6 bg-dark-surface border border-gray-800">
-        <TabsTrigger value="live" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-600 data-[state=active]:to-emerald-600 data-[state=active]:text-white">
+        <TabsTrigger value="live" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-green-600 data-[state=active]:text-white">
           Live
         </TabsTrigger>
-        <TabsTrigger value="upcoming" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-yellow-500 data-[state=active]:text-white">
+        <TabsTrigger value="upcoming" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-blue-600 data-[state=active]:text-white">
           Upcoming
         </TabsTrigger>
         <TabsTrigger value="all" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-600 data-[state=active]:to-purple-600 data-[state=active]:text-white">
           All
         </TabsTrigger>
-        <TabsTrigger value="completed" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-gray-600 data-[state=active]:to-slate-700 data-[state=active]:text-white">
+        <TabsTrigger value="completed" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-500 data-[state=active]:to-red-600 data-[state=active]:text-white">
           Completed
         </TabsTrigger>
       </TabsList>

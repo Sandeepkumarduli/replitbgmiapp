@@ -9,7 +9,8 @@ import {
   insertTeamMemberSchema, 
   insertTournamentSchema, 
   updateTournamentSchema,
-  insertRegistrationSchema 
+  insertRegistrationSchema,
+  insertNotificationSchema
 } from "@shared/schema";
 import { setupAuth, hashPassword } from "./auth";
 import { setupSupabaseAuth } from "./supabase-auth";
@@ -632,8 +633,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const updatedTournament = await storage.updateTournament(tournamentId, result.data);
       
+      // Check if room information was updated (roomId or password changed)
+      const roomInfoUpdated = 
+        (req.body.roomId && req.body.roomId !== tournament.roomId) || 
+        (req.body.password && req.body.password !== tournament.password);
+      
+      // If room info was updated, create notifications for registered users
+      if (roomInfoUpdated) {
+        // Get all registrations for this tournament
+        const registrations = await storage.getRegistrationsByTournament(tournamentId);
+        
+        // Create notifications for each registered user
+        const notifications = [];
+        
+        for (const registration of registrations) {
+          const notification = await storage.createNotification({
+            userId: registration.userId,
+            title: `Room Info Updated - ${updatedTournament.title}`,
+            message: `Room ID: ${updatedTournament.roomId}, Password: ${updatedTournament.password}`,
+            type: "tournament",
+            relatedId: tournamentId
+          });
+          
+          notifications.push(notification);
+        }
+        
+        console.log(`Created ${notifications.length} room info notifications for tournament ${tournamentId}`);
+      }
+      
       res.json(updatedTournament);
     } catch (error) {
+      console.error("Error updating tournament:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });
@@ -1553,6 +1583,133 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       // Don't return error to avoid leaking security information
       res.json({ success: true });
+    }
+  });
+
+  //
+  // Notification Routes
+  //
+  
+  // Get user notifications
+  app.get("/api/notifications", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const notifications = await storage.getUserNotifications(userId);
+      res.json(notifications);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      res.status(500).json({ message: "Failed to fetch notifications" });
+    }
+  });
+
+  // Get unread notification count
+  app.get("/api/notifications/count", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const count = await storage.getUnreadNotificationsCount(userId);
+      res.json({ count });
+    } catch (error) {
+      console.error("Error fetching notification count:", error);
+      res.status(500).json({ message: "Failed to fetch notification count" });
+    }
+  });
+
+  // Mark notification as read
+  app.patch("/api/notifications/:id/read", isAuthenticated, async (req, res) => {
+    try {
+      const notificationId = parseInt(req.params.id);
+      const userId = req.session.userId!;
+      
+      // Verify the notification belongs to this user or is a broadcast
+      const notification = await storage.getNotification(notificationId);
+      if (!notification) {
+        return res.status(404).json({ message: "Notification not found" });
+      }
+      
+      if (notification.userId !== null && notification.userId !== userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const updatedNotification = await storage.markNotificationAsRead(notificationId);
+      res.json(updatedNotification);
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      res.status(500).json({ message: "Failed to mark notification as read" });
+    }
+  });
+
+  // Mark all notifications as read
+  app.post("/api/notifications/mark-all-read", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      await storage.markAllNotificationsAsRead(userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+      res.status(500).json({ message: "Failed to mark all notifications as read" });
+    }
+  });
+
+  // Admin: Create notification for a user or broadcast to all users
+  app.post("/api/admin/notifications", isAdmin, async (req, res) => {
+    try {
+      const result = insertNotificationSchema.safeParse(req.body);
+      
+      if (!result.success) {
+        return res.status(400).json({ message: result.error.format() });
+      }
+      
+      const notification = await storage.createNotification(result.data);
+      
+      // Log the notification creation
+      logSecurityEvent('Admin created notification', req, { 
+        notificationId: notification.id,
+        notificationType: notification.type,
+        targeted: notification.userId !== null
+      });
+      
+      res.status(201).json(notification);
+    } catch (error) {
+      console.error("Error creating notification:", error);
+      res.status(500).json({ message: "Failed to create notification" });
+    }
+  });
+
+  // Add notification for tournament room info update
+  app.post("/api/tournaments/:id/room-notification", isAdmin, async (req, res) => {
+    try {
+      const tournamentId = parseInt(req.params.id);
+      const tournament = await storage.getTournament(tournamentId);
+      
+      if (!tournament) {
+        return res.status(404).json({ message: "Tournament not found" });
+      }
+      
+      // Get all registrations for this tournament
+      const registrations = await storage.getRegistrationsByTournament(tournamentId);
+      
+      // Create notifications for each registered user
+      const notifications = [];
+      
+      for (const registration of registrations) {
+        const notification = await storage.createNotification({
+          userId: registration.userId,
+          title: `Room Info Updated - ${tournament.title}`,
+          message: `Room ID: ${tournament.roomId}, Password: ${tournament.password}`,
+          type: "tournament",
+          relatedId: tournamentId
+        });
+        
+        notifications.push(notification);
+      }
+      
+      res.status(201).json({ 
+        success: true, 
+        notificationsCreated: notifications.length 
+      });
+    } catch (error) {
+      console.error("Error creating room notifications:", error);
+      res.status(500).json({ message: "Failed to create room notifications" });
     }
   });
 

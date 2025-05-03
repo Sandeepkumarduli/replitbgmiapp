@@ -95,12 +95,14 @@ export class MemStorage implements IStorage {
     this.teamMembers = new Map();
     this.tournaments = new Map();
     this.registrations = new Map();
+    this.notifications = new Map();
     
     this.userId = 1;
     this.teamId = 1;
     this.teamMemberId = 1;
     this.tournamentId = 1;
     this.registrationId = 1;
+    this.notificationId = 1;
     
     // Initialize session store
     this.sessionStore = new MemoryStore({
@@ -363,6 +365,65 @@ export class MemStorage implements IStorage {
 
   async deleteRegistration(id: number): Promise<boolean> {
     return this.registrations.delete(id);
+  }
+
+  // Notification operations
+  async getNotification(id: number): Promise<Notification | undefined> {
+    return this.notifications.get(id);
+  }
+
+  async getUserNotifications(userId: number): Promise<Notification[]> {
+    return Array.from(this.notifications.values()).filter(
+      (notification) => notification.userId === userId || notification.userId === null
+    ).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()); // Sort by newest first
+  }
+
+  async getBroadcastNotifications(): Promise<Notification[]> {
+    return Array.from(this.notifications.values()).filter(
+      (notification) => notification.userId === null
+    ).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()); // Sort by newest first
+  }
+
+  async getUnreadNotificationsCount(userId: number): Promise<number> {
+    return Array.from(this.notifications.values()).filter(
+      (notification) => (notification.userId === userId || notification.userId === null) && !notification.isRead
+    ).length;
+  }
+
+  async createNotification(insertNotification: InsertNotification): Promise<Notification> {
+    const id = this.notificationId++;
+    const createdAt = new Date();
+    const notification: Notification = {
+      ...insertNotification,
+      id,
+      createdAt,
+      isRead: false
+    };
+    this.notifications.set(id, notification);
+    return notification;
+  }
+
+  async markNotificationAsRead(id: number): Promise<Notification | undefined> {
+    const notification = this.notifications.get(id);
+    if (!notification) return undefined;
+    
+    const updatedNotification = { ...notification, isRead: true };
+    this.notifications.set(id, updatedNotification);
+    return updatedNotification;
+  }
+
+  async markAllNotificationsAsRead(userId: number): Promise<void> {
+    const userNotifications = await this.getUserNotifications(userId);
+    
+    userNotifications.forEach(notification => {
+      if (!notification.isRead) {
+        this.notifications.set(notification.id, { ...notification, isRead: true });
+      }
+    });
+  }
+
+  async deleteNotification(id: number): Promise<boolean> {
+    return this.notifications.delete(id);
   }
 }
 

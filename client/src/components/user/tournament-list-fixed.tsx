@@ -183,26 +183,7 @@ export function TournamentList({
       return;
     }
 
-    // Check if it's a solo tournament (doesn't require team selection)
-    const tournamentType = tournament.teamType?.toLowerCase() || 'squad';
-    if (tournamentType === 'solo') {
-      // For solo tournaments, directly register with the first team
-      if (teams.length > 0) {
-        registerMutation.mutate({
-          tournamentId: tournament.id,
-          teamId: teams[0].id
-        });
-      } else {
-        toast({
-          title: "No teams found",
-          description: "You need to create a team before registering for a tournament",
-          variant: "destructive",
-        });
-      }
-      return;
-    }
-
-    // For non-solo tournaments, show team selection dialog
+    // Check if teams exist
     if (teams.length === 0) {
       toast({
         title: "No teams found",
@@ -212,6 +193,16 @@ export function TournamentList({
       return;
     }
 
+    // Check if it's a solo tournament (doesn't require team selection)
+    const tournamentType = tournament.teamType?.toLowerCase() || 'squad';
+    if (tournamentType === 'solo') {
+      // For solo tournaments, show confirmation dialog but with team pre-selected
+      setSelectedTeamId(teams[0].id.toString());
+      setRegisterDialogOpen(true);
+      return;
+    }
+
+    // For non-solo tournaments, show team selection dialog
     setSelectedTeamId(teams[0].id.toString());
     setRegisterDialogOpen(true);
   };
@@ -223,14 +214,26 @@ export function TournamentList({
     const teamId = parseInt(selectedTeamId);
     const tournamentType = selectedTournament.teamType?.toLowerCase() || 'squad';
     
+    // For solo tournaments, directly register without team validation
     if (tournamentType === 'solo') {
-      registerMutation.mutate({
-        tournamentId: selectedTournament.id,
-        teamId
-      });
+      try {
+        registerMutation.mutate({
+          tournamentId: selectedTournament.id,
+          teamId
+        });
+        setRegisterDialogOpen(false);
+        return;
+      } catch (error) {
+        toast({
+          title: 'Registration Error',
+          description: error instanceof Error ? error.message : 'Failed to register for tournament',
+          variant: 'destructive'
+        });
+      }
       return;
     }
     
+    // For duo and squad tournaments, validate team size
     try {
       const res = await fetch(`/api/teams/${teamId}/members`);
       if (!res.ok) throw new Error('Failed to fetch team members');

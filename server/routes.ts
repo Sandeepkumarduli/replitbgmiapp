@@ -1681,10 +1681,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Create a broadcast notification for all users
+  // Create a notification (broadcast to all or send to specific user)
   app.post("/api/notifications", isAdmin, async (req, res) => {
     try {
-      const { title, message, type = "broadcast" } = req.body;
+      const { title, message, type = "broadcast", userId = null } = req.body;
       
       if (!title || !message) {
         return res.status(400).json({ 
@@ -1693,28 +1693,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Create broadcast notification (userId = null means it's for all users)
+      // Create notification (userId = null means it's for all users)
       const notification = await storage.createNotification({
         title,
         message,
         type,
-        userId: null,
+        userId,
         relatedId: null
       });
       
-      // Log the broadcast notification creation
-      logSecurityEvent('Admin created broadcast notification', req, { 
+      // Log the notification creation
+      logSecurityEvent('Admin created notification', req, { 
         notificationId: notification.id,
-        title
+        title,
+        isPersonal: userId !== null
       });
       
-      res.status(201).json({ 
+      // Return proper JSON response
+      return res.status(201).json({ 
         success: true, 
         notification
       });
     } catch (error) {
-      console.error("Error creating broadcast notification:", error);
-      res.status(500).json({ message: "Failed to create broadcast notification" });
+      console.error("Error creating notification:", error);
+      // Ensure we're returning proper JSON
+      return res.status(500).json({ 
+        success: false,
+        message: "Failed to create notification",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
     }
   });
 

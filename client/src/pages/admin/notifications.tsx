@@ -1,259 +1,243 @@
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Loader2, Send, Users, User } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
-import AdminLayout from "@/components/layouts/admin-layout";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { User } from "@/lib/types";
+import AdminLayout from "@/components/layouts/admin-layout";
+import { AlertTriangle, Send, Users } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-const notificationSchema = z.object({
-  title: z.string().min(5, "Title must be at least 5 characters"),
-  message: z.string().min(10, "Message must be at least 10 characters"),
-  type: z.string().default("general"),
-  recipientType: z.enum(["all", "specific"]),
-  userId: z.number().optional(),
-  userIdInput: z.string().optional(),
-});
-
-export default function AdminNotifications() {
+export default function AdminNotificationsPage() {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const [title, setTitle] = useState("");
+  const [message, setMessage] = useState("");
+  const [notificationType, setNotificationType] = useState("all");
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 
-  // Query for all users (to select a specific user)
-  const {
-    data: users,
-    isLoading: isLoadingUsers,
-    error: usersError,
-  } = useQuery({
-    queryKey: ["/api/admin/users"],
-    enabled: true,
+  // Fetch all users for the dropdown menu
+  const { data: users, isLoading: loadingUsers } = useQuery({
+    queryKey: ["/api/users"],
+    enabled: notificationType === "user", // Only fetch when sending to a specific user
   });
 
-  const form = useForm<z.infer<typeof notificationSchema>>({
-    resolver: zodResolver(notificationSchema),
-    defaultValues: {
-      title: "",
-      message: "",
-      type: "general",
-      recipientType: "all",
-    },
-  });
+  // Form validation
+  const isValid = title.trim() !== "" && message.trim() !== "" && 
+    (notificationType !== "user" || (notificationType === "user" && selectedUserId !== null));
 
+  // Send notification mutation
   const sendNotification = useMutation({
-    mutationFn: async (data: any) => {
-      // Prepare notification data based on recipientType
-      const notificationData = {
-        title: data.title,
-        message: data.message,
-        type: data.type,
-        userId: data.recipientType === "specific" ? parseInt(data.userIdInput) : null,
-      };
-
-      const response = await apiRequest("POST", "/api/admin/notifications", notificationData);
-      return await response.json();
+    mutationFn: async (data: {
+      title: string;
+      message: string;
+      type: string;
+      userId?: number;
+    }) => {
+      const res = await apiRequest("POST", "/api/notifications", data);
+      return await res.json();
     },
     onSuccess: () => {
       toast({
-        title: "Notification sent",
-        description: "The notification has been sent successfully",
+        title: "Notification Sent",
+        description: "Your notification has been sent successfully.",
       });
-      form.reset();
+      
+      // Reset form
+      setTitle("");
+      setMessage("");
+      setNotificationType("all");
+      setSelectedUserId(null);
+      
+      // Invalidate notifications queries
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications/count"] });
     },
     onError: (error: Error) => {
       toast({
-        title: "Error sending notification",
-        description: error.message,
+        title: "Error",
+        description: `Failed to send notification: ${error.message}`,
         variant: "destructive",
       });
     },
   });
 
-  function onSubmit(data: z.infer<typeof notificationSchema>) {
-    sendNotification.mutate(data);
-  }
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const notificationData = {
+      title,
+      message,
+      type: notificationType === "user" ? "personal" : "broadcast",
+      ...(notificationType === "user" && selectedUserId ? { userId: selectedUserId } : {}),
+    };
+    
+    sendNotification.mutate(notificationData);
+  };
 
   return (
     <AdminLayout>
-      <div className="container mx-auto py-10">
-        <Card className="border border-gray-800 bg-dark-card shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold text-white">Send Notifications</CardTitle>
-            <CardDescription className="text-gray-400">
-              Send notifications to users of the tournament platform
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="recipientType"
-                  render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel className="text-white">Recipient</FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          className="flex flex-col space-y-1"
-                        >
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="all" id="all" />
-                            <Label htmlFor="all" className="flex items-center">
-                              <Users className="mr-2 h-4 w-4 text-indigo-400" />
-                              All Users
-                            </Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="specific" id="specific" />
-                            <Label htmlFor="specific" className="flex items-center">
-                              <User className="mr-2 h-4 w-4 text-blue-400" />
-                              Specific User
-                            </Label>
-                          </div>
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-white">Notifications Management</h1>
+            <p className="text-gray-400">Send notifications to users or broadcast to everyone</p>
+          </div>
+        </div>
 
-                {form.watch("recipientType") === "specific" && (
-                  <FormField
-                    control={form.control}
-                    name="userIdInput"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-white">User ID</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Enter user ID"
-                            className="bg-dark-surface border-gray-800 text-white"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormDescription className="text-gray-400">
-                          Enter the ID of the user who should receive this notification
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Send Notification Form */}
+          <Card className="bg-dark-card border-gray-800">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <Send className="h-5 w-5 text-primary" />
+                Send Notification
+              </CardTitle>
+              <CardDescription>Create and send a new notification</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="title" className="text-white">Notification Title</Label>
+                  <Input
+                    id="title"
+                    placeholder="Enter notification title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className="bg-dark-surface border-gray-700 text-white"
+                    required
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="message" className="text-white">Message</Label>
+                  <Textarea
+                    id="message"
+                    placeholder="Enter notification message"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    className="bg-dark-surface border-gray-700 text-white min-h-[120px]"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <Label className="text-white">Send To</Label>
+                  <RadioGroup
+                    value={notificationType}
+                    onValueChange={setNotificationType}
+                    className="flex flex-col space-y-1"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="all" id="all" />
+                      <Label htmlFor="all" className="text-gray-300 cursor-pointer">All Users (Broadcast)</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="user" id="user" />
+                      <Label htmlFor="user" className="text-gray-300 cursor-pointer">Specific User</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                {notificationType === "user" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="userId" className="text-white">Select User</Label>
+                    <Select
+                      value={selectedUserId?.toString() || ""}
+                      onValueChange={(value) => setSelectedUserId(parseInt(value))}
+                    >
+                      <SelectTrigger className="bg-dark-surface border-gray-700 text-white">
+                        <SelectValue placeholder="Select a user" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-dark-card border-gray-800">
+                        {loadingUsers ? (
+                          <SelectItem value="loading" disabled>Loading users...</SelectItem>
+                        ) : users?.length ? (
+                          users.map((user: User) => (
+                            <SelectItem key={user.id} value={user.id.toString()}>
+                              {user.username}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="none" disabled>No users found</SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 )}
 
-                <FormField
-                  control={form.control}
-                  name="type"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-white">Notification Type</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="bg-dark-surface border-gray-800 text-white">
-                            <SelectValue placeholder="Select notification type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent className="bg-dark-surface border-gray-800">
-                          <SelectItem value="general">General</SelectItem>
-                          <SelectItem value="tournament">Tournament</SelectItem>
-                          <SelectItem value="announcement">Announcement</SelectItem>
-                          <SelectItem value="important">Important</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-white">Title</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Notification title"
-                          className="bg-dark-surface border-gray-800 text-white"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="message"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-white">Message</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Enter notification message"
-                          className="bg-dark-surface border-gray-800 text-white min-h-[120px]"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <Button
-                  type="submit"
-                  className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
-                  disabled={sendNotification.isPending}
-                >
-                  {sendNotification.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Sending...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="mr-2 h-4 w-4" />
-                      Send Notification
-                    </>
-                  )}
-                </Button>
+                <div className="pt-2">
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-primary hover:bg-primary/90"
+                    disabled={!isValid || sendNotification.isPending}
+                  >
+                    {sendNotification.isPending ? (
+                      <span className="flex items-center">
+                        <span className="animate-spin mr-2">⏳</span> Sending...
+                      </span>
+                    ) : (
+                      <span className="flex items-center">
+                        <Send className="h-4 w-4 mr-2" /> Send Notification
+                      </span>
+                    )}
+                  </Button>
+                </div>
               </form>
-            </Form>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+
+          {/* Tips and Information Card */}
+          <Card className="bg-dark-card border-gray-800">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <Users className="h-5 w-5 text-primary" />
+                Notification Guidelines
+              </CardTitle>
+              <CardDescription>Best practices for sending notifications</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-dark-surface p-4 rounded-md border border-gray-800">
+                <h3 className="text-white font-semibold mb-2 flex items-center">
+                  <AlertTriangle className="h-4 w-4 text-amber-500 mr-2" />
+                  Important Information
+                </h3>
+                <ul className="list-disc list-inside text-gray-300 space-y-2">
+                  <li>Broadcast notifications are sent to all users</li>
+                  <li>Personal notifications are only visible to the selected user</li>
+                  <li>Users will see a notification badge in the header</li>
+                  <li>Be concise and clear in your notification messages</li>
+                </ul>
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="text-white font-semibold">Notification Types</h3>
+                <p className="text-gray-300 text-sm">
+                  The system automatically sends notifications for:
+                </p>
+                <ul className="list-disc list-inside text-gray-300 text-sm pl-2 space-y-1">
+                  <li>Tournament room details updates</li>
+                  <li>New tournament announcements</li>
+                  <li>Tournament status changes</li>
+                </ul>
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="text-white font-semibold">Best Practices</h3>
+                <ul className="list-disc list-inside text-gray-300 text-sm pl-2 space-y-1">
+                  <li>Use clear and descriptive titles</li>
+                  <li>Keep messages concise and actionable</li>
+                  <li>Avoid sending too many broadcasts in short periods</li>
+                  <li>For urgent matters, highlight key information</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </AdminLayout>
   );

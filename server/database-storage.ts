@@ -1,14 +1,15 @@
 import { 
-  users, teams, teamMembers, tournaments, registrations,
+  users, teams, teamMembers, tournaments, registrations, notifications,
   type User, type InsertUser, 
   type Team, type InsertTeam, 
   type TeamMember, type InsertTeamMember,
   type Tournament, type InsertTournament, type UpdateTournament,
-  type Registration, type InsertRegistration
+  type Registration, type InsertRegistration,
+  type Notification, type InsertNotification
 } from "@shared/schema";
 import { IStorage } from "./storage";
 import { db } from "./db";
-import { eq, and, desc, asc } from "drizzle-orm";
+import { eq, and, desc, asc, or, isNull, count } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
@@ -481,6 +482,128 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error deleting registration:', error);
       throw error; // Rethrow to handle in the controller
+    }
+  }
+
+  // Notification operations
+  async getNotification(id: number): Promise<Notification | undefined> {
+    try {
+      const [notification] = await db.select()
+        .from(notifications)
+        .where(eq(notifications.id, id));
+      return notification;
+    } catch (error) {
+      console.error('Error fetching notification:', error);
+      throw error;
+    }
+  }
+
+  async getUserNotifications(userId: number): Promise<Notification[]> {
+    try {
+      return await db.select()
+        .from(notifications)
+        .where(
+          // Get personal notifications AND broadcast notifications (where userId is null)
+          // in a single query using OR condition
+          or(
+            eq(notifications.userId, userId),
+            isNull(notifications.userId)
+          )
+        )
+        .orderBy(desc(notifications.createdAt));
+    } catch (error) {
+      console.error(`Error fetching notifications for user ${userId}:`, error);
+      throw error;
+    }
+  }
+
+  async getBroadcastNotifications(): Promise<Notification[]> {
+    try {
+      return await db.select()
+        .from(notifications)
+        .where(isNull(notifications.userId))
+        .orderBy(desc(notifications.createdAt));
+    } catch (error) {
+      console.error('Error fetching broadcast notifications:', error);
+      throw error;
+    }
+  }
+
+  async getUnreadNotificationsCount(userId: number): Promise<number> {
+    try {
+      const unreadNotifications = await db.select({ count: count() })
+        .from(notifications)
+        .where(
+          and(
+            or(
+              eq(notifications.userId, userId),
+              isNull(notifications.userId)
+            ),
+            eq(notifications.isRead, false)
+          )
+        );
+      return unreadNotifications[0]?.count || 0;
+    } catch (error) {
+      console.error(`Error fetching unread notification count for user ${userId}:`, error);
+      throw error;
+    }
+  }
+
+  async createNotification(insertNotification: InsertNotification): Promise<Notification> {
+    try {
+      const [notification] = await db.insert(notifications)
+        .values({
+          ...insertNotification,
+          isRead: false
+        })
+        .returning();
+      return notification;
+    } catch (error) {
+      console.error('Error creating notification:', error);
+      throw error;
+    }
+  }
+
+  async markNotificationAsRead(id: number): Promise<Notification | undefined> {
+    try {
+      const [updatedNotification] = await db.update(notifications)
+        .set({ isRead: true })
+        .where(eq(notifications.id, id))
+        .returning();
+      return updatedNotification;
+    } catch (error) {
+      console.error(`Error marking notification ${id} as read:`, error);
+      throw error;
+    }
+  }
+
+  async markAllNotificationsAsRead(userId: number): Promise<void> {
+    try {
+      await db.update(notifications)
+        .set({ isRead: true })
+        .where(
+          or(
+            eq(notifications.userId, userId),
+            isNull(notifications.userId)
+          )
+        );
+    } catch (error) {
+      console.error(`Error marking all notifications as read for user ${userId}:`, error);
+      throw error;
+    }
+  }
+
+  async deleteNotification(id: number): Promise<boolean> {
+    try {
+      // Before deletion, check if the notification exists
+      const notification = await this.getNotification(id);
+      if (!notification) return false;
+      
+      await db.delete(notifications).where(eq(notifications.id, id));
+      return true;
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      throw error;
     }
   }
 }

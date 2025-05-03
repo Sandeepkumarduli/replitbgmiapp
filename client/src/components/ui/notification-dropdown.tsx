@@ -161,7 +161,7 @@ export function NotificationDropdown() {
                 <Check className="h-4 w-4 mr-1" />
                 Mark all read
               </Button>
-              {notifications?.length > 0 && (
+              {notifications && notifications.length > 0 && (
                 <Button
                   variant="ghost"
                   size="sm"

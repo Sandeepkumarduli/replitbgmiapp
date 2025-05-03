@@ -620,4 +620,27 @@ export class DatabaseStorage implements IStorage {
       return 0; // Return 0 instead of throwing to prevent disrupting the application
     }
   }
+  
+  // Delete all notifications for a specific user
+  async deleteAllUserNotifications(userId: number): Promise<number> {
+    try {
+      // Delete both user-specific notifications and broadcasts
+      const result = await db.delete(notifications)
+        .where(
+          or(
+            eq(notifications.userId, userId),
+            and(
+              isNull(notifications.userId),
+              eq(notifications.type, 'broadcast')
+            )
+          )
+        )
+        .returning();
+      
+      return result.length;
+    } catch (error) {
+      console.error('Error deleting all user notifications:', error);
+      return 0; // Return 0 instead of throwing to prevent disrupting the application
+    }
+  }
 }

@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { TournamentList } from "@/components/user/tournament-list";
+import { TournamentList } from "@/components/user/tournament-list-fixed";
 import { CheckCircle, UserPlus, Users, Trophy, RefreshCw } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";

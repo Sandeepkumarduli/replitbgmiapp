@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { TournamentListWithTabs } from "@/components/user/tournament-list";
+import { TournamentListWithTabs } from "@/components/user/tournament-list-fixed";
 import { Button } from "@/components/ui/button";
 import { Search, Trophy, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";

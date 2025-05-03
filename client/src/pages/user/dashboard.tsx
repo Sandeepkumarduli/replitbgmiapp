@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { TournamentList } from "@/components/user/tournament-list";
+import { TournamentList } from "@/components/user/tournament-list-fixed";
 import { TeamCard } from "@/components/ui/team-card";
 import { JoinTeamForm } from "@/components/user/join-team-form";
 import { 

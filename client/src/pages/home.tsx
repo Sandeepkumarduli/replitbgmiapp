@@ -49,7 +49,7 @@ export default function Home() {
                 Register for our upcoming tournaments and show your skills on the battlefield. All tournaments feature cash prizes and exclusive rewards.
               </p>
             </div>
-            <Link href="/tournaments" className="inline-flex items-center px-5 py-2.5 bg-dark-card hover:bg-dark rounded-md border border-gray-700 text-white font-medium group">
+            <Link href="/tournaments" className="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-indigo-900/30 to-purple-900/30 hover:from-indigo-900/50 hover:to-purple-900/50 rounded-md border border-indigo-600 text-white font-medium group shadow-md">
               <span>View All Tournaments</span>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
@@ -103,24 +103,24 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
             <div className="text-center">
-              <div className="bg-dark-surface rounded-full h-20 w-20 flex items-center justify-center mx-auto mb-6 border border-primary">
-                <UserPlus className="text-primary h-10 w-10" />
+              <div className="bg-gradient-to-r from-indigo-900/30 to-purple-900/30 rounded-full h-20 w-20 flex items-center justify-center mx-auto mb-6 border border-indigo-600 shadow-md">
+                <UserPlus className="text-indigo-400 h-10 w-10" />
               </div>
               <h3 className="text-xl font-bold text-white mb-3">Create Account</h3>
               <p className="text-gray-400">Register with your unique username and BGMI game ID to get started</p>
             </div>
 
             <div className="text-center">
-              <div className="bg-dark-surface rounded-full h-20 w-20 flex items-center justify-center mx-auto mb-6 border border-primary">
-                <Users className="text-primary h-10 w-10" />
+              <div className="bg-gradient-to-r from-blue-900/30 to-cyan-900/30 rounded-full h-20 w-20 flex items-center justify-center mx-auto mb-6 border border-blue-600 shadow-md">
+                <Users className="text-blue-400 h-10 w-10" />
               </div>
               <h3 className="text-xl font-bold text-white mb-3">Build Your Team</h3>
               <p className="text-gray-400">Create your team by adding up to 4 players plus substitutes</p>
             </div>
 
             <div className="text-center">
-              <div className="bg-dark-surface rounded-full h-20 w-20 flex items-center justify-center mx-auto mb-6 border border-primary">
-                <Trophy className="text-primary h-10 w-10" />
+              <div className="bg-gradient-to-r from-amber-900/30 to-orange-900/30 rounded-full h-20 w-20 flex items-center justify-center mx-auto mb-6 border border-amber-600 shadow-md">
+                <Trophy className="text-amber-400 h-10 w-10" />
               </div>
               <h3 className="text-xl font-bold text-white mb-3">Join Tournaments</h3>
               <p className="text-gray-400">Browse and register for tournaments to compete for prizes</p>
@@ -147,32 +147,32 @@ export default function Home() {
               <h3 className="text-2xl font-bold text-white mb-6">User Dashboard</h3>
               <ul className="space-y-4">
                 <li className="flex items-start">
-                  <div className="flex-shrink-0 h-6 w-6 text-accent">
-                    <CheckCircle />
+                  <div className="flex-shrink-0 h-6 w-6">
+                    <CheckCircle className="text-indigo-400" />
                   </div>
                   <p className="ml-3 text-lg text-gray-300">
                     View all registered tournaments in one place
                   </p>
                 </li>
                 <li className="flex items-start">
-                  <div className="flex-shrink-0 h-6 w-6 text-accent">
-                    <CheckCircle />
+                  <div className="flex-shrink-0 h-6 w-6">
+                    <CheckCircle className="text-blue-400" />
                   </div>
                   <p className="ml-3 text-lg text-gray-300">
                     Create and manage your personal profile with unique username
                   </p>
                 </li>
                 <li className="flex items-start">
-                  <div className="flex-shrink-0 h-6 w-6 text-accent">
-                    <CheckCircle />
+                  <div className="flex-shrink-0 h-6 w-6">
+                    <CheckCircle className="text-green-400" />
                   </div>
                   <p className="ml-3 text-lg text-gray-300">
                     Build your team with up to 4 players and substitutes
                   </p>
                 </li>
                 <li className="flex items-start">
-                  <div className="flex-shrink-0 h-6 w-6 text-accent">
-                    <CheckCircle />
+                  <div className="flex-shrink-0 h-6 w-6">
+                    <CheckCircle className="text-amber-400" />
                   </div>
                   <p className="ml-3 text-lg text-gray-300">
                     Track your tournament results and team performance
@@ -193,7 +193,7 @@ export default function Home() {
                 <span className="text-gray-400">3 Tournaments</span>
               </div>
               <div className="space-y-4">
-                <div className="bg-dark-surface p-4 rounded-lg border border-gray-800 flex justify-between items-center">
+                <div className="bg-dark-surface p-4 rounded-lg border border-green-700/40 flex justify-between items-center shadow-md bg-gradient-to-r from-green-900/10 to-emerald-900/10">
                   <div>
                     <h5 className="text-white font-medium">BGMI Pro League</h5>
                     <p className="text-gray-400 text-sm">Today, 5:30 PM • Squad</p>

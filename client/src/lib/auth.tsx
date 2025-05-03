@@ -76,19 +76,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const res = await apiRequest("POST", "/api/login", credentials);
         return res.json();
       } catch (error) {
-        // Handle specific error cases more gracefully
-        if (error instanceof Error) {
-          if (error.message.includes("Wrong username or password") || 
-              error.message.includes("401") || 
-              error.message.includes("Unauthorized") ||
-              error.message.includes("Please check username or password")) {
-            throw new Error("Login failed. Please check username or password.");
-          } else {
-            throw new Error("Login failed. Please try again later.");
-          }
-        } else {
-          throw new Error("Login failed. Please try again later.");
-        }
+        // Handle all login errors with a consistent message about checking credentials
+        // This is more secure and better UX than revealing specific error reasons
+        throw new Error("Login failed. Please check username or password.");
       }
     },
     onSuccess: (data: User) => {
@@ -107,7 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onError: (error: Error) => {
       toast({
         title: "Login Failed",
-        description: error.message || "Try again later.",
+        description: "Please check username or password.",
         variant: "destructive",
       });
     },

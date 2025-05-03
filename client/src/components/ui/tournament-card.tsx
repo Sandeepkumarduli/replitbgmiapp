@@ -53,17 +53,17 @@ export function TournamentCard({ tournament, onRegister, registered = false, reg
           {/* Status Badge */}
           <div className="flex items-center justify-between mb-3">
             {status === "live" ? (
-              <Badge className="bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold shadow-sm">
+              <Badge className="bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold shadow-sm">
                 <span className="w-2 h-2 bg-white rounded-full animate-pulse mr-1.5"></span>
                 LIVE NOW
               </Badge>
             ) : status === "upcoming" ? (
-              <Badge className="bg-gradient-to-r from-indigo-600 to-blue-500 text-white font-semibold shadow-sm">
+              <Badge className="bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold shadow-sm">
                 <span className="w-2 h-2 bg-white rounded-full mr-1.5"></span>
                 UPCOMING
               </Badge>
             ) : (
-              <Badge className="bg-gradient-to-r from-rose-600 to-pink-500 text-white font-semibold shadow-sm">
+              <Badge className="bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold shadow-sm">
                 <span className="w-2 h-2 bg-white rounded-full mr-1.5"></span>
                 COMPLETED
               </Badge>
@@ -85,9 +85,9 @@ export function TournamentCard({ tournament, onRegister, registered = false, reg
           <div className="flex items-center mb-3">
             <h3 className="text-xl font-bold text-white mr-2">{title}</h3>
             <Badge className={`
-              ${gameType === 'BGMI' ? 'bg-gradient-to-r from-fuchsia-600 to-pink-600' : 
+              ${gameType === 'BGMI' ? 'bg-gradient-to-r from-gray-700 to-slate-700' : 
                 gameType === 'COD' ? 'bg-gradient-to-r from-blue-600 to-cyan-600' : 
-                  gameType === 'FREEFIRE' ? 'bg-gradient-to-r from-orange-500 to-amber-500' : 'bg-gradient-to-r from-fuchsia-600 to-pink-600'} 
+                  gameType === 'FREEFIRE' ? 'bg-gradient-to-r from-orange-500 to-amber-500' : 'bg-gradient-to-r from-gray-700 to-slate-700'} 
               text-white font-semibold shadow-sm
             `}>
               {gameType}

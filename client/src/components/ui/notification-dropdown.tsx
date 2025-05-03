@@ -128,8 +128,8 @@ export function NotificationDropdown() {
   };
 
   return (
-    <div data-dropdown="notification" onClick={(e) => e.stopPropagation()}>
-      <DropdownMenu open={isOpen} modal={false}>
+    <div data-dropdown="notification">
+      <DropdownMenu open={isOpen} onOpenChange={setIsOpen} modal={true}>
         <DropdownMenuTrigger asChild onClick={handleToggle}>
           <Button
             variant="ghost"

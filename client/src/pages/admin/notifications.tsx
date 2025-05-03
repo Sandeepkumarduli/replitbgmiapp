@@ -26,7 +26,7 @@ import { z } from "zod";
 import { Loader2, Send, Users, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import AdminLayout from "@/components/admin/admin-layout";
+import AdminLayout from "@/components/layouts/admin-layout";
 import {
   Select,
   SelectContent,

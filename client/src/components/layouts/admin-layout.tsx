@@ -10,7 +10,8 @@ import {
   Settings,
   LogOut,
   BarChart,
-  AlertTriangle
+  AlertTriangle,
+  BellRing
 } from "lucide-react";
 
 interface AdminLayoutProps {

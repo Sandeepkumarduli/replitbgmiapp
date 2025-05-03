@@ -1626,7 +1626,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/notifications", isAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId!;
+      
+      console.log(`Fetching notifications for user ${userId}`);
+      
+      // Get both user-specific and broadcast notifications
       const notifications = await storage.getUserNotifications(userId);
+      
+      // Sort by creation date, most recent first
+      notifications.sort((a, b) => {
+        if (!a.createdAt || !b.createdAt) return 0;
+        return b.createdAt.getTime() - a.createdAt.getTime();
+      });
+      
+      console.log(`Found ${notifications.length} notifications for user ${userId}`);
+      
       res.json(notifications);
     } catch (error) {
       console.error("Error fetching notifications:", error);
@@ -1638,7 +1651,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/notifications/count", isAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId!;
+      
+      console.log(`Fetching notification count for user ${userId}`);
       const count = await storage.getUnreadNotificationsCount(userId);
+      console.log(`User ${userId} has ${count} unread notifications`);
+      
       res.json({ count });
     } catch (error) {
       console.error("Error fetching notification count:", error);

@@ -68,6 +68,13 @@ export function NotificationDropdown() {
           // Update notification count immediately without a query
           queryClient.setQueryData(['/api/notifications/count'], { count: data.count });
           
+          // If we have any notifications, make sure to show them by clearing the hidden state
+          if (data.count > 0 && !data.isHideAction) {
+            console.log(`Showing notifications - count ${data.count} (from WebSocket)`);
+            localStorage.removeItem(`notifications_cleared_${user.id}`);
+            setHiddenNotifications(false);
+          }
+          
           // Always force refresh notifications on updates to ensure we have the latest data
           queryClient.invalidateQueries({ queryKey: ["/api/notifications/count"] });
           queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
@@ -114,8 +121,21 @@ export function NotificationDropdown() {
     isFetching: isFetchingNotifications,
   } = useQuery<Notification[]>({
     queryKey: ["/api/notifications"],
-    enabled: isOpen && !shouldSkipNotifications(), // Only fetch when dropdown is open and not cleared
+    // Only fetch when dropdown is open OR if we need to check if there are notifications
+    // This ensures we fetch on login to check notification status
+    enabled: (isOpen || !!user) && !shouldSkipNotifications(),
+    staleTime: 60000, // Keep data fresh for 60 seconds
     initialData: [], // Start with empty array
+    onSuccess: (data) => {
+      // If we get notifications and there's a count, make sure hiddenNotifications is false
+      if (data.length > 0 && user) {
+        console.log(`Found ${data.length} notifications for user ${user.id} from query`);
+        const wasCleared = localStorage.getItem(`notifications_cleared_${user.id}`) === 'true';
+        if (!wasCleared) {
+          setHiddenNotifications(false);
+        }
+      }
+    }
   });
 
   // Mutation to mark all notifications as read

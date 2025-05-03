@@ -34,8 +34,13 @@ async function throwIfResNotOk(res: Response) {
     }
     
     // Create and throw the error (but don't display it yet - that will be handled by React Query's onError)
-    const error = new Error(errorMessage);
-    throw error;
+    try {
+      const error = new Error(errorMessage || "An unknown error occurred");
+      throw error;
+    } catch (e) {
+      // If there's an issue creating the error object, throw a generic error
+      throw new Error("Failed to process request. Please try again.");
+    }
   }
 }
 

@@ -268,6 +268,7 @@ export default function AdminTeams() {
                   <TableHead className="text-gray-400">Game</TableHead>
                   <TableHead className="text-gray-400">Owner</TableHead>
                   <TableHead className="text-gray-400">Members</TableHead>
+                  <TableHead className="text-gray-400">Invite Code</TableHead>
                   <TableHead className="text-gray-400">Created</TableHead>
                   <TableHead className="text-gray-400 text-right">Actions</TableHead>
                 </TableRow>
@@ -300,6 +301,30 @@ export default function AdminTeams() {
                       <span className="px-2 py-1 bg-gray-700/50 text-gray-300 rounded-full text-xs">
                         {team.memberCount || 0} members
                       </span>
+                    </TableCell>
+                    <TableCell className="text-gray-300 font-mono">
+                      {team.inviteCode ? (
+                        <div className="flex items-center gap-1">
+                          <span className="bg-indigo-950/40 text-indigo-300 px-2 py-1 rounded border border-indigo-700/30">
+                            {team.inviteCode}
+                          </span>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6 text-indigo-400 hover:text-indigo-300"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigator.clipboard.writeText(team.inviteCode);
+                              toast({
+                                title: "Invite code copied",
+                                description: "Team invite code copied to clipboard"
+                              });
+                            }}
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      ) : "No code"}
                     </TableCell>
                     <TableCell className="text-gray-300">
                       {team.createdAt ? format(new Date(team.createdAt), "MMM d, yyyy") : "Unknown"}

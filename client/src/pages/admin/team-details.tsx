@@ -17,7 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, ArrowLeft, Edit, UserCog, Users, Save, Trash } from "lucide-react";
+import { Loader2, ArrowLeft, Edit, UserCog, Users, Save, Trash, Copy, Check } from "lucide-react";
 import AdminLayout from "@/components/layouts/admin-layout";
 import { apiRequest } from "@/lib/queryClient";
 import { 
@@ -50,6 +50,7 @@ export default function TeamDetails() {
     gameType: string;
     ownerId: number;
     createdAt: string;
+    inviteCode: string;
   }
 
   interface User {

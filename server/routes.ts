@@ -22,6 +22,7 @@ import {
   validateHardcodedAdmin,
   logSecurityEvent
 } from "./auth-security";
+import { WebSocketServer, WebSocket } from 'ws';
 import { z } from "zod";
 import crypto from "crypto";
 
@@ -1733,6 +1734,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
           
           notifications.push(notification);
+          
+          // Get the updated count for this user and broadcast it
+          const count = await storage.getUnreadNotificationsCount(uid);
+          app.locals.broadcastNotification(uid, count);
         }
         
         // Log the notifications creation
@@ -1764,6 +1769,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           title,
           isPersonal: userId !== null
         });
+        
+        if (userId === null) {
+          // Broadcast notification to all connected clients
+          app.locals.broadcastNotification(null, 1); // Send update to all users
+        } else {
+          // Get the updated count for this user and broadcast it
+          const count = await storage.getUnreadNotificationsCount(userId);
+          app.locals.broadcastNotification(userId, count);
+        }
         
         // Return proper JSON response
         return res.status(201).json({ 
@@ -1808,6 +1822,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
         
         notifications.push(notification);
+        
+        // Send real-time notification update to this user
+        const count = await storage.getUnreadNotificationsCount(registration.userId);
+        app.locals.broadcastNotification(registration.userId, count);
       }
       
       res.status(201).json({ 
@@ -1821,5 +1839,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+  
+  // Set up WebSocket server for real-time notifications
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  
+  // Track connected clients with their user IDs
+  const clients = new Map<WebSocket, { userId?: number }>();
+  
+  wss.on('connection', (ws) => {
+    // Store connected client
+    clients.set(ws, {});
+    
+    ws.on('message', (message) => {
+      try {
+        const data = JSON.parse(message.toString());
+        
+        // Authentication message to associate websocket with user
+        if (data.type === 'auth' && data.userId) {
+          clients.set(ws, { userId: data.userId });
+          console.log(`WebSocket client authenticated for user ${data.userId}`);
+        }
+      } catch (error) {
+        console.error('Error processing WebSocket message:', error);
+      }
+    });
+    
+    ws.on('close', () => {
+      clients.delete(ws);
+    });
+  });
+  
+  // Add a function to broadcast notification updates to connected clients
+  const broadcastNotification = (userId: number | null, count: number) => {
+    clients.forEach((client, ws) => {
+      // For broadcast notifications (userId is null) or targeted notifications
+      if (ws.readyState === WebSocket.OPEN && 
+          (userId === null || client.userId === userId)) {
+        ws.send(JSON.stringify({
+          type: 'notification_update',
+          count: count
+        }));
+      }
+    });
+  };
+  
+  // Attach the broadcastNotification function to app for use in routes
+  app.locals.broadcastNotification = broadcastNotification;
+  
   return httpServer;
 }

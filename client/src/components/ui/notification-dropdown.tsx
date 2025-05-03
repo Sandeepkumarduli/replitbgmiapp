@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { BellRing, BellOff, Check } from "lucide-react";
+import { BellRing, BellOff, Check, Trash2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,10 +14,65 @@ import { NotificationItem } from "./notification-item";
 import { Notification } from "@shared/schema";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
+import { useAuth } from "@/lib/auth";
 
 export function NotificationDropdown() {
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
+  const { user } = useAuth();
+  const wsRef = useRef<WebSocket | null>(null);
+  
+  // WebSocket connection for real-time notifications
+  useEffect(() => {
+    if (!user) return; // Don't connect if not logged in
+    
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/ws`;
+    
+    const socket = new WebSocket(wsUrl);
+    wsRef.current = socket;
+    
+    socket.onopen = () => {
+      console.log('WebSocket connected for notifications');
+      // Authenticate the WebSocket connection with user ID
+      if (user.id) {
+        socket.send(JSON.stringify({
+          type: 'auth',
+          userId: user.id
+        }));
+      }
+    };
+    
+    socket.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        
+        if (data.type === 'notification_update') {
+          // Update notification count immediately without a query
+          queryClient.setQueryData(['/api/notifications/count'], { count: data.count });
+          
+          // Also refresh notifications list if the dropdown is open
+          if (isOpen) {
+            queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
+          }
+        }
+      } catch (error) {
+        console.error('Error processing notification update:', error);
+      }
+    };
+    
+    socket.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+    
+    socket.onclose = () => {
+      console.log('WebSocket connection closed');
+    };
+    
+    return () => {
+      socket.close();
+    };
+  }, [user, queryClient, isOpen]);
 
   // Query to get unread notification count
   const {
@@ -50,8 +105,19 @@ export function NotificationDropdown() {
       queryClient.invalidateQueries({ queryKey: ["/api/notifications/count"] });
     },
   });
-
-  // We've removed the auto-close to fix the issue with the dropdown closing immediately
+  
+  // Mutation to delete all notifications
+  const deleteAllNotifications = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("DELETE", "/api/notifications/all", {});
+      return response.json();
+    },
+    onSuccess: () => {
+      // Invalidate queries to refresh notification data
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications/count"] });
+    },
+  });
 
   // Count of unread notifications
   const unreadCount = countData?.count || 0;
@@ -84,16 +150,30 @@ export function NotificationDropdown() {
         >
           <div className="flex items-center justify-between p-4 border-b border-gray-800">
             <h3 className="text-lg font-semibold text-white">Notifications</h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => markAllAsRead.mutate()}
-              disabled={isLoadingNotifications || markAllAsRead.isPending || (unreadCount === 0)}
-              className="text-xs"
-            >
-              <Check className="h-4 w-4 mr-1" />
-              Mark all as read
-            </Button>
+            <div className="flex space-x-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => markAllAsRead.mutate()}
+                disabled={isLoadingNotifications || markAllAsRead.isPending || (unreadCount === 0)}
+                className="text-xs"
+              >
+                <Check className="h-4 w-4 mr-1" />
+                Mark all read
+              </Button>
+              {notifications?.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => deleteAllNotifications.mutate()}
+                  disabled={isLoadingNotifications || deleteAllNotifications.isPending}
+                  className="text-xs text-red-400 hover:text-red-300"
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Clear all
+                </Button>
+              )}
+            </div>
           </div>
 
           {isLoadingNotifications ? (

@@ -204,73 +204,13 @@ export default function UserDashboard() {
           </div>
         </div>
         
-        {/* Registered Tournaments - Full Width */}
+        {/* Teams Card */}
         <Card className="bg-dark-card border-gray-800 shadow-lg mb-6">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <div className="flex items-center">
-              <Trophy className="h-5 w-5 text-primary mr-2" />
-              <CardTitle className="text-white text-xl">My Registered Tournaments</CardTitle>
+              <Users className="h-5 w-5 text-primary mr-2" />
+              <CardTitle className="text-white text-xl">My Teams</CardTitle>
             </div>
-            <div className="flex items-center gap-2">
-              <Link href="/tournaments" className="inline-block">
-                <Button variant="ghost" size="sm" className="text-accent hover:text-accent/80">
-                  Browse All Tournaments
-                </Button>
-              </Link>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="p-2">
-              {/* Tournament Status Tabs */}
-              <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
-                <Button 
-                  variant="default" 
-                  size="sm" 
-                  className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700"
-                  onClick={() => navigate("/tournaments")}
-                >
-                  All
-                </Button>
-                <Button 
-                  variant="default" 
-                  size="sm" 
-                  className="bg-green-600 text-white hover:bg-green-700"
-                  onClick={() => navigate("/tournaments?status=live")}
-                >
-                  Live
-                </Button>
-                <Button 
-                  variant="default" 
-                  size="sm" 
-                  className="bg-amber-600 text-white hover:bg-amber-700"
-                  onClick={() => navigate("/tournaments?status=upcoming")}
-                >
-                  Upcoming
-                </Button>
-                <Button 
-                  variant="default" 
-                  size="sm" 
-                  className="bg-gray-600 text-white hover:bg-gray-700"
-                  onClick={() => navigate("/tournaments?status=completed")}
-                >
-                  Completed
-                </Button>
-              </div>
-              
-              {/* Registered tournaments with enhanced visibility */}
-              <div className="bg-dark-surface rounded-lg border border-gray-800 p-4">
-                <h3 className="text-white font-medium mb-3">Your Registered Tournaments</h3>
-                {/* The TournamentList component now handles single column display when showRegisteredOnly is true */}
-                <TournamentList showRegisteredOnly={true} limit={4} />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        {/* Teams Card */}
-        <Card className="bg-dark-card border-gray-800 shadow-lg">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-white text-xl">My Teams</CardTitle>
             <Link href="/user/team" className="inline-block">
               <Button variant="link" className="text-accent hover:text-accent/80 p-0 h-auto">
                 Manage All
@@ -348,6 +288,69 @@ export default function UserDashboard() {
                 </div>
               </div>
             )}
+          </CardContent>
+        </Card>
+        
+        {/* Registered Tournaments - Full Width */}
+        <Card className="bg-dark-card border-gray-800 shadow-lg">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <div className="flex items-center">
+              <Trophy className="h-5 w-5 text-primary mr-2" />
+              <CardTitle className="text-white text-xl">My Registered Tournaments</CardTitle>
+            </div>
+            <div className="flex items-center gap-2">
+              <Link href="/tournaments" className="inline-block">
+                <Button variant="ghost" size="sm" className="text-accent hover:text-accent/80">
+                  Browse All Tournaments
+                </Button>
+              </Link>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="p-2">
+              {/* Tournament Status Tabs */}
+              <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  className="bg-amber-600 text-white hover:bg-amber-700"
+                  onClick={() => navigate("/tournaments?status=upcoming")}
+                >
+                  Upcoming
+                </Button>
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  className="bg-green-600 text-white hover:bg-green-700"
+                  onClick={() => navigate("/tournaments?status=live")}
+                >
+                  Live
+                </Button>
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700"
+                  onClick={() => navigate("/tournaments")}
+                >
+                  All
+                </Button>
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  className="bg-gray-600 text-white hover:bg-gray-700"
+                  onClick={() => navigate("/tournaments?status=completed")}
+                >
+                  Completed
+                </Button>
+              </div>
+              
+              {/* Registered tournaments with enhanced visibility */}
+              <div className="bg-dark-surface rounded-lg border border-gray-800 p-4">
+                <h3 className="text-white font-medium mb-3">Your Registered Tournaments</h3>
+                {/* The TournamentList component now handles single column display when showRegisteredOnly is true */}
+                <TournamentList showRegisteredOnly={true} limit={4} />
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>

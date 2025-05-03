@@ -51,27 +51,20 @@ export function NotificationDropdown() {
     },
   });
 
-  // Auto-close dropdown when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (isOpen && !(event.target as Element).closest('[data-dropdown="notification"]')) {
-        setIsOpen(false);
-      }
-    }
-
-    document.addEventListener("click", handleClickOutside);
-    return () => {
-      document.removeEventListener("click", handleClickOutside);
-    };
-  }, [isOpen]);
+  // We've removed the auto-close to fix the issue with the dropdown closing immediately
 
   // Count of unread notifications
   const unreadCount = countData?.count || 0;
 
+  // Handle toggle manually
+  const handleToggle = () => {
+    setIsOpen(!isOpen);
+  };
+
   return (
-    <div data-dropdown="notification">
-      <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-        <DropdownMenuTrigger asChild>
+    <div data-dropdown="notification" onClick={(e) => e.stopPropagation()}>
+      <DropdownMenu open={isOpen} modal={false}>
+        <DropdownMenuTrigger asChild onClick={handleToggle}>
           <Button
             variant="ghost"
             size="sm"

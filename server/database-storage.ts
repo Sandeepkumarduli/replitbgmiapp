@@ -1,11 +1,12 @@
 import { 
-  users, teams, teamMembers, tournaments, registrations, notifications,
+  users, teams, teamMembers, tournaments, registrations, notifications, notificationReads,
   type User, type InsertUser, 
   type Team, type InsertTeam, 
   type TeamMember, type InsertTeamMember,
   type Tournament, type InsertTournament, type UpdateTournament,
   type Registration, type InsertRegistration,
-  type Notification, type InsertNotification
+  type Notification, type InsertNotification, 
+  type NotificationRead, type InsertNotificationRead
 } from "@shared/schema";
 import { IStorage } from "./storage";
 import { db } from "./db";
@@ -500,17 +501,33 @@ export class DatabaseStorage implements IStorage {
 
   async getUserNotifications(userId: number): Promise<Notification[]> {
     try {
-      return await db.select()
+      // Get all user-specific and broadcast notifications
+      const allNotifications = await db.select()
         .from(notifications)
         .where(
-          // Get personal notifications AND broadcast notifications (where userId is null)
-          // in a single query using OR condition
           or(
             eq(notifications.userId, userId),
             isNull(notifications.userId)
           )
         )
         .orderBy(desc(notifications.createdAt));
+      
+      // Get all notification IDs this user has read
+      const readNotificationIds = await this.getUserReadNotifications(userId);
+      
+      // Mark broadcast notifications as read or unread for this specific user
+      return allNotifications.map(notification => {
+        // For broadcast notifications, check if this user has read it
+        if (notification.userId === null) {
+          return {
+            ...notification,
+            isRead: readNotificationIds.includes(notification.id)
+          };
+        }
+        
+        // User-specific notifications keep their original isRead status
+        return notification;
+      });
     } catch (error) {
       console.error(`Error fetching notifications for user ${userId}:`, error);
       throw error;
@@ -531,18 +548,29 @@ export class DatabaseStorage implements IStorage {
 
   async getUnreadNotificationsCount(userId: number): Promise<number> {
     try {
-      const unreadNotifications = await db.select({ count: count() })
+      // First, get all unread user-specific notifications
+      const unreadUserNotifications = await db.select({ count: count() })
         .from(notifications)
         .where(
           and(
-            or(
-              eq(notifications.userId, userId),
-              isNull(notifications.userId)
-            ),
+            eq(notifications.userId, userId),
             eq(notifications.isRead, false)
           )
         );
-      return unreadNotifications[0]?.count || 0;
+      
+      // Now, get all broadcast notifications
+      const broadcastNotifications = await this.getBroadcastNotifications();
+      
+      // Get IDs of broadcast notifications the user has already read
+      const readNotificationIds = await this.getUserReadNotifications(userId);
+      
+      // Count broadcast notifications that the user hasn't read
+      const unreadBroadcastCount = broadcastNotifications.filter(
+        notification => !readNotificationIds.includes(notification.id)
+      ).length;
+      
+      // Return the total count of unread notifications
+      return (unreadUserNotifications[0]?.count || 0) + unreadBroadcastCount;
     } catch (error) {
       console.error(`Error fetching unread notification count for user ${userId}:`, error);
       throw error;
@@ -564,29 +592,117 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async markNotificationAsRead(id: number): Promise<Notification | undefined> {
+  async markNotificationAsRead(id: number, userId: number): Promise<Notification | undefined> {
     try {
-      const [updatedNotification] = await db.update(notifications)
-        .set({ isRead: true })
-        .where(eq(notifications.id, id))
-        .returning();
-      return updatedNotification;
+      const notification = await this.getNotification(id);
+      if (!notification) return undefined;
+      
+      // For user-specific notifications, update the isRead flag directly
+      if (notification.userId === userId) {
+        const [updatedNotification] = await db.update(notifications)
+          .set({ isRead: true })
+          .where(eq(notifications.id, id))
+          .returning();
+        
+        return updatedNotification;
+      } 
+      // For broadcast notifications, add an entry to the notification_reads table
+      else if (notification.userId === null) {
+        // Insert into notification_reads, ignoring conflicts (if already read)
+        await db.insert(notificationReads)
+          .values({
+            userId,
+            notificationId: id
+          })
+          .onConflictDoNothing({
+            target: [notificationReads.userId, notificationReads.notificationId]
+          });
+        
+        return notification; // Return the original notification
+      }
+      
+      return notification;
     } catch (error) {
-      console.error(`Error marking notification ${id} as read:`, error);
+      console.error(`Error marking notification ${id} as read for user ${userId}:`, error);
       throw error;
+    }
+  }
+
+  async hasUserReadNotification(userId: number, notificationId: number): Promise<boolean> {
+    try {
+      const notification = await this.getNotification(notificationId);
+      if (!notification) return false;
+      
+      // For user-specific notifications, check the isRead flag
+      if (notification.userId === userId) {
+        return notification.isRead;
+      } 
+      // For broadcast notifications, check the notification_reads table
+      else if (notification.userId === null) {
+        const reads = await db.select()
+          .from(notificationReads)
+          .where(
+            and(
+              eq(notificationReads.userId, userId),
+              eq(notificationReads.notificationId, notificationId)
+            )
+          )
+          .limit(1);
+        
+        return reads.length > 0;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error(`Error checking if user ${userId} has read notification ${notificationId}:`, error);
+      return false;
+    }
+  }
+  
+  async getUserReadNotifications(userId: number): Promise<number[]> {
+    try {
+      const reads = await db.select()
+        .from(notificationReads)
+        .where(eq(notificationReads.userId, userId));
+      
+      return reads.map(read => read.notificationId);
+    } catch (error) {
+      console.error(`Error getting read notifications for user ${userId}:`, error);
+      return [];
     }
   }
 
   async markAllNotificationsAsRead(userId: number): Promise<void> {
     try {
+      // For user-specific notifications, update the isRead flag
       await db.update(notifications)
         .set({ isRead: true })
-        .where(
-          or(
-            eq(notifications.userId, userId),
-            isNull(notifications.userId)
-          )
-        );
+        .where(eq(notifications.userId, userId));
+      
+      // For broadcast notifications, add entries to notification_reads table
+      const broadcastNotifications = await this.getBroadcastNotifications();
+      
+      // Get IDs of broadcast notifications the user has already read
+      const readNotificationIds = await this.getUserReadNotifications(userId);
+      
+      // Filter out notifications that are already read
+      const unreadBroadcastNotifications = broadcastNotifications.filter(
+        notification => !readNotificationIds.includes(notification.id)
+      );
+      
+      // Insert read records for each unread broadcast notification
+      if (unreadBroadcastNotifications.length > 0) {
+        for (const notification of unreadBroadcastNotifications) {
+          await db.insert(notificationReads)
+            .values({
+              userId,
+              notificationId: notification.id
+            })
+            .onConflictDoNothing({
+              target: [notificationReads.userId, notificationReads.notificationId]
+            });
+        }
+      }
     } catch (error) {
       console.error(`Error marking all notifications as read for user ${userId}:`, error);
       throw error;

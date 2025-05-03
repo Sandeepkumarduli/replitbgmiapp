@@ -1679,7 +1679,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Access denied" });
       }
       
-      const updatedNotification = await storage.markNotificationAsRead(notificationId);
+      const updatedNotification = await storage.markNotificationAsRead(notificationId, userId);
       res.json(updatedNotification);
     } catch (error) {
       console.error("Error marking notification as read:", error);

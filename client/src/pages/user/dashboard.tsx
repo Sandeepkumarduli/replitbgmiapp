@@ -36,17 +36,46 @@ export default function UserDashboard() {
       }
     }
   }, [isAuthenticated, isAdmin, isLoading, navigate]);
+  
+  // Auto-refresh when the component mounts or regains focus
+  useEffect(() => {
+    // Define a function to refresh data
+    const refreshData = () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/teams/my"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/registrations/user"] });
+    };
+    
+    // Refresh on mount
+    refreshData();
+    
+    // Refresh when the window regains focus
+    const handleFocus = () => {
+      refreshData();
+    };
+    
+    // Add event listener
+    window.addEventListener('focus', handleFocus);
+    
+    // Cleanup function
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [queryClient, isAuthenticated]);
 
   // Fetch user teams
-  const { data: teams, isLoading: isLoadingTeams } = useQuery<any[]>({
+  const { data: teams, isLoading: isLoadingTeams, refetch: refetchTeams } = useQuery<any[]>({
     queryKey: ["/api/teams/my"],
     enabled: isAuthenticated,
+    refetchOnWindowFocus: true,
+    staleTime: 10000, // 10 seconds before considering data stale
   });
 
   // Fetch user registrations
-  const { data: registrations, isLoading: isLoadingRegistrations } = useQuery<any[]>({
+  const { data: registrations, isLoading: isLoadingRegistrations, refetch: refetchRegistrations } = useQuery<any[]>({
     queryKey: ["/api/registrations/user"],
     enabled: isAuthenticated,
+    refetchOnWindowFocus: true,
+    staleTime: 10000, // 10 seconds before considering data stale
   });
   
   // Handle refresh data

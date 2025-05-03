@@ -2,6 +2,8 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { 
+  Team,
+  User,
   insertUserSchema,
   insertTeamSchema, 
   insertTeamMemberSchema, 
@@ -341,9 +343,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/teams/my", isAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId!;
-      const teams = await storage.getTeamsByOwnerId(userId);
-      res.json(teams);
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Get teams owned by user
+      const ownedTeams = await storage.getTeamsByOwnerId(userId);
+      
+      // Get all teams
+      const allTeams = await storage.getAllTeams();
+      
+      // Get all team members to find teams where user is a member
+      const memberTeams: Team[] = [];
+      
+      for (const team of allTeams) {
+        // Skip teams the user already owns
+        if (ownedTeams.some(ownedTeam => ownedTeam.id === team.id)) {
+          continue;
+        }
+        
+        // Check if user is a member of this team
+        const members = await storage.getTeamMembers(team.id);
+        const isMember = members.some(member => member.username === user.username);
+        
+        if (isMember) {
+          memberTeams.push(team);
+        }
+      }
+      
+      // Combine owned teams and member teams
+      const combinedTeams = [...ownedTeams, ...memberTeams];
+      
+      res.json(combinedTeams);
     } catch (error) {
+      console.error("Error fetching user teams:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });

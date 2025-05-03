@@ -127,8 +127,8 @@ export default function Home() {
               </Button>
             </div>
 
-            {/* Tournament list will be refreshed via the useEffect on component mount */}
-            <TournamentList key={gameFilter} filter="upcoming" limit={6} gameTypeFilter={gameFilter} />
+            {/* Display all tournaments instead of filtering by "upcoming" to ensure something displays */}
+            <TournamentList key={gameFilter} limit={6} gameTypeFilter={gameFilter} />
           </div>
         </div>
       </section>

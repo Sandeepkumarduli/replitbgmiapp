@@ -624,15 +624,12 @@ export class DatabaseStorage implements IStorage {
   // Delete all notifications for a specific user
   async deleteAllUserNotifications(userId: number): Promise<number> {
     try {
-      // Delete both user-specific notifications and broadcasts
+      // Delete both user-specific notifications and all broadcast notifications
       const result = await db.delete(notifications)
         .where(
           or(
             eq(notifications.userId, userId),
-            and(
-              isNull(notifications.userId),
-              eq(notifications.type, 'broadcast')
-            )
+            isNull(notifications.userId)  // All broadcast notifications
           )
         )
         .returning();

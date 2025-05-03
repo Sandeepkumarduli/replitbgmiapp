@@ -148,15 +148,17 @@ export function NotificationDropdown() {
           align="end"
           className="w-[360px] p-0 bg-dark-card border border-gray-800"
         >
-          <div className="flex items-center justify-between p-4 border-b border-gray-800">
-            <h3 className="text-lg font-semibold text-white">Notifications</h3>
-            <div className="flex space-x-2">
+          <div className="flex flex-col p-4 border-b border-gray-800">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold text-white">Notifications</h3>
+            </div>
+            <div className="flex justify-end gap-2">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => markAllAsRead.mutate()}
                 disabled={isLoadingNotifications || markAllAsRead.isPending || (unreadCount === 0)}
-                className="text-xs"
+                className="text-xs h-8"
               >
                 <Check className="h-4 w-4 mr-1" />
                 Mark all read
@@ -167,7 +169,7 @@ export function NotificationDropdown() {
                   size="sm"
                   onClick={() => deleteAllNotifications.mutate()}
                   disabled={isLoadingNotifications || deleteAllNotifications.isPending}
-                  className="text-xs text-red-400 hover:text-red-300"
+                  className="text-xs h-8 text-red-400 hover:text-red-300"
                 >
                   <Trash2 className="h-4 w-4 mr-1" />
                   Clear all

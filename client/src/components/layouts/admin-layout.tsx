@@ -87,7 +87,22 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <ShieldCheck className="h-6 w-6 text-accent" />
             <h1 className="text-xl font-bold text-white">Admin Panel</h1>
           </div>
-          <p className="text-xs text-gray-400 mt-1">BGMI Tournament Management</p>
+          <div className="mt-2 py-1 px-2 bg-primary/10 rounded-md border border-primary/20">
+            <p className="text-xs font-semibold text-primary uppercase">RD TOURNAMENTS HUB</p>
+          </div>
+          <div className="flex items-center mt-3">
+            <div className="h-7 w-7 rounded-full bg-primary flex items-center justify-center">
+              <span className="text-xs font-bold text-white">
+                {user?.username?.charAt(0).toUpperCase()}
+              </span>
+            </div>
+            <div className="ml-2">
+              <p className="text-sm font-medium text-white truncate max-w-[180px]">
+                {user?.username}
+              </p>
+              <p className="text-xs text-gray-400">Administrator</p>
+            </div>
+          </div>
         </div>
         
         <nav className="flex-1 p-4 space-y-1">

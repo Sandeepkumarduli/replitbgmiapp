@@ -448,7 +448,7 @@ export class MemStorage implements IStorage {
     const notificationsToDelete = Array.from(this.notifications.values())
       .filter(notification => 
         notification.userId === userId || // User's personal notifications
-        (notification.userId === null && notification.type === 'broadcast') // Broadcasts
+        notification.userId === null      // All broadcast notifications (regardless of type)
       );
     
     // Delete each notification

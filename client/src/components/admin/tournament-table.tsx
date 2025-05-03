@@ -70,7 +70,10 @@ export function TournamentTable() {
   const gameTypes = ["BGMI", "FREEFIRE", "COD"];
   
   // Status types for filtering
-  const statusTypes = ["upcoming", "live", "completed"];
+  const statusTypes = ["live", "upcoming", "completed"];
+
+  // Set default filter to show live and upcoming tournaments
+  const [defaultStatusFilter, setDefaultStatusFilter] = useState<string | null>("live-upcoming");
 
   const { data: tournaments, isLoading, refetch } = useQuery<Tournament[]>({
     queryKey: ["/api/tournaments"],
@@ -89,6 +92,11 @@ export function TournamentTable() {
       // Apply status filter
       if (statusFilter && t.status !== statusFilter) return false;
       
+      // Apply special combined filter for live and upcoming
+      if (!statusFilter && defaultStatusFilter === "live-upcoming" && t.status === "completed") {
+        return false;
+      }
+      
       // Apply date filter
       if (dateFilter) {
         const tournamentDate = new Date(t.date);
@@ -101,6 +109,12 @@ export function TournamentTable() {
       return true;
     }) : 
     [];
+    
+  // Sort tournaments to prioritize Live, then Upcoming, then Completed
+  const sortedTournaments = [...filteredTournaments].sort((a, b) => {
+    const statusPriority = { live: 0, upcoming: 1, completed: 2 };
+    return statusPriority[a.status as keyof typeof statusPriority] - statusPriority[b.status as keyof typeof statusPriority];
+  });
   
   const refreshTournaments = async () => {
     setIsRefreshing(true);
@@ -368,8 +382,8 @@ export function TournamentTable() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredTournaments && filteredTournaments.length > 0 ? (
-              filteredTournaments.map((tournament) => (
+            {sortedTournaments && sortedTournaments.length > 0 ? (
+              sortedTournaments.map((tournament) => (
                 <TableRow key={tournament.id} className="border-gray-800 hover:bg-dark-surface/50">
                   <TableCell className="font-medium text-white">{tournament.title}</TableCell>
                   <TableCell className="text-gray-300">

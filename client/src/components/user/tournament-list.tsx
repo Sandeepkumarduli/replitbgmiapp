@@ -37,10 +37,14 @@ export function TournamentList({
   gameTypeFilter = null,
   searchTerm = ""
 }: TournamentListProps) {
+  // Standard page size for pagination
+  const PAGE_SIZE = 10;
+  
   const [registerDialogOpen, setRegisterDialogOpen] = useState(false);
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
   const [selectedTeamId, setSelectedTeamId] = useState<string>("");
   const [isJustRegistered, setIsJustRegistered] = useState<number[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -76,10 +80,9 @@ export function TournamentList({
     queryKey: ["/api/teams/my"],
   });
 
-  // Fetch user's registrations
+  // Fetch user's registrations - always fetch but with different handling
   const { data: registrations, isLoading: isLoadingRegistrations } = useQuery<any[]>({
     queryKey: ["/api/registrations/user"],
-    enabled: showRegisteredOnly,
   });
   
   // Fetch registration counts for all tournaments
@@ -220,28 +223,179 @@ export function TournamentList({
     return registrations.some((reg: any) => reg.tournamentId === tournamentId);
   };
 
-  // Handle API errors gracefully
-  if (tournamentsError) {
-    return (
-      <div className="py-8 text-center">
-        <p className="text-red-400">Error loading tournaments. Please try again.</p>
-        <Button 
-          onClick={() => refetchTournaments()}
-          className="mt-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white"
-        >
-          Retry
-        </Button>
-      </div>
-    );
-  }
+  // All loading and error states must be after all hooks are called
+  // We'll use a single renderContent function to avoid conditional hook issues
+  const renderContent = () => {
+    // Handle API errors gracefully
+    if (tournamentsError) {
+      return (
+        <div className="py-8 text-center">
+          <p className="text-red-400">Error loading tournaments. Please try again.</p>
+          <Button 
+            onClick={() => refetchTournaments()}
+            className="mt-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white"
+          >
+            Retry
+          </Button>
+        </div>
+      );
+    }
 
-  if (isLoadingTournaments || (showRegisteredOnly && isLoadingRegistrations) || isLoadingCounts) {
+    // Handle loading state
+    if (isLoadingTournaments || (showRegisteredOnly && isLoadingRegistrations) || isLoadingCounts) {
+      return (
+        <div className="py-8 text-center">
+          <p className="text-gray-400">Loading tournaments...</p>
+        </div>
+      );
+    }
+    
+    // Process the tournaments
+    let displayTournaments = tournaments || [];
+
+    if (showRegisteredOnly && registrations) {
+      // Filter tournaments that the user has registered for
+      const registeredTournamentIds = registrations.map((reg: any) => reg.tournamentId);
+      displayTournaments = displayTournaments.filter(t => registeredTournamentIds.includes(t.id));
+    }
+
+    // For the "completed" filter, only show completed tournaments to:
+    // 1. Users who registered for them (if logged in)
+    // 2. Or if no filter is applied (showing all tournaments)
+    if (filter === "completed" && !showRegisteredOnly) {
+      // If user is logged in and we have their registrations
+      if (registrations) {
+        const registeredTournamentIds = registrations.map((reg: any) => reg.tournamentId);
+        // Show only completed tournaments they registered for
+        displayTournaments = displayTournaments.filter(t => registeredTournamentIds.includes(t.id));
+      } else {
+        // If not logged in, show a placeholder that says "Please log in to view completed tournaments"
+        displayTournaments = [];
+      }
+    }
+
+    // Apply game type filter if specified
+    if (gameTypeFilter) {
+      displayTournaments = displayTournaments.filter(t => t.gameType === gameTypeFilter);
+    }
+    
+    // Apply search filter if specified
+    if (searchTerm.trim()) {
+      const lowercaseSearch = searchTerm.toLowerCase().trim();
+      displayTournaments = displayTournaments.filter(t => 
+        t.title.toLowerCase().includes(lowercaseSearch) || 
+        (t.description && t.description.toLowerCase().includes(lowercaseSearch)) ||
+        t.mapType.toLowerCase().includes(lowercaseSearch) ||
+        t.teamType.toLowerCase().includes(lowercaseSearch) ||
+        (t.gameType && t.gameType.toLowerCase().includes(lowercaseSearch))
+      );
+    }
+
+    // Sort tournaments by date (most recent first)
+    displayTournaments = [...displayTournaments].sort((a, b) => {
+      // Convert string dates to Date objects for comparison
+      const dateA = new Date(a.date);
+      const dateB = new Date(b.date);
+      // Sort descending (newest first)
+      return dateB.getTime() - dateA.getTime();
+    });
+
+    // Calculate total pages
+    const totalTournaments = displayTournaments.length;
+    const totalPages = Math.ceil(totalTournaments / PAGE_SIZE);
+
+    // If a limit is specified (e.g., for homepage), use it
+    // Otherwise use pagination
+    let paginatedTournaments = displayTournaments;
+    if (limit && displayTournaments.length > limit) {
+      paginatedTournaments = displayTournaments.slice(0, limit);
+    } else {
+      // Apply pagination
+      const startIndex = (currentPage - 1) * PAGE_SIZE;
+      paginatedTournaments = displayTournaments.slice(startIndex, startIndex + PAGE_SIZE);
+    }
+
+    if (displayTournaments.length === 0) {
+      return (
+        <div className="py-8 text-center">
+          <p className="text-gray-400">
+            {filter === "completed" && !registrations
+              ? "Please log in to view completed tournaments. Only tournaments you registered for will be visible."
+              : showRegisteredOnly
+                ? "You haven't registered for any tournaments yet"
+                : "No tournaments available at the moment"}
+          </p>
+          {filter === "completed" && !registrations && (
+            <Button
+              className="mt-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white"
+              onClick={() => window.location.href = "/auth"}
+            >
+              Log In Now
+            </Button>
+          )}
+        </div>
+      );
+    }
+
     return (
-      <div className="py-8 text-center">
-        <p className="text-gray-400">Loading tournaments...</p>
-      </div>
+      <>
+        <div className={`grid grid-cols-1 ${showRegisteredOnly ? "" : "sm:grid-cols-2 lg:grid-cols-3"} gap-6`}>
+          {paginatedTournaments.map((tournament) => (
+            <TournamentCard
+              key={tournament.id}
+              tournament={tournament}
+              onRegister={handleRegister}
+              registered={isRegistered(tournament.id)}
+              registrationsCount={registrationCounts?.[tournament.id] || 0}
+            />
+          ))}
+        </div>
+        
+        {/* Pagination controls */}
+        {!limit && totalPages > 1 && (
+          <div className="flex justify-center items-center mt-8 space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className="border-gray-700 text-white hover:bg-dark-surface bg-gradient-to-r from-gray-900/30 to-slate-900/30"
+            >
+              Previous
+            </Button>
+            
+            <div className="flex items-center space-x-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <Button
+                  key={page}
+                  variant={currentPage === page ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handlePageChange(page)}
+                  className={
+                    currentPage === page
+                      ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white"
+                      : "border-gray-700 text-white hover:bg-dark-surface bg-gradient-to-r from-gray-900/30 to-slate-900/30"
+                  }
+                >
+                  {page}
+                </Button>
+              ))}
+            </div>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+              className="border-gray-700 text-white hover:bg-dark-surface bg-gradient-to-r from-gray-900/30 to-slate-900/30"
+            >
+              Next
+            </Button>
+          </div>
+        )}
+      </>
     );
-  }
+  };
 
   let displayTournaments = tournaments || [];
 
@@ -249,6 +403,21 @@ export function TournamentList({
     // Filter tournaments that the user has registered for
     const registeredTournamentIds = registrations.map((reg: any) => reg.tournamentId);
     displayTournaments = displayTournaments.filter(t => registeredTournamentIds.includes(t.id));
+  }
+
+  // For the "completed" filter, only show completed tournaments to:
+  // 1. Users who registered for them (if logged in)
+  // 2. Or if no filter is applied (showing all tournaments)
+  if (filter === "completed" && !showRegisteredOnly) {
+    // If user is logged in and we have their registrations
+    if (registrations) {
+      const registeredTournamentIds = registrations.map((reg: any) => reg.tournamentId);
+      // Show only completed tournaments they registered for
+      displayTournaments = displayTournaments.filter(t => registeredTournamentIds.includes(t.id));
+    } else {
+      // If not logged in, show a placeholder that says "Please log in to view completed tournaments"
+      displayTournaments = [];
+    }
   }
 
   // Apply game type filter if specified
@@ -268,19 +437,64 @@ export function TournamentList({
     );
   }
 
-  // Limit number of tournaments if specified
+  // Sort tournaments by date (most recent first)
+  displayTournaments = [...displayTournaments].sort((a, b) => {
+    // Convert string dates to Date objects for comparison
+    const dateA = new Date(a.date);
+    const dateB = new Date(b.date);
+    // Sort descending (newest first)
+    return dateB.getTime() - dateA.getTime();
+  });
+
+  // Calculate total pages
+  const totalTournaments = displayTournaments.length;
+  const totalPages = Math.ceil(totalTournaments / PAGE_SIZE);
+
+  // Reset to first page if current page is out of bounds after filtering
+  // Note: this useEffect must not be conditionally rendered
+  useEffect(() => {
+    // Only do the check if we have a valid totalPages value
+    if (totalPages > 0 && currentPage > totalPages) {
+      setCurrentPage(1);
+    }
+  }, [totalPages, currentPage]);
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    // Scroll to top of the list when changing pages
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // If a limit is specified (e.g., for homepage), use it
+  // Otherwise use pagination
+  let paginatedTournaments = displayTournaments;
   if (limit && displayTournaments.length > limit) {
-    displayTournaments = displayTournaments.slice(0, limit);
+    paginatedTournaments = displayTournaments.slice(0, limit);
+  } else {
+    // Apply pagination
+    const startIndex = (currentPage - 1) * PAGE_SIZE;
+    paginatedTournaments = displayTournaments.slice(startIndex, startIndex + PAGE_SIZE);
   }
 
   if (displayTournaments.length === 0) {
     return (
       <div className="py-8 text-center">
         <p className="text-gray-400">
-          {showRegisteredOnly
-            ? "You haven't registered for any tournaments yet"
-            : "No tournaments available at the moment"}
+          {filter === "completed" && !registrations
+            ? "Please log in to view completed tournaments. Only tournaments you registered for will be visible."
+            : showRegisteredOnly
+              ? "You haven't registered for any tournaments yet"
+              : "No tournaments available at the moment"}
         </p>
+        {filter === "completed" && !registrations && (
+          <Button
+            className="mt-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white"
+            onClick={() => window.location.href = "/auth"}
+          >
+            Log In Now
+          </Button>
+        )}
       </div>
     );
   }
@@ -288,7 +502,7 @@ export function TournamentList({
   return (
     <>
       <div className={`grid grid-cols-1 ${showRegisteredOnly ? "" : "sm:grid-cols-2 lg:grid-cols-3"} gap-6`}>
-        {displayTournaments.map((tournament) => (
+        {paginatedTournaments.map((tournament) => (
           <TournamentCard
             key={tournament.id}
             tournament={tournament}
@@ -298,6 +512,49 @@ export function TournamentList({
           />
         ))}
       </div>
+      
+      {/* Pagination controls */}
+      {!limit && totalPages > 1 && (
+        <div className="flex justify-center items-center mt-8 space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+            disabled={currentPage === 1}
+            className="border-gray-700 text-white hover:bg-dark-surface bg-gradient-to-r from-gray-900/30 to-slate-900/30"
+          >
+            Previous
+          </Button>
+          
+          <div className="flex items-center space-x-1">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <Button
+                key={page}
+                variant={currentPage === page ? "default" : "outline"}
+                size="sm"
+                onClick={() => handlePageChange(page)}
+                className={
+                  currentPage === page
+                    ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white"
+                    : "border-gray-700 text-white hover:bg-dark-surface bg-gradient-to-r from-gray-900/30 to-slate-900/30"
+                }
+              >
+                {page}
+              </Button>
+            ))}
+          </div>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+            disabled={currentPage === totalPages}
+            className="border-gray-700 text-white hover:bg-dark-surface bg-gradient-to-r from-gray-900/30 to-slate-900/30"
+          >
+            Next
+          </Button>
+        </div>
+      )}
 
       {/* Registration Dialog */}
       <Dialog open={registerDialogOpen} onOpenChange={setRegisterDialogOpen}>

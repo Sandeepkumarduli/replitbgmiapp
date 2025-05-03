@@ -60,6 +60,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       active: location === "/admin/admins"
     },
     {
+      icon: <BellRing className="h-5 w-5 mr-3" />,
+      text: "Notifications",
+      path: "/admin/notifications",
+      active: location === "/admin/notifications"
+    },
+    {
       icon: <Settings className="h-5 w-5 mr-3" />,
       text: "Settings",
       path: "/admin/settings",

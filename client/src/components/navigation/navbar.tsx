@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Menu, X, User, Trophy, LogOut, Users, Home, Settings, Mail, Info, Gamepad } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { NotificationDropdown } from "@/components/ui/notification-dropdown";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -84,7 +85,9 @@ export default function Navbar() {
               )}
             </div>
           </div>
-          <div className="hidden sm:ml-6 sm:flex sm:items-center">
+          <div className="hidden sm:ml-6 sm:flex sm:items-center space-x-2">
+            {isAuthenticated && <NotificationDropdown />}
+            
             {isAuthenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

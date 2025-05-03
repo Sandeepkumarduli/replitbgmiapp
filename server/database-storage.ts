@@ -87,11 +87,33 @@ export class DatabaseStorage implements IStorage {
       const user = await this.getUser(id);
       if (!user) return false;
       
+      // First, get all teams owned by this user
+      const userTeams = await this.getTeamsByOwnerId(id);
+      
+      // For each team
+      for (const team of userTeams) {
+        // 1. Delete all team members
+        await db.delete(teamMembers).where(eq(teamMembers.teamId, team.id));
+        
+        // 2. Delete all registrations for this team
+        await db.delete(registrations).where(eq(registrations.teamId, team.id));
+        
+        // 3. Delete the team itself
+        await db.delete(teams).where(eq(teams.id, team.id));
+      }
+      
+      // Delete any remaining team members where this user is a member of someone else's team
+      await db.delete(teamMembers).where(eq(teamMembers.username, user.username));
+      
+      // Delete all tournament registrations made by this user
+      await db.delete(registrations).where(eq(registrations.userId, id));
+      
+      // Finally, delete the user
       await db.delete(users).where(eq(users.id, id));
       return true;
     } catch (error) {
       console.error('Error deleting user:', error);
-      return false;
+      throw error; // Rethrow to properly handle in controller
     }
   }
   
@@ -163,11 +185,19 @@ export class DatabaseStorage implements IStorage {
       const team = await this.getTeam(id);
       if (!team) return false;
       
+      // First, delete all team members to handle foreign key constraints
+      await db.delete(teamMembers).where(eq(teamMembers.teamId, id));
+      
+      // Then delete any tournament registrations associated with this team
+      await db.delete(registrations).where(eq(registrations.teamId, id));
+      
+      // Now safe to delete the team
       await db.delete(teams).where(eq(teams.id, id));
+      
       return true;
     } catch (error) {
       console.error('Error deleting team:', error);
-      return false;
+      throw error; // Rethrow to handle in the controller for proper error messages
     }
   }
   
@@ -321,11 +351,15 @@ export class DatabaseStorage implements IStorage {
       const tournament = await this.getTournament(id);
       if (!tournament) return false;
       
+      // First delete all registrations for this tournament
+      await db.delete(registrations).where(eq(registrations.tournamentId, id));
+      
+      // Now safe to delete the tournament
       await db.delete(tournaments).where(eq(tournaments.id, id));
       return true;
     } catch (error) {
       console.error('Error deleting tournament:', error);
-      return false;
+      throw error; // Rethrow to handle in the controller
     }
   }
 

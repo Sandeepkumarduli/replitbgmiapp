@@ -1273,14 +1273,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // Delete the team
-      const isDeleted = await storage.deleteTeam(teamId);
-      
-      if (!isDeleted) {
+      try {
+        const isDeleted = await storage.deleteTeam(teamId);
+        
+        if (!isDeleted) {
+          return res.status(404).json({ message: "Team not found" });
+        }
+        
+        res.json({ message: "Team deleted successfully" });
+      } catch (error) {
+        console.error("Error deleting team:", error);
         return res.status(500).json({ message: "Failed to delete team" });
       }
-      
-      res.json({ message: "Team deleted successfully" });
     } catch (error) {
+      console.error("Admin delete team error:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });

@@ -454,30 +454,36 @@ export function TournamentList({
           <DialogHeader>
             <DialogTitle>Register for Tournament</DialogTitle>
             <DialogDescription className="text-gray-400">
-              Select a team to register for {selectedTournament?.title}
+              {selectedTournament?.teamType?.toLowerCase() === 'solo' 
+                ? `Confirm registration for ${selectedTournament?.title}`
+                : `Select a team to register for ${selectedTournament?.title}`
+              }
             </DialogDescription>
           </DialogHeader>
 
           <div className="py-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">Select Team</label>
-              <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
-                <SelectTrigger className="bg-dark-surface border-gray-700 text-white">
-                  <SelectValue placeholder="Select a team" />
-                </SelectTrigger>
-                <SelectContent className="bg-dark-card border-gray-700">
-                  {teams?.map((team) => (
-                    <SelectItem 
-                      key={team.id} 
-                      value={team.id.toString()}
-                      className="text-white focus:bg-dark-surface focus:text-white"
-                    >
-                      {team.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Only show team selection for non-solo tournaments */}
+            {selectedTournament?.teamType?.toLowerCase() !== 'solo' && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-300">Select Team</label>
+                <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
+                  <SelectTrigger className="bg-dark-surface border-gray-700 text-white">
+                    <SelectValue placeholder="Select a team" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-dark-card border-gray-700">
+                    {teams?.map((team) => (
+                      <SelectItem 
+                        key={team.id} 
+                        value={team.id.toString()}
+                        className="text-white focus:bg-dark-surface focus:text-white"
+                      >
+                        {team.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div className="mt-4 p-3 bg-dark-surface border border-gray-700 rounded-md">
               <h4 className="text-sm font-medium text-white mb-2">Tournament Info</h4>
@@ -513,7 +519,7 @@ export function TournamentList({
             <Button
               onClick={confirmRegistration}
               className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-md"
-              disabled={registerMutation.isPending || !selectedTeamId}
+              disabled={registerMutation.isPending || (selectedTournament?.teamType?.toLowerCase() !== 'solo' && !selectedTeamId)}
             >
               {registerMutation.isPending ? "Registering..." : "Confirm Registration"}
             </Button>

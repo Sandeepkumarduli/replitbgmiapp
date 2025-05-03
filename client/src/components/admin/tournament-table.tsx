@@ -38,9 +38,20 @@ import {
   Eye,
   Key,
   AlertTriangle,
-  RefreshCw
+  RefreshCw,
+  Calendar,
+  Filter
 } from "lucide-react";
 import { Tournament } from "@shared/schema";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export function TournamentTable() {
   const [, navigate] = useLocation();
@@ -52,9 +63,14 @@ export function TournamentTable() {
   const [roomData, setRoomData] = useState({ roomId: "", password: "" });
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [gameFilter, setGameFilter] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
   
   // Game types for filtering
   const gameTypes = ["BGMI", "FREEFIRE", "COD"];
+  
+  // Status types for filtering
+  const statusTypes = ["upcoming", "live", "completed"];
 
   const { data: tournaments, isLoading, refetch } = useQuery<Tournament[]>({
     queryKey: ["/api/tournaments"],
@@ -64,9 +80,26 @@ export function TournamentTable() {
     queryKey: ["/api/registrations/counts"],
   });
   
-  // Filter tournaments by game type if filter is active
+  // Apply all filters to tournaments
   const filteredTournaments = tournaments ? 
-    (gameFilter ? tournaments.filter(t => t.gameType === gameFilter) : tournaments) : 
+    tournaments.filter(t => {
+      // Apply game type filter
+      if (gameFilter && t.gameType !== gameFilter) return false;
+      
+      // Apply status filter
+      if (statusFilter && t.status !== statusFilter) return false;
+      
+      // Apply date filter
+      if (dateFilter) {
+        const tournamentDate = new Date(t.date);
+        // Format both dates to same format to compare only the date part (not time)
+        const filterDateStr = dateFilter.toISOString().split('T')[0];
+        const tournamentDateStr = tournamentDate.toISOString().split('T')[0];
+        if (filterDateStr !== tournamentDateStr) return false;
+      }
+      
+      return true;
+    }) : 
     [];
   
   const refreshTournaments = async () => {
@@ -209,40 +242,116 @@ export function TournamentTable() {
           </div>
         </div>
         
-        {/* Game filters */}
-        <div className="px-4 pb-2 flex gap-2 items-center">
-          <span className="text-sm text-gray-400">Filter by game:</span>
-          <div className="flex gap-1">
-            {gameTypes.map(game => (
-              <Button
-                key={game}
-                size="sm"
-                variant={gameFilter === game ? "default" : "outline"}
-                className={`text-xs ${
-                  gameFilter === game 
-                    ? `${game === 'BGMI' 
-                        ? 'bg-blue-600 hover:bg-blue-700' 
-                        : game === 'FREEFIRE' 
-                          ? 'bg-red-600 hover:bg-red-700' 
-                          : 'bg-green-600 hover:bg-green-700'}`
-                    : "bg-transparent border-gray-700 text-gray-300 hover:bg-gray-800"
-                }`}
-                onClick={() => gameFilter === game ? setGameFilter(null) : setGameFilter(game)}
-              >
-                {game}
-              </Button>
-            ))}
-            {gameFilter && (
-              <Button
+        {/* Filters Section */}
+        <div className="px-4 pb-4 space-y-2">
+          {/* Game filters */}
+          <div className="flex gap-2 items-center">
+            <span className="text-sm text-gray-400">Game:</span>
+            <div className="flex gap-1">
+              {gameTypes.map(game => (
+                <Button
+                  key={game}
+                  size="sm"
+                  variant={gameFilter === game ? "default" : "outline"}
+                  className={`text-xs ${
+                    gameFilter === game 
+                      ? `${game === 'BGMI' 
+                          ? 'bg-blue-600 hover:bg-blue-700' 
+                          : game === 'FREEFIRE' 
+                            ? 'bg-red-600 hover:bg-red-700' 
+                            : 'bg-green-600 hover:bg-green-700'}`
+                      : "bg-transparent border-gray-700 text-gray-300 hover:bg-gray-800"
+                  }`}
+                  onClick={() => gameFilter === game ? setGameFilter(null) : setGameFilter(game)}
+                >
+                  {game}
+                </Button>
+              ))}
+            </div>
+          </div>
+          
+          {/* Status filters */}
+          <div className="flex gap-2 items-center">
+            <span className="text-sm text-gray-400">Status:</span>
+            <div className="flex gap-1">
+              {statusTypes.map(status => (
+                <Button
+                  key={status}
+                  size="sm"
+                  variant={statusFilter === status ? "default" : "outline"}
+                  className={`text-xs ${
+                    statusFilter === status 
+                      ? `${status === 'live' 
+                          ? 'bg-green-600 hover:bg-green-700' 
+                          : status === 'upcoming' 
+                            ? 'bg-amber-600 hover:bg-amber-700' 
+                            : 'bg-gray-600 hover:bg-gray-700'}`
+                      : "bg-transparent border-gray-700 text-gray-300 hover:bg-gray-800"
+                  }`}
+                  onClick={() => statusFilter === status ? setStatusFilter(null) : setStatusFilter(status)}
+                >
+                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                </Button>
+              ))}
+            </div>
+          </div>
+          
+          {/* Date filter */}
+          <div className="flex gap-2 items-center">
+            <span className="text-sm text-gray-400">Date:</span>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={`text-xs bg-transparent border-gray-700 text-gray-300 hover:bg-gray-800 ${
+                    dateFilter ? 'bg-primary/20 border-primary text-primary' : ''
+                  }`}
+                >
+                  <Calendar className="mr-2 h-3 w-3" />
+                  {dateFilter ? format(dateFilter, "MMM d, yyyy") : "Select date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 bg-dark-card border-gray-800">
+                <CalendarComponent
+                  mode="single"
+                  selected={dateFilter}
+                  onSelect={setDateFilter}
+                  className="bg-dark-card text-white border-none"
+                />
+              </PopoverContent>
+            </Popover>
+            
+            {dateFilter && (
+              <Button 
                 size="sm"
                 variant="outline"
                 className="text-xs bg-transparent border-gray-700 text-gray-300 hover:bg-gray-800"
-                onClick={() => setGameFilter(null)}
+                onClick={() => setDateFilter(undefined)}
               >
                 Clear
               </Button>
             )}
           </div>
+          
+          {/* Clear all filters */}
+          {(gameFilter || statusFilter || dateFilter) && (
+            <div className="flex justify-end">
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-xs bg-transparent border-gray-700 text-gray-300 hover:bg-gray-800"
+                onClick={() => {
+                  setGameFilter(null);
+                  setStatusFilter(null);
+                  setDateFilter(undefined);
+                }}
+              >
+                <Filter className="mr-2 h-3 w-3" />
+                Clear All Filters
+              </Button>
+            </div>
+          )}
         </div>
         
         <Table>

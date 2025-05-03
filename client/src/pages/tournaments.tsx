@@ -2,14 +2,18 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { TournamentListWithTabs } from "@/components/user/tournament-list-fixed";
 import { Button } from "@/components/ui/button";
-import { Search, Trophy, RefreshCw } from "lucide-react";
+import { Search, Trophy, RefreshCw, Calendar } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { format } from "date-fns";
 
 export default function Tournaments() {
   const [searchTerm, setSearchTerm] = useState("");
   const [gameFilter, setGameFilter] = useState<'BGMI' | 'COD' | 'FREEFIRE' | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -57,6 +61,40 @@ export default function Tournaments() {
               <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
             </Button>
             
+            {/* Date Filter */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={`bg-dark-surface border-gray-700 text-white hover:bg-dark-card flex items-center gap-2 ${dateFilter ? 'border-primary' : ''}`}
+                >
+                  <Calendar className="h-4 w-4" />
+                  {dateFilter ? format(dateFilter, 'PP') : 'Filter by Date'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 bg-dark-card border-gray-700">
+                <CalendarComponent
+                  mode="single"
+                  selected={dateFilter}
+                  onSelect={setDateFilter}
+                  initialFocus
+                  className="bg-dark-card text-white"
+                />
+                {dateFilter && (
+                  <div className="p-3 border-t border-gray-800 flex justify-end">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="bg-dark-surface border-gray-700 text-gray-300 hover:bg-dark-card"
+                      onClick={() => setDateFilter(undefined)}
+                    >
+                      Clear
+                    </Button>
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
+            
             <div className="relative max-w-md w-full">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
               <Input
@@ -98,7 +136,7 @@ export default function Tournaments() {
         </div>
 
         <div className="bg-dark-card border border-gray-800 rounded-lg p-6">
-          <TournamentListWithTabs gameTypeFilter={gameFilter} searchTerm={searchTerm} />
+          <TournamentListWithTabs gameTypeFilter={gameFilter} searchTerm={searchTerm} dateFilter={dateFilter} />
         </div>
       </div>
     </div>

@@ -58,6 +58,7 @@ type TournamentListProps = {
   limit?: number;
   gameTypeFilter?: 'BGMI' | 'COD' | 'FREEFIRE' | null;
   searchTerm?: string;
+  dateFilter?: Date;
 };
 
 export function TournamentList({ 
@@ -65,7 +66,8 @@ export function TournamentList({
   showRegisteredOnly = false, 
   limit, 
   gameTypeFilter = null,
-  searchTerm = ""
+  searchTerm = "",
+  dateFilter
 }: TournamentListProps) {
   // Standard page size for pagination
   const PAGE_SIZE = 10;
@@ -181,6 +183,26 @@ export function TournamentList({
       return;
     }
 
+    // Check if it's a solo tournament (doesn't require team selection)
+    const tournamentType = tournament.teamType?.toLowerCase() || 'squad';
+    if (tournamentType === 'solo') {
+      // For solo tournaments, directly register with the first team
+      if (teams.length > 0) {
+        registerMutation.mutate({
+          tournamentId: tournament.id,
+          teamId: teams[0].id
+        });
+      } else {
+        toast({
+          title: "No teams found",
+          description: "You need to create a team before registering for a tournament",
+          variant: "destructive",
+        });
+      }
+      return;
+    }
+
+    // For non-solo tournaments, show team selection dialog
     if (teams.length === 0) {
       toast({
         title: "No teams found",
@@ -269,6 +291,17 @@ export function TournamentList({
     // Apply game type filter
     if (gameTypeFilter) {
       displayTournaments = displayTournaments.filter(t => t.gameType === gameTypeFilter);
+    }
+    
+    // Apply date filter
+    if (dateFilter) {
+      displayTournaments = displayTournaments.filter(t => {
+        const tournamentDate = new Date(t.date);
+        // Format both dates to the same format to compare only the date part (not time)
+        const filterDateString = dateFilter.toISOString().split('T')[0];
+        const tournamentDateString = tournamentDate.toISOString().split('T')[0];
+        return filterDateString === tournamentDateString;
+      });
     }
     
     // Apply search filter
@@ -494,9 +527,10 @@ export function TournamentList({
 type TournamentListWithTabsProps = {
   gameTypeFilter?: 'BGMI' | 'COD' | 'FREEFIRE' | null;
   searchTerm?: string;
+  dateFilter?: Date;
 };
 
-export function TournamentListWithTabs({ gameTypeFilter = null, searchTerm = "" }: TournamentListWithTabsProps) {
+export function TournamentListWithTabs({ gameTypeFilter = null, searchTerm = "", dateFilter }: TournamentListWithTabsProps) {
   return (
     <Tabs defaultValue="all" className="w-full">
       <TabsList className="mb-6 bg-dark-surface border border-gray-800">
@@ -515,19 +549,19 @@ export function TournamentListWithTabs({ gameTypeFilter = null, searchTerm = "" 
       </TabsList>
       
       <TabsContent value="all" className="mt-0">
-        <TournamentList gameTypeFilter={gameTypeFilter} searchTerm={searchTerm} />
+        <TournamentList gameTypeFilter={gameTypeFilter} searchTerm={searchTerm} dateFilter={dateFilter} />
       </TabsContent>
       
       <TabsContent value="live" className="mt-0">
-        <TournamentList filter="live" gameTypeFilter={gameTypeFilter} searchTerm={searchTerm} />
+        <TournamentList filter="live" gameTypeFilter={gameTypeFilter} searchTerm={searchTerm} dateFilter={dateFilter} />
       </TabsContent>
       
       <TabsContent value="upcoming" className="mt-0">
-        <TournamentList filter="upcoming" gameTypeFilter={gameTypeFilter} searchTerm={searchTerm} />
+        <TournamentList filter="upcoming" gameTypeFilter={gameTypeFilter} searchTerm={searchTerm} dateFilter={dateFilter} />
       </TabsContent>
       
       <TabsContent value="completed" className="mt-0">
-        <TournamentList filter="completed" gameTypeFilter={gameTypeFilter} searchTerm={searchTerm} />
+        <TournamentList filter="completed" gameTypeFilter={gameTypeFilter} searchTerm={searchTerm} dateFilter={dateFilter} />
       </TabsContent>
     </Tabs>
   );

@@ -86,7 +86,7 @@ export default function Navbar() {
             </div>
           </div>
           <div className="hidden sm:ml-6 sm:flex sm:items-center space-x-2">
-            {isAuthenticated && <NotificationDropdown />}
+            {isAuthenticated && !isAdmin && <NotificationDropdown />}
             
             {isAuthenticated ? (
               <DropdownMenu>

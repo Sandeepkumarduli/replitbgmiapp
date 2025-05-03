@@ -639,26 +639,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         (req.body.password && req.body.password !== tournament.password);
       
       // If room info was updated, create notifications for registered users
-      if (roomInfoUpdated) {
-        // Get all registrations for this tournament
-        const registrations = await storage.getRegistrationsByTournament(tournamentId);
-        
-        // Create notifications for each registered user
-        const notifications = [];
-        
-        for (const registration of registrations) {
-          const notification = await storage.createNotification({
-            userId: registration.userId,
-            title: `Room Info Updated - ${updatedTournament.title}`,
-            message: `Room ID: ${updatedTournament.roomId}, Password: ${updatedTournament.password}`,
-            type: "tournament",
-            relatedId: tournamentId
-          });
+      if (roomInfoUpdated && updatedTournament) {
+        try {
+          // Get all registrations for this tournament
+          const registrations = await storage.getRegistrationsByTournament(tournamentId);
           
-          notifications.push(notification);
+          // Create notifications for each registered user
+          let notificationCount = 0;
+          
+          for (const registration of registrations) {
+            if (registration.userId) {
+              await storage.createNotification({
+                userId: registration.userId,
+                title: `Room Info Updated - ${updatedTournament.title}`,
+                message: `Room ID: ${updatedTournament.roomId || 'Not set'}, Password: ${updatedTournament.password || 'Not set'}`,
+                type: "tournament",
+                relatedId: tournamentId
+              });
+              notificationCount++;
+            }
+          }
+          
+          console.log(`Created ${notificationCount} room info notifications for tournament ${tournamentId}`);
+        } catch (error) {
+          console.error("Error creating room update notifications:", error);
+          // Continue execution even if notifications fail
         }
-        
-        console.log(`Created ${notifications.length} room info notifications for tournament ${tournamentId}`);
       }
       
       res.json(updatedTournament);

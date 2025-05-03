@@ -8,7 +8,14 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { User } from "@/lib/types";
+
+// Define User type locally for this component
+interface User {
+  id: number;
+  username: string;
+  email: string;
+  role: string;
+}
 import AdminLayout from "@/components/layouts/admin-layout";
 import { AlertTriangle, Send, Users } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -156,7 +163,7 @@ export default function AdminNotificationsPage() {
                       <SelectContent className="bg-dark-card border-gray-800">
                         {loadingUsers ? (
                           <SelectItem value="loading" disabled>Loading users...</SelectItem>
-                        ) : users?.length ? (
+                        ) : users && Array.isArray(users) && users.length > 0 ? (
                           users.map((user: User) => (
                             <SelectItem key={user.id} value={user.id.toString()}>
                               {user.username}

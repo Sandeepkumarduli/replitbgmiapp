@@ -1,7 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { User, Plus, X } from "lucide-react";
+import { User, Plus, X, Users, Copy, Check } from "lucide-react";
 import { Team, TeamMember } from "@shared/schema";
+import { useState } from "react";
+import { toast } from "@/hooks/use-toast";
 
 type TeamCardProps = {
   team?: Team;
@@ -13,6 +15,20 @@ type TeamCardProps = {
 };
 
 export function TeamCard({ team, members = [], onManage, onAddMember, onRemoveMember, onDeleteTeam }: TeamCardProps) {
+  const [copied, setCopied] = useState(false);
+
+  const copyInviteCode = () => {
+    if (team?.inviteCode) {
+      navigator.clipboard.writeText(team.inviteCode);
+      setCopied(true);
+      toast({
+        title: "Invite code copied!",
+        description: "You can now share this code with others to join your team."
+      });
+      setTimeout(() => setCopied(false), 3000);
+    }
+  };
+
   if (!team) {
     return (
       <Card className="bg-dark-card border-gray-800">
@@ -46,6 +62,37 @@ export function TeamCard({ team, members = [], onManage, onAddMember, onRemoveMe
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
+          {/* Invite Code Section */}
+          {team.inviteCode && (
+            <div className="bg-indigo-950/60 p-3 rounded-lg border border-indigo-600/30">
+              <div className="flex flex-col space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className="h-8 w-8 rounded-full bg-indigo-600/20 flex items-center justify-center text-indigo-400 mr-2">
+                      <Users className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-white text-sm font-medium">Team Invite Code</p>
+                      <p className="text-gray-400 text-xs">Share this code to invite players</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between mt-2 bg-indigo-950/80 p-2 rounded border border-indigo-700/30">
+                  <div className="font-mono text-white text-md tracking-wider px-2">{team.inviteCode}</div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={copyInviteCode}
+                    className="h-8 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-900/50"
+                  >
+                    {copied ? <Check className="h-4 w-4 mr-1" /> : <Copy className="h-4 w-4 mr-1" />}
+                    {copied ? "Copied" : "Copy"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+          
           {captain && (
             <div className="bg-dark-surface p-3 rounded-lg border border-primary/30">
               <div className="flex items-center justify-between">

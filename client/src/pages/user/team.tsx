@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/auth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { TeamForm } from "@/components/user/team-form";
 import { TeamCard } from "@/components/ui/team-card";
+import { JoinTeamForm } from "@/components/user/join-team-form";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -265,19 +266,30 @@ export default function UserTeam() {
 
         <div className="space-y-8">
           {!hasTeam ? (
-            <Card className="bg-dark-card border-gray-800">
-              <CardHeader>
-                <CardTitle className="text-white">Team Creation</CardTitle>
-                <CardDescription className="text-gray-400">
-                  Create your first team to participate in tournaments
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <TeamForm onSuccess={() => queryClient.invalidateQueries({ queryKey: ["/api/teams/my"] })} />
-              </CardContent>
-            </Card>
+            <div className="grid md:grid-cols-2 gap-8">
+              <Card className="bg-dark-card border-gray-800">
+                <CardHeader>
+                  <CardTitle className="text-white">Team Creation</CardTitle>
+                  <CardDescription className="text-gray-400">
+                    Create your first team to participate in tournaments
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <TeamForm onSuccess={() => queryClient.invalidateQueries({ queryKey: ["/api/teams/my"] })} />
+                </CardContent>
+              </Card>
+              
+              <JoinTeamForm />
+            </div>
           ) : (
             <>
+              {/* Join with invite code section for users with existing teams */}
+              {teams && teams.length < 3 && (
+                <div className="mb-6">
+                  <JoinTeamForm />
+                </div>
+              )}
+              
               {teams && teams.length >= 3 && (
                 <div className="bg-amber-500/10 border border-amber-500/20 text-amber-500 p-4 rounded-lg mb-6">
                   <p className="flex items-center">

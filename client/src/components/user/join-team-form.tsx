@@ -49,7 +49,8 @@ export function JoinTeamForm() {
   };
 
   return (
-    <Card className="bg-dark-card border-gray-800">
+    <Card className="bg-dark-card border-gray-800 overflow-hidden">
+      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-700 to-purple-600"></div>
       <CardHeader>
         <div className="flex items-center space-x-2">
           <Users className="h-5 w-5 text-indigo-400" />
@@ -61,25 +62,46 @@ export function JoinTeamForm() {
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent>
-          <div className="flex items-center space-x-2">
-            <Input
-              value={inviteCode}
-              onChange={(e) => setInviteCode(e.target.value)}
-              placeholder="Enter 6-digit code"
-              className="bg-dark-surface text-white border-gray-700 focus:border-indigo-500"
-              maxLength={6}
-            />
-            <Button 
-              type="submit" 
-              className="bg-indigo-600 hover:bg-indigo-700 text-white"
-              disabled={joinTeamMutation.isPending}
-            >
-              {joinTeamMutation.isPending ? "Joining..." : "Join Team"}
-            </Button>
+          <div className="flex flex-col space-y-4">
+            <div className="bg-dark-surface/50 p-4 rounded-md border border-indigo-800/30 text-sm text-gray-300">
+              <p>Enter the team invitation code provided by the team captain or members.</p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="relative flex-1">
+                <Input
+                  value={inviteCode}
+                  onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                  placeholder="Enter 6-digit code"
+                  className="bg-dark-surface text-white border-gray-700 focus:border-indigo-500 font-mono tracking-wider text-center uppercase"
+                  maxLength={6}
+                />
+                {inviteCode.length > 0 && (
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-700 to-purple-600" 
+                    style={{width: `${(inviteCode.length / 6) * 100}%`}}></div>
+                )}
+              </div>
+              <Button 
+                type="submit" 
+                className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                disabled={joinTeamMutation.isPending}
+              >
+                {joinTeamMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Joining...
+                  </>
+                ) : "Join Team"}
+              </Button>
+            </div>
           </div>
         </CardContent>
-        <CardFooter className="text-xs text-gray-400 border-t border-gray-800 pt-4">
-          You can get the invite code from the team captain or any team member
+        <CardFooter className="bg-dark-surface/30 border-t border-gray-800 pt-4 text-xs text-gray-400">
+          <div className="flex items-center gap-2">
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-900/50 text-indigo-400">
+              <span>i</span>
+            </div>
+            <span>You can get the invite code from the team captain or any team member</span>
+          </div>
         </CardFooter>
       </form>
     </Card>

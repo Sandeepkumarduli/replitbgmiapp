@@ -39,7 +39,7 @@ export default function Tournaments() {
           <div>
             <h1 className="text-3xl font-bold text-white mb-2 flex items-center">
               <Trophy className="mr-3 h-8 w-8 text-primary" />
-              RD Tournaments
+              Tournaments
             </h1>
             <p className="text-gray-400 max-w-2xl">
               Browse and register for upcoming tournaments, view live matches, and check past events

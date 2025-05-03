@@ -58,7 +58,16 @@ export function TournamentList({
   
   // Immediately refetch once on component mount to ensure fresh data
   useEffect(() => {
-    refetchTournaments();
+    const fetchData = async () => {
+      try {
+        await refetchTournaments();
+      } catch (error) {
+        // Silently catch the error to avoid unhandled rejection
+        console.log("Refetch cancelled or failed silently");
+      }
+    };
+    
+    fetchData();
   }, []);
 
   // Fetch user's teams

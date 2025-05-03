@@ -13,23 +13,34 @@ export function useNavigationRefresh() {
   useEffect(() => {
     // Invalidate key queries when navigation happens
     const refreshData = async () => {
-      // Invalidate tournaments data
-      await queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
-      await queryClient.invalidateQueries({ queryKey: ['/api/tournaments?status=live'] });
-      await queryClient.invalidateQueries({ queryKey: ['/api/tournaments?status=upcoming'] });
-      await queryClient.invalidateQueries({ queryKey: ['/api/tournaments?status=completed'] });
-      
-      // Also invalidate registration counts and user registrations
-      await queryClient.invalidateQueries({ queryKey: ['/api/registrations/counts'] });
-      await queryClient.invalidateQueries({ queryKey: ['/api/registrations/user'] });
-      
-      // Fetch the data right away
-      await Promise.all([
-        queryClient.fetchQuery({ queryKey: ['/api/tournaments'] }),
-        queryClient.fetchQuery({ queryKey: ['/api/registrations/counts'] }),
-      ]);
-      
-      console.log('Data refreshed after navigation to:', location);
+      try {
+        // Invalidate tournaments data
+        queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/tournaments?status=live'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/tournaments?status=upcoming'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/tournaments?status=completed'] });
+        
+        // Invalidate user-related data
+        queryClient.invalidateQueries({ queryKey: ['/api/registrations/counts'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/registrations/user'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/teams/my'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+        
+        // Fetch the data in parallel with error handling
+        try {
+          await Promise.allSettled([
+            queryClient.fetchQuery({ queryKey: ['/api/tournaments'] }),
+            queryClient.fetchQuery({ queryKey: ['/api/registrations/counts'] }),
+            queryClient.fetchQuery({ queryKey: ['/api/user'] }),
+          ]);
+        } catch (fetchError) {
+          console.log('Some fetch queries were rejected, but this is handled');
+        }
+        
+        console.log('Data refreshed after navigation to:', location);
+      } catch (error) {
+        console.log('Error during data refresh, but continuing');
+      }
     };
     
     refreshData();

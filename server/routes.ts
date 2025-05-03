@@ -22,6 +22,37 @@ import {
 import { z } from "zod";
 import crypto from "crypto";
 
+// Function to generate a unique 6-digit team invite code
+async function generate6DigitCode(storage: any): Promise<string> {
+  // Generate a random 6-digit code
+  const generateCode = () => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  };
+  
+  // Try to generate a unique code up to 10 times
+  let code = generateCode();
+  let attempts = 0;
+  let teamWithCode = null;
+  
+  while (attempts < 10) {
+    try {
+      // Check if the code already exists
+      teamWithCode = await storage.getTeamByInviteCode(code);
+      if (!teamWithCode) {
+        return code; // Unique code found
+      }
+      // Generate a new code and try again
+      code = generateCode();
+      attempts++;
+    } catch (error) {
+      return code; // If there's an error checking the code, just return the current one
+    }
+  }
+  
+  // If we couldn't generate a unique code after 10 attempts, use a timestamp-based approach
+  return `${Date.now().toString().slice(-6)}`;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Choose which authentication system to use
   const useSupabase = process.env.USE_SUPABASE === 'true';
@@ -284,7 +315,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Team name already exists" });
       }
       
-      const team = await storage.createTeam(result.data);
+      // Generate a unique invite code for the team
+      const inviteCode = await generate6DigitCode(storage);
+      
+      // Create team with invite code
+      const team = await storage.createTeam({
+        ...result.data,
+        inviteCode
+      });
       
       // Automatically add the team creator as team captain
       await storage.addTeamMember({
@@ -324,7 +362,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Internal server error" });
     }
   });
+  
+  // Get team by invite code
+  app.get("/api/teams/code/:inviteCode", isAuthenticated, async (req, res) => {
+    try {
+      const inviteCode = req.params.inviteCode;
+      const team = await storage.getTeamByInviteCode(inviteCode);
+      
+      if (!team) {
+        return res.status(404).json({ message: "Team not found with this invite code" });
+      }
+      
+      res.json(team);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
 
+  // Join team by invite code
+  app.post("/api/teams/join", isAuthenticated, async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const { inviteCode } = req.body;
+      if (!inviteCode) {
+        return res.status(400).json({ message: "Invite code is required" });
+      }
+      
+      // Find team by invite code
+      const team = await storage.getTeamByInviteCode(inviteCode);
+      if (!team) {
+        return res.status(404).json({ message: "Team not found with this invite code" });
+      }
+      
+      // Check if team already has 5 members (4 + 1 substitute)
+      const members = await storage.getTeamMembers(team.id);
+      if (members.length >= 5) {
+        return res.status(400).json({ message: "Team is already full" });
+      }
+      
+      // Check if user is already a member of this team
+      const userAlreadyInTeam = members.some(member => member.username === user.username);
+      if (userAlreadyInTeam) {
+        return res.status(400).json({ message: "You are already a member of this team" });
+      }
+      
+      // Add user to team
+      const newMember = await storage.addTeamMember({
+        teamId: team.id,
+        username: user.username,
+        gameId: user.gameId,
+        role: "member"
+      });
+      
+      res.status(201).json({
+        member: newMember,
+        team
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
   // Team members routes
   app.post("/api/teams/:id/members", isAuthenticated, async (req, res) => {
     try {

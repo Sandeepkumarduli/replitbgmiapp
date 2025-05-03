@@ -24,8 +24,9 @@ export interface IStorage {
   // Team operations
   getTeam(id: number): Promise<Team | undefined>;
   getTeamByName(name: string): Promise<Team | undefined>;
+  getTeamByInviteCode(inviteCode: string): Promise<Team | undefined>;
   getTeamsByOwnerId(ownerId: number): Promise<Team[]>;
-  createTeam(team: InsertTeam): Promise<Team>;
+  createTeam(team: InsertTeam & { inviteCode: string }): Promise<Team>;
   updateTeam(id: number, team: Partial<Team>): Promise<Team | undefined>;
   deleteTeam(id: number): Promise<boolean>;
   getAllTeams(): Promise<Team[]>; // For admin team management
@@ -161,6 +162,12 @@ export class MemStorage implements IStorage {
       (team) => team.name.toLowerCase() === name.toLowerCase(),
     );
   }
+  
+  async getTeamByInviteCode(inviteCode: string): Promise<Team | undefined> {
+    return Array.from(this.teams.values()).find(
+      (team) => team.inviteCode === inviteCode,
+    );
+  }
 
   async getTeamsByOwnerId(ownerId: number): Promise<Team[]> {
     return Array.from(this.teams.values()).filter(
@@ -168,7 +175,7 @@ export class MemStorage implements IStorage {
     );
   }
 
-  async createTeam(insertTeam: InsertTeam): Promise<Team> {
+  async createTeam(insertTeam: InsertTeam & { inviteCode: string }): Promise<Team> {
     const id = this.teamId++;
     const createdAt = new Date();
     const team: Team = { ...insertTeam, id, createdAt };

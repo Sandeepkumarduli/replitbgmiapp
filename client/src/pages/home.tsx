@@ -23,12 +23,12 @@ export default function Home() {
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
               <Link href="/auth" className="inline-block">
-                <Button className="bg-primary hover:bg-primary/90 text-white px-8 py-3 rounded-md text-lg font-medium glow-hover">
+                <Button className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 py-3 rounded-md text-lg font-medium shadow-md">
                   Register Now
                 </Button>
               </Link>
               <Link href="/tournaments" className="inline-block">
-                <Button variant="outline" className="bg-dark-surface hover:bg-dark-card border border-primary text-white px-8 py-3 rounded-md text-lg font-medium glow-hover">
+                <Button variant="outline" className="bg-dark-surface hover:bg-dark-card border border-indigo-600 text-white px-8 py-3 rounded-md text-lg font-medium shadow-md bg-gradient-to-r from-indigo-900/30 to-purple-900/30">
                   View Tournaments
                 </Button>
               </Link>
@@ -62,25 +62,25 @@ export default function Home() {
             <div className="flex flex-wrap gap-3 mb-6">
               <Button 
                 variant="outline" 
-                className={`${gameFilter === 'BGMI' ? 'bg-primary' : 'bg-primary/20'} border-primary text-white hover:bg-primary/30 focus:ring-primary/50`}
+                className={`${gameFilter === 'BGMI' ? 'bg-gradient-to-r from-indigo-600 to-purple-600' : 'bg-gradient-to-r from-indigo-900/20 to-purple-900/20'} border-indigo-600 text-white hover:from-indigo-700/40 hover:to-purple-700/40 focus:ring-indigo-500/50 shadow-md`}
                 onClick={() => setGameFilter('BGMI')}>
                 BGMI
               </Button>
               <Button 
                 variant="outline" 
-                className={`${gameFilter === 'COD' ? 'bg-primary/90' : 'bg-primary/15'} border-primary/70 text-white hover:bg-primary/25 focus:ring-primary/40`}
+                className={`${gameFilter === 'COD' ? 'bg-gradient-to-r from-blue-600 to-cyan-600' : 'bg-gradient-to-r from-blue-900/20 to-cyan-900/20'} border-blue-600 text-white hover:from-blue-700/40 hover:to-cyan-700/40 focus:ring-blue-500/50 shadow-md`}
                 onClick={() => setGameFilter('COD')}>
                 COD
               </Button>
               <Button 
                 variant="outline" 
-                className={`${gameFilter === 'FREEFIRE' ? 'bg-accent' : 'bg-accent/20'} border-accent text-white hover:bg-accent/30 focus:ring-accent/50`}
+                className={`${gameFilter === 'FREEFIRE' ? 'bg-gradient-to-r from-orange-500 to-amber-500' : 'bg-gradient-to-r from-orange-900/20 to-amber-900/20'} border-orange-500 text-white hover:from-orange-600/40 hover:to-amber-600/40 focus:ring-orange-500/50 shadow-md`}
                 onClick={() => setGameFilter('FREEFIRE')}>
                 FREEFIRE
               </Button>
               <Button 
                 variant="outline" 
-                className={`${gameFilter === null ? 'bg-gray-700' : 'bg-gray-700/70'} border-gray-600 text-white hover:bg-gray-600 focus:ring-gray-500`}
+                className={`${gameFilter === null ? 'bg-gradient-to-r from-gray-700 to-slate-700' : 'bg-gradient-to-r from-gray-900/20 to-slate-900/20'} border-gray-600 text-white hover:from-gray-800/40 hover:to-slate-800/40 focus:ring-gray-500/50 shadow-md`}
                 onClick={() => setGameFilter(null)}>
                 All Games
               </Button>
@@ -181,7 +181,7 @@ export default function Home() {
               </ul>
               <div className="mt-8">
                 <Link href="/user/dashboard" className="inline-block">
-                  <Button className="bg-primary hover:bg-primary/90 text-white font-medium py-3 px-6 rounded-md glow-hover">
+                  <Button className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-medium py-3 px-6 rounded-md shadow-md">
                     Try User Dashboard
                   </Button>
                 </Link>
@@ -238,12 +238,12 @@ export default function Home() {
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link href="/auth" className="inline-block">
-              <Button className="bg-primary hover:bg-primary/90 text-white px-8 py-3 rounded-md text-lg font-medium glow-hover">
+              <Button className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 py-3 rounded-md text-lg font-medium shadow-md">
                 Create Account
               </Button>
             </Link>
             <Link href="/tournaments" className="inline-block">
-              <Button variant="outline" className="bg-dark hover:bg-dark-card border border-primary text-white px-8 py-3 rounded-md text-lg font-medium glow-hover">
+              <Button variant="outline" className="bg-dark-surface hover:bg-dark-card border border-indigo-600 text-white px-8 py-3 rounded-md text-lg font-medium shadow-md bg-gradient-to-r from-indigo-900/30 to-purple-900/30">
                 Browse Tournaments
               </Button>
             </Link>

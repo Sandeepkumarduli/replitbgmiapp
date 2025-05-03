@@ -1687,9 +1687,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.session.userId!;
       
-      // We're not deleting anything on the server, just updating the count to 0 for this user's WebSocket
-      if (app.locals.broadcastNotification) {
-        app.locals.broadcastNotification(userId, 0, true); // The third parameter indicates this is a temporary hide
+      // We're not deleting anything on the server, just sending a hide action to this user's WebSockets
+      for (const [ws, client] of clients.entries()) {
+        if (ws.readyState === WebSocket.OPEN && client.userId === userId) {
+          ws.send(JSON.stringify({
+            type: 'notification_update',
+            count: 0,
+            isHideAction: true
+          }));
+        }
       }
       
       res.json({ 
@@ -1755,9 +1761,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           notifications.push(notification);
           
-          // Get the updated count for this user and broadcast it
-          const count = await storage.getUnreadNotificationsCount(uid);
-          app.locals.broadcastNotification(uid, count);
+          // Find all connected clients for this user and send their updated count
+          for (const [ws, client] of clients.entries()) {
+            if (ws.readyState === WebSocket.OPEN && client.userId === uid) {
+              const count = await storage.getUnreadNotificationsCount(uid);
+              ws.send(JSON.stringify({
+                type: 'notification_update',
+                count: count
+              }));
+            }
+          }
         }
         
         // Log the notifications creation
@@ -1791,12 +1804,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
         
         if (userId === null) {
-          // Broadcast notification to all connected clients
-          app.locals.broadcastNotification(null, 1); // Send update to all users
+          // For broadcast notifications, we need to notify all users with their specific counts
+          // Get all connected clients
+          for (const [ws, client] of clients.entries()) {
+            if (ws.readyState === WebSocket.OPEN && client.userId) {
+              // Get the unread count for this specific user
+              const userCount = await storage.getUnreadNotificationsCount(client.userId);
+              // Send their personal count
+              ws.send(JSON.stringify({
+                type: 'notification_update',
+                count: userCount
+              }));
+            }
+          }
         } else {
-          // Get the updated count for this user and broadcast it
-          const count = await storage.getUnreadNotificationsCount(userId);
-          app.locals.broadcastNotification(userId, count);
+          // Find all connected clients for this user and send direct notification update
+          for (const [ws, client] of clients.entries()) {
+            if (ws.readyState === WebSocket.OPEN && client.userId === userId) {
+              const count = await storage.getUnreadNotificationsCount(userId);
+              ws.send(JSON.stringify({
+                type: 'notification_update',
+                count: count
+              }));
+            }
+          }
         }
         
         // Return proper JSON response
@@ -1843,9 +1874,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         notifications.push(notification);
         
-        // Send real-time notification update to this user
-        const count = await storage.getUnreadNotificationsCount(registration.userId);
-        app.locals.broadcastNotification(registration.userId, count);
+        // Find all connected clients for this user and send direct notification update
+        for (const [ws, client] of clients.entries()) {
+          if (ws.readyState === WebSocket.OPEN && client.userId === registration.userId) {
+            const count = await storage.getUnreadNotificationsCount(registration.userId);
+            ws.send(JSON.stringify({
+              type: 'notification_update',
+              count: count
+            }));
+          }
+        }
       }
       
       res.status(201).json({ 

@@ -195,7 +195,7 @@ export function NotificationDropdown() {
           <Button
             variant="ghost"
             size="sm"
-            className="relative h-9 w-9 rounded-full p-0"
+            className="relative h-9 w-9 rounded-full p-0 focus:outline-none focus:ring-0"
           >
             <BellRing className="h-5 w-5 text-gray-300" />
             {unreadCount > 0 && (
@@ -207,7 +207,7 @@ export function NotificationDropdown() {
         </DropdownMenuTrigger>
         <DropdownMenuContent
           align="end"
-          className="w-[360px] p-0 bg-dark-card border border-gray-800"
+          className="w-[360px] p-0 bg-dark-card border border-gray-800 focus:outline-none"
         >
           <div className="flex flex-col p-4 border-b border-gray-800">
             <div className="flex items-center justify-between mb-2">

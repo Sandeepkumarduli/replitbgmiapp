@@ -1,6 +1,7 @@
 import { Switch, Route, useLocation, Redirect } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { useNavigationRefresh } from "./hooks/use-navigation-refresh";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "./lib/auth";
@@ -101,6 +102,12 @@ function AuthRoute({ component: Component, ...rest }: {
   return <Route {...rest}>{(props) => <Component {...props} />}</Route>;
 }
 
+// NavigationRefresh component that uses our hook
+function NavigationRefresh() {
+  useNavigationRefresh();
+  return null;
+}
+
 function Router() {
   const [location] = useLocation();
   const { isAuthenticated } = useAuth();
@@ -113,6 +120,9 @@ function Router() {
   
   return (
     <div className="min-h-screen bg-dark font-poppins flex flex-col">
+      {/* Add auto-refresh on navigation */}
+      <NavigationRefresh />
+      
       {showNavbar && <Navbar />}
       
       <div className="pt-16 flex-grow">

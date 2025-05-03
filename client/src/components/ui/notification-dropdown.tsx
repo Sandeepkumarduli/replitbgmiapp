@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { BellRing, BellOff, Check, Trash2 } from "lucide-react";
 import {
@@ -50,6 +50,13 @@ export function NotificationDropdown() {
         const data = JSON.parse(event.data);
         
         if (data.type === 'notification_update') {
+          // Reset the cleared notifications state when new notifications arrive
+          if (data.count > 0 && user) {
+            // Remove the localStorage flag so new notifications can be seen
+            localStorage.removeItem(`notifications_cleared_${user.id}`);
+            setHiddenNotifications(false);
+          }
+          
           // Update notification count immediately without a query
           queryClient.setQueryData(['/api/notifications/count'], { count: data.count });
           
@@ -76,23 +83,32 @@ export function NotificationDropdown() {
     };
   }, [user, queryClient, isOpen]);
 
-  // Query to get unread notification count
+  // Check if we need to skip notifications fetch based on localStorage
+  const shouldSkipNotifications = useCallback(() => {
+    if (!user) return false;
+    return localStorage.getItem(`notifications_cleared_${user.id}`) === 'true';
+  }, [user]);
+
+  // Query to get unread notification count (skip if notifications are cleared)
   const {
     data: countData,
     isLoading: isLoadingCount,
   } = useQuery<{ count: number }>({
     queryKey: ["/api/notifications/count"],
     refetchInterval: 30000, // Refetch every 30 seconds
+    initialData: { count: 0 },
+    enabled: !shouldSkipNotifications(), // Don't fetch if notifications are cleared
   });
 
-  // Query to get notifications (only loaded when dropdown is open)
+  // Query to get notifications (only loaded when dropdown is open and not cleared)
   const {
     data: notifications,
     isLoading: isLoadingNotifications,
     isFetching: isFetchingNotifications,
   } = useQuery<Notification[]>({
     queryKey: ["/api/notifications"],
-    enabled: isOpen, // Only fetch when dropdown is open
+    enabled: isOpen && !shouldSkipNotifications(), // Only fetch when dropdown is open and not cleared
+    initialData: [], // Start with empty array
   });
 
   // Mutation to mark all notifications as read
@@ -108,13 +124,34 @@ export function NotificationDropdown() {
     },
   });
   
-  // Frontend-only clear all notifications 
-  const [hiddenNotifications, setHiddenNotifications] = useState<boolean>(false);
+  // Frontend-only clear all notifications that persists across page refreshes
+  // Initialize state from localStorage if user is logged in
+  const [hiddenNotifications, setHiddenNotifications] = useState<boolean>(() => {
+    if (!user) return false;
+    // Check if we've previously cleared notifications for this user
+    return localStorage.getItem(`notifications_cleared_${user.id}`) === 'true';
+  });
+  
+  // When notifications load, check if they should be hidden based on previous user action
+  useEffect(() => {
+    if (!user || !notifications) return;
+    
+    if (localStorage.getItem(`notifications_cleared_${user.id}`) === 'true') {
+      // If notifications were cleared by this user before, hide them and set count to 0
+      queryClient.setQueryData(["/api/notifications/count"], { count: 0 });
+      setHiddenNotifications(true);
+    }
+  }, [user, notifications, queryClient]);
   
   // This function clears notifications only on the frontend (no server request)
   const clearAllNotifications = () => {
+    if (!user) return;
+    
     // Hide notifications in the UI
     setHiddenNotifications(true);
+    
+    // Store this preference in localStorage to persist across page refreshes
+    localStorage.setItem(`notifications_cleared_${user.id}`, 'true');
     
     // Update the count to zero in the cache (frontend only)
     queryClient.setQueryData(["/api/notifications/count"], { count: 0 });

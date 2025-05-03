@@ -91,17 +91,9 @@ export const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       staleTime: Infinity,
       retry: false,
-      onError: (error) => {
-        // Global error handler for all queries
-        handleError(error);
-      }
     },
     mutations: {
       retry: false,
-      onError: (error) => {
-        // Global error handler for all mutations
-        handleError(error);
-      }
     },
   },
 });

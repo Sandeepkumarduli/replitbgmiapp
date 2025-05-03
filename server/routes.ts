@@ -1274,7 +1274,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get user by ID (admin only)
-  app.get("/api/admin/users/:id", isAdmin, async (req, res) => {
+  app.get("/api/admin/users/:id", isEnhancedAdmin, async (req, res) => {
     try {
       const userId = parseInt(req.params.id);
       const user = await storage.getUser(userId);
@@ -1402,7 +1402,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get all teams (admin only)
-  app.get("/api/teams", isAdmin, async (req, res) => {
+  app.get("/api/teams", isEnhancedAdmin, async (req, res) => {
     try {
       const teams = await storage.getAllTeams();
       res.json(teams);
@@ -1607,7 +1607,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Admin security log
-  app.post("/api/admin/log", isAdmin, async (req, res) => {
+  app.post("/api/admin/log", isEnhancedAdmin, async (req, res) => {
     try {
       const { action } = req.body;
       logSecurityEvent(action, req);
@@ -1705,7 +1705,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin: Create notification for a user or broadcast to all users
-  app.post("/api/admin/notifications", isAdmin, async (req, res) => {
+  app.post("/api/admin/notifications", isEnhancedAdmin, async (req, res) => {
     try {
       const result = insertNotificationSchema.safeParse(req.body);
       
@@ -1730,7 +1730,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Create a notification (broadcast to all, send to specific user, or multiple users)
-  app.post("/api/notifications", isAdmin, async (req, res) => {
+  app.post("/api/notifications", isEnhancedAdmin, async (req, res) => {
     try {
       const { title, message, type = "broadcast", userId = null, userIds = [] } = req.body;
       
@@ -1819,7 +1819,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Add notification for tournament room info update
-  app.post("/api/tournaments/:id/room-notification", isAdmin, async (req, res) => {
+  app.post("/api/tournaments/:id/room-notification", isEnhancedAdmin, async (req, res) => {
     try {
       const tournamentId = parseInt(req.params.id);
       const tournament = await storage.getTournament(tournamentId);

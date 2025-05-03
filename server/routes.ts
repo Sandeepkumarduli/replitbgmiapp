@@ -1681,6 +1681,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to mark all notifications as read" });
     }
   });
+  
+  // Delete all notifications for the current user
+  app.delete("/api/notifications/all", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const deletedCount = await storage.deleteAllUserNotifications(userId);
+      
+      // Send WebSocket notification update
+      if (app.locals.broadcastNotification) {
+        app.locals.broadcastNotification(userId, 0);
+      }
+      
+      res.json({ 
+        success: true, 
+        deletedCount,
+        message: "All notifications deleted successfully" 
+      });
+    } catch (error) {
+      console.error("Error deleting all notifications:", error);
+      res.status(500).json({ message: "Failed to delete notifications" });
+    }
+  });
 
   // Admin: Create notification for a user or broadcast to all users
   app.post("/api/admin/notifications", isAdmin, async (req, res) => {

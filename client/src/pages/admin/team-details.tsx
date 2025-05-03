@@ -451,6 +451,37 @@ export default function TeamDetails() {
                       <p className="text-white">{team?.id}</p>
                     </div>
                   </div>
+                  
+                  {/* Invite Code Section */}
+                  {team?.inviteCode && (
+                    <div className="bg-indigo-950/60 p-4 rounded-md border border-indigo-600/30 mt-4">
+                      <h3 className="text-sm font-medium text-indigo-400 mb-2 flex items-center">
+                        <Users className="h-4 w-4 mr-2" />
+                        Team Invite Code
+                      </h3>
+                      <div className="flex flex-wrap items-center justify-between gap-2 mt-2 bg-indigo-950/80 p-3 rounded border border-indigo-700/30">
+                        <div className="font-mono text-white text-md tracking-wider px-2">{team.inviteCode}</div>
+                        <Button 
+                          variant="ghost"
+                          size="sm" 
+                          onClick={() => {
+                            navigator.clipboard.writeText(team.inviteCode);
+                            toast({
+                              title: "Invite code copied!",
+                              description: "You can now share this code with others to join your team."
+                            });
+                          }}
+                          className="h-8 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-900/50"
+                        >
+                          <Copy className="h-4 w-4 mr-1" />
+                          Copy
+                        </Button>
+                      </div>
+                      <p className="text-xs text-gray-400 mt-2">
+                        Share this code with players to join this team. Players can use this code on their dashboard to join.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>

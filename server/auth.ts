@@ -142,17 +142,27 @@ export function setupAuth(app: Express) {
       }
       
       // Handle admin login with hardcoded credentials
-      if (username === "Sandeepkumarduli" && password === "Sandy@1234") {
+      const adminUsername = "Sandeepkumarduli";
+      const adminEmail = "admin@bgmi-tournaments.com";
+      const adminPassword = "Sandy@1234";
+      
+      if ((username === adminUsername || username === adminEmail) && password === adminPassword) {
         try {
-          let adminUser = await storage.getUserByUsername(username);
+          // Try to get admin by username first
+          let adminUser = await storage.getUserByUsername(adminUsername);
+          
+          // If not found, check by email
+          if (!adminUser && username === adminEmail) {
+            adminUser = await storage.getUserByEmail(adminEmail);
+          }
           
           // If admin doesn't exist in storage, create it
           if (!adminUser) {
             const hashedPassword = await hashPassword(password);
             adminUser = await storage.createUser({
-              username,
+              username: adminUsername,
               password: hashedPassword,
-              email: "admin@bgmi-tournaments.com",
+              email: adminEmail,
               phone: "1234567890",
               gameId: "admin",
               role: "admin"
@@ -187,14 +197,25 @@ export function setupAuth(app: Express) {
         }
       }
       
-      // Regular user login flow
-      const user = await storage.getUserByUsername(username);
+      // Regular user login flow - check both username and email
+      // First try by username
+      let user = await storage.getUserByUsername(username);
+      
+      // If not found by username, try by email
       if (!user) {
-        return res.status(401).json({ message: "Please check username or password" });
+        // Check if the input looks like an email
+        if (username.includes('@')) {
+          user = await storage.getUserByEmail(username);
+        }
+        
+        // If still not found, return error
+        if (!user) {
+          return res.status(401).json({ message: "Please check username or password" });
+        }
       }
       
       // Ensure non-admin users can't become admin even if they somehow got that role
-      if (username !== "Sandeepkumarduli" && user.role === "admin") {
+      if (user.username !== "Sandeepkumarduli" && user.role === "admin") {
         await storage.updateUser(user.id, { role: "user" });
         user.role = "user";
       }

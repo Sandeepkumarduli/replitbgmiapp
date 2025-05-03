@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Loader2 } from "lucide-react";
 
 // Form Validation Schemas
@@ -118,10 +118,13 @@ export default function AuthPage() {
                       name="username"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Username</FormLabel>
+                          <FormLabel>Username or Email</FormLabel>
                           <FormControl>
-                            <Input placeholder="Enter your username" {...field} />
+                            <Input placeholder="Enter your username or email" {...field} />
                           </FormControl>
+                          <FormDescription className="text-xs">
+                            You can login with either your username or email address
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}

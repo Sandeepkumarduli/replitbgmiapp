@@ -723,8 +723,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if team registration is needed (Solo tournaments don't need teams)
       if (tournamentType === 'solo') {
-        // For Solo tournaments, the user registers directly without a team
-        // The teamId will be the same as userId (user represents themselves)
+        // For Solo tournaments, the user registers directly
         // Check if user is already registered
         const userRegistrations = await storage.getRegistrationsByUser(userId);
         const alreadyRegistered = userRegistrations.some(reg => reg.tournamentId === tournamentId);
@@ -739,10 +738,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: "Tournament is already full" });
         }
         
-        // Create a direct registration for the user
+        // Check if user has a personal team, or create one for solo tournaments
+        const user = await storage.getUser(userId);
+        if (!user) {
+          return res.status(404).json({ message: "User not found" });
+        }
+        
+        // Find user's teams
+        const userTeams = await storage.getTeamsByOwnerId(userId);
+        let soloTeamId;
+        
+        // Look for a team named "Solo-{username}" or create one
+        const soloTeamName = `Solo-${user.username}`;
+        const existingSoloTeam = userTeams.find(team => team.name === soloTeamName);
+        
+        if (existingSoloTeam) {
+          soloTeamId = existingSoloTeam.id;
+        } else {
+          // Create a personal solo team for the user
+          const inviteCode = await generate6DigitCode(storage);
+          const soloTeam = await storage.createTeam({
+            name: soloTeamName,
+            ownerId: userId,
+            gameType: tournament.gameType || 'BGMI',
+            inviteCode
+          });
+          
+          // Add user as the solo team captain
+          await storage.addTeamMember({
+            teamId: soloTeam.id,
+            username: user.username,
+            gameId: user.gameId,
+            role: "captain"
+          });
+          
+          soloTeamId = soloTeam.id;
+        }
+        
+        // Create a registration using the solo team
         const soloResult = insertRegistrationSchema.safeParse({
           tournamentId,
-          teamId: userId, // User is registered as an individual
+          teamId: soloTeamId,
           userId
         });
         
@@ -760,8 +796,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Team not found" });
       }
       
-      if (team.ownerId !== userId) {
-        return res.status(403).json({ message: "You are not the owner of this team" });
+      // Check if user is a member of the team
+      const userIsMember = await storage.getTeamMembers(teamId)
+        .then(members => members.some(member => member.username === req.session.username));
+      
+      if (!userIsMember) {
+        return res.status(403).json({ message: "You are not a member of this team" });
       }
       
       // Get team members to check team size
@@ -836,25 +876,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/registrations/user", isAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId!;
-      const registrations = await storage.getRegistrationsByUser(userId);
+      const username = req.session.username!;
+      
+      // First, get all teams that the user is a member of
+      const allTeams = await storage.getAllTeams();
+      const userTeamIds = new Set<number>();
+      
+      // 1. Add teams the user owns
+      const ownedTeams = await storage.getTeamsByOwnerId(userId);
+      ownedTeams.forEach(team => userTeamIds.add(team.id));
+      
+      // 2. Add teams the user is a member of
+      for (const team of allTeams) {
+        const members = await storage.getTeamMembers(team.id);
+        if (members.some(member => member.username === username)) {
+          userTeamIds.add(team.id);
+        }
+      }
+      
+      // Now, get all registrations for all these teams
+      let allRegistrations: any[] = [];
+      
+      // 1. Get registrations made by the user directly
+      const userRegistrations = await storage.getRegistrationsByUser(userId);
+      allRegistrations = [...userRegistrations];
+      
+      // 2. Get registrations for all teams the user is a member of
+      for (const teamId of userTeamIds) {
+        const teamRegistrations = await storage.getRegistrationsByTeam(teamId);
+        // Avoid duplicates by checking if registration is already in the array
+        for (const reg of teamRegistrations) {
+          if (!allRegistrations.some(r => r.id === reg.id)) {
+            allRegistrations.push(reg);
+          }
+        }
+      }
       
       // Get additional information for each registration
       const result = await Promise.all(
-        registrations.map(async (registration) => {
+        allRegistrations.map(async (registration) => {
           const tournament = await storage.getTournament(registration.tournamentId);
           const team = await storage.getTeam(registration.teamId);
           
           return {
             ...registration,
             tournament,
-            team
+            team,
+            // Add a flag to indicate if this registration was made by the current user
+            isRegisteredByMe: registration.userId === userId
           };
         })
       );
       
       res.json(result);
     } catch (error) {
-      res.status(500).json({ message: "Internal server error" });
+      console.error("Error fetching user registrations:", error);
+      res.status(500).json({ message: error instanceof Error ? error.message : "Internal server error" });
     }
   });
 

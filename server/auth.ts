@@ -190,7 +190,7 @@ export function setupAuth(app: Express) {
       // Regular user login flow
       const user = await storage.getUserByUsername(username);
       if (!user) {
-        return res.status(401).json({ message: "Wrong username or password" });
+        return res.status(401).json({ message: "Please check username or password" });
       }
       
       // Ensure non-admin users can't become admin even if they somehow got that role
@@ -201,7 +201,7 @@ export function setupAuth(app: Express) {
 
       const isPasswordValid = await comparePasswords(password, user.password);
       if (!isPasswordValid) {
-        return res.status(401).json({ message: "Wrong username or password" });
+        return res.status(401).json({ message: "Please check username or password" });
       }
 
       // Store user info in session

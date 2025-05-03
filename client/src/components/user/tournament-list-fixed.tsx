@@ -303,10 +303,22 @@ export function TournamentList({
       displayTournaments = displayTournaments.filter(t => registeredIds.includes(t.id));
     }
     
-    // Apply status filter (filter is 'upcoming', 'live', 'completed', or undefined)
+    // For completed tournaments, only show the ones that user has registered for
     if (filter === 'completed') {
-      // Only show completed tournaments when specifically selected
-      displayTournaments = displayTournaments.filter(t => t.status === 'completed');
+      if (showRegisteredOnly) {
+        // If showing registered only, apply the completed filter
+        displayTournaments = displayTournaments.filter(t => t.status === 'completed');
+      } else if (registrations) {
+        // If not explicitly showing registered only, but we have registrations data,
+        // only show completed tournaments that the user has registered for
+        const registeredIds = registrations.map((reg: any) => reg.tournamentId);
+        displayTournaments = displayTournaments.filter(t => 
+          t.status === 'completed' && registeredIds.includes(t.id)
+        );
+      } else {
+        // No registrations data available, keep only completed
+        displayTournaments = displayTournaments.filter(t => t.status === 'completed');
+      }
     } else if (filter && filter !== 'all') {
       // Filter for specific status (upcoming or live)
       displayTournaments = displayTournaments.filter(t => t.status === filter);

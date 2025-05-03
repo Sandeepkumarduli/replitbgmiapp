@@ -81,17 +81,20 @@ export function TournamentCard({ tournament, onRegister, registered = false, reg
             ) : null}
           </div>
           
-          {/* Tournament Title with Game Type Badge */}
-          <div className="flex items-center mb-3">
-            <h3 className="text-xl font-bold text-white mr-2">{title}</h3>
-            <Badge className={`
+          {/* Game Type Banner */}
+          <div className="mb-3">
+            <div className={`
               ${gameType === 'BGMI' ? 'bg-gradient-to-r from-gray-700 to-slate-700' : 
                 gameType === 'COD' ? 'bg-gradient-to-r from-blue-600 to-cyan-600' : 
                   gameType === 'FREEFIRE' ? 'bg-gradient-to-r from-orange-500 to-amber-500' : 'bg-gradient-to-r from-gray-700 to-slate-700'} 
-              text-white font-semibold shadow-sm
+              text-white font-semibold shadow-sm py-1.5 px-3 inline-block rounded-md text-md 
+              border border-white/10 mb-2
             `}>
               {gameType}
-            </Badge>
+            </div>
+            
+            {/* Tournament Title */}
+            <h3 className="text-xl font-bold text-white">{title}</h3>
           </div>
           
           {/* Date/Time */}

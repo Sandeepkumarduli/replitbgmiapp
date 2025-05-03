@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { TournamentList } from "@/components/user/tournament-list";
 import { TeamCard } from "@/components/ui/team-card";
+import { JoinTeamForm } from "@/components/user/join-team-form";
 import { 
   Trophy, 
   Users, 
@@ -14,7 +15,8 @@ import {
   Clock, 
   CalendarCheck,
   User,
-  RefreshCw
+  RefreshCw,
+  Plus
 } from "lucide-react";
 
 export default function UserDashboard() {
@@ -187,27 +189,60 @@ export default function UserDashboard() {
                         +{teams.length - 2} more teams
                       </p>
                     )}
-                    <div className="flex justify-center mt-4">
+                    <div className="grid grid-cols-2 gap-4 mt-4">
                       <Link href="/user/team" className="inline-block">
                         <Button 
                           variant="outline"
-                          className="border-gray-700 text-white hover:bg-dark-surface"
+                          className="border-gray-700 text-white hover:bg-dark-surface w-full"
                         >
                           <Users className="h-4 w-4 mr-2" />
                           Manage Teams
                         </Button>
                       </Link>
+                      {teams && teams.length < 3 && (
+                        <Link href="/user/team" className="inline-block">
+                          <Button 
+                            variant="outline"
+                            className="border-indigo-600 text-indigo-400 hover:bg-indigo-600/10 w-full"
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Join Team
+                          </Button>
+                        </Link>
+                      )}
                     </div>
+                    
+                    {/* Join Team Form */}
+                    {teams && teams.length < 3 && (
+                      <div className="mt-6 border-t border-gray-800 pt-6">
+                        <JoinTeamForm />
+                      </div>
+                    )}
                   </div>
                 ) : (
-                  <div className="text-center py-6">
-                    <Users className="h-12 w-12 text-gray-600 mx-auto mb-3" />
-                    <p className="text-gray-400 mb-4">You haven't created any teams yet</p>
-                    <Link href="/user/team/create" className="inline-block">
-                      <Button className="bg-primary hover:bg-primary/90 text-white">
-                        Create a Team
-                      </Button>
-                    </Link>
+                  <div>
+                    <div className="text-center py-6">
+                      <Users className="h-12 w-12 text-gray-600 mx-auto mb-3" />
+                      <p className="text-gray-400 mb-4">You haven't created any teams yet</p>
+                      <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                        <Link href="/user/team" className="inline-block">
+                          <Button className="bg-primary hover:bg-primary/90 text-white">
+                            <Plus className="h-4 w-4 mr-2" />
+                            Create a Team
+                          </Button>
+                        </Link>
+                        <Link href="/user/team" className="inline-block">
+                          <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                            Join a Team
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                    
+                    {/* Join Team Form */}
+                    <div className="mt-4 border-t border-gray-800 pt-6">
+                      <JoinTeamForm />
+                    </div>
                   </div>
                 )}
               </CardContent>
@@ -224,7 +259,16 @@ export default function UserDashboard() {
                 </Link>
               </CardHeader>
               <CardContent>
-                <TournamentList showRegisteredOnly={true} limit={5} />
+                {/* Custom tournament list for dashboard, one per row */}
+                <div className="tournament-dashboard-list">
+                  <style jsx>{`
+                    /* Custom styles for tournament cards in dashboard */
+                    :global(.tournament-dashboard-list .grid) {
+                      grid-template-columns: 1fr !important;
+                    }
+                  `}</style>
+                  <TournamentList showRegisteredOnly={true} limit={5} />
+                </div>
               </CardContent>
             </Card>
           </div>

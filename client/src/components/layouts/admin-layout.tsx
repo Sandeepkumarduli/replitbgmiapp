@@ -21,11 +21,26 @@ interface AdminLayoutProps {
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const [location, navigate] = useLocation();
-  const { user } = useAuth();
+  const { user, isLoading, isAuthenticated, isAdmin } = useAuth();
   
-  // If not admin, redirect to home
-  if (user?.role !== 'admin') {
-    navigate('/');
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+  
+  // Redirect to auth page if not authenticated
+  if (!isAuthenticated) {
+    navigate('/auth');
+    return null;
+  }
+  
+  // If authenticated but not admin, redirect to user dashboard
+  if (!isAdmin) {
+    navigate('/user/dashboard');
     return null;
   }
   

@@ -168,13 +168,7 @@ function Router() {
             <Redirect to="/admin/notifications" />
           </Route>
           <ProtectedRoute path="/admin/settings" component={AdminSettings} adminOnly={true}/>
-          <Route path="/admin/tournaments/edit/:id">
-            {(params) => (
-              isAuthenticated ? 
-                <EditTournament params={params} /> : 
-                <Redirect to="/auth" />
-            )}
-          </Route>
+          <ProtectedRoute path="/admin/tournaments/edit/:id" component={(props: any) => <EditTournament params={props.params} />} adminOnly={true} />
           
           {/* User Routes - protected */}
           <ProtectedRoute path="/user/dashboard" component={UserDashboard}/>

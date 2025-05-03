@@ -20,6 +20,7 @@ export const teams = pgTable("teams", {
   name: text("name").notNull().unique(),
   ownerId: integer("owner_id").notNull().references(() => users.id),
   gameType: text("game_type").notNull().default("BGMI"), // BGMI, COD, FREEFIRE
+  inviteCode: text("invite_code").notNull().unique(), // 6-digit unique code for team invites
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -73,7 +74,8 @@ export const insertUserSchema = createInsertSchema(users).omit({
 
 export const insertTeamSchema = createInsertSchema(teams).omit({
   id: true,
-  createdAt: true
+  createdAt: true,
+  inviteCode: true // We'll generate this automatically
 });
 
 export const insertTeamMemberSchema = createInsertSchema(teamMembers).omit({

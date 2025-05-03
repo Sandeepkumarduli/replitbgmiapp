@@ -20,6 +20,7 @@ import {
   logSecurityEvent
 } from "./auth-security";
 import { z } from "zod";
+import crypto from "crypto";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Choose which authentication system to use

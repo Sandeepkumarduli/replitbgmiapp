@@ -184,7 +184,19 @@ export default function TournamentDetails({ params }: { params: { id: string } }
     }
   };
 
+  // Set initial local registration state based on API data when it loads
+  useEffect(() => {
+    if (userRegistrations && tournament) {
+      const alreadyRegistered = userRegistrations.some((reg: any) => reg.tournamentId === tournament.id);
+      setIsLocalRegistered(alreadyRegistered);
+    }
+  }, [userRegistrations, tournament]);
+
   const isRegistered = () => {
+    // First check local state (which updates immediately on registration)
+    if (isLocalRegistered) return true;
+    
+    // Fall back to checking the API data
     if (!userRegistrations || !tournament) return false;
     return userRegistrations.some((reg: any) => reg.tournamentId === tournament.id);
   };

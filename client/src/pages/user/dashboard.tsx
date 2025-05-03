@@ -25,6 +25,7 @@ export default function UserDashboard() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [tournamentFilter, setTournamentFilter] = useState<'upcoming' | 'live' | 'all' | 'completed'>('all');
 
   // Redirect if not authenticated or is admin
   useEffect(() => {
@@ -313,32 +314,40 @@ export default function UserDashboard() {
                 <Button 
                   variant="default" 
                   size="sm" 
-                  className="bg-amber-600 text-white hover:bg-amber-700"
-                  onClick={() => navigate("/tournaments?status=upcoming")}
+                  className={`${tournamentFilter === 'upcoming' 
+                    ? 'bg-amber-600 text-white hover:bg-amber-700' 
+                    : 'bg-dark-surface border-gray-700 hover:bg-dark-surface/80 text-gray-300'}`}
+                  onClick={() => setTournamentFilter('upcoming')}
                 >
                   Upcoming
                 </Button>
                 <Button 
                   variant="default" 
                   size="sm" 
-                  className="bg-green-600 text-white hover:bg-green-700"
-                  onClick={() => navigate("/tournaments?status=live")}
+                  className={`${tournamentFilter === 'live' 
+                    ? 'bg-green-600 text-white hover:bg-green-700' 
+                    : 'bg-dark-surface border-gray-700 hover:bg-dark-surface/80 text-gray-300'}`}
+                  onClick={() => setTournamentFilter('live')}
                 >
                   Live
                 </Button>
                 <Button 
                   variant="default" 
                   size="sm" 
-                  className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700"
-                  onClick={() => navigate("/tournaments")}
+                  className={`${tournamentFilter === 'all' 
+                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700' 
+                    : 'bg-dark-surface border-gray-700 hover:bg-dark-surface/80 text-gray-300'}`}
+                  onClick={() => setTournamentFilter('all')}
                 >
                   All
                 </Button>
                 <Button 
                   variant="default" 
                   size="sm" 
-                  className="bg-gray-600 text-white hover:bg-gray-700"
-                  onClick={() => navigate("/tournaments?status=completed")}
+                  className={`${tournamentFilter === 'completed' 
+                    ? 'bg-gray-600 text-white hover:bg-gray-700' 
+                    : 'bg-dark-surface border-gray-700 hover:bg-dark-surface/80 text-gray-300'}`}
+                  onClick={() => setTournamentFilter('completed')}
                 >
                   Completed
                 </Button>

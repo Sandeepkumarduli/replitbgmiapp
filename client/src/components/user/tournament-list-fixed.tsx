@@ -283,14 +283,13 @@ export function TournamentList({
       displayTournaments = displayTournaments.filter(t => registeredIds.includes(t.id));
     }
     
-    // Special filter for completed tournaments
-    if (filter === "completed" && !showRegisteredOnly) {
-      if (registrations) {
-        const registeredIds = registrations.map((reg: any) => reg.tournamentId);
-        displayTournaments = displayTournaments.filter(t => registeredIds.includes(t.id));
-      } else {
-        displayTournaments = [];
-      }
+    // Apply status filter (filter is 'upcoming', 'live', 'completed', or undefined)
+    if (filter) {
+      displayTournaments = displayTournaments.filter(t => t.status === filter);
+    } else if (!filter && !showRegisteredOnly) {
+      // Default behavior: If no filter is explicitly specified, and not showing registered only,
+      // then show live and upcoming tournaments (hide completed)
+      displayTournaments = displayTournaments.filter(t => t.status === 'live' || t.status === 'upcoming');
     }
     
     // Apply game type filter
@@ -321,8 +320,18 @@ export function TournamentList({
       );
     }
     
-    // Sort tournaments by date (most recent first)
+    // First sort by status priority (live -> upcoming -> completed)
+    // Then sort by date (most recent first within each status)
     displayTournaments.sort((a, b) => {
+      const statusPriority = { 'live': 0, 'upcoming': 1, 'completed': 2 };
+      const statusA = statusPriority[a.status as keyof typeof statusPriority];
+      const statusB = statusPriority[b.status as keyof typeof statusPriority];
+      
+      if (statusA !== statusB) {
+        return statusA - statusB; // First sort by status priority
+      }
+      
+      // Then sort by date within the same status
       const dateA = new Date(a.date);
       const dateB = new Date(b.date);
       return dateB.getTime() - dateA.getTime();

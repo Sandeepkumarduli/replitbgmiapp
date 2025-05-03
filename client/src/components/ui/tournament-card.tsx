@@ -53,17 +53,17 @@ export function TournamentCard({ tournament, onRegister, registered = false, reg
           {/* Status Badge */}
           <div className="flex items-center justify-between mb-3">
             {status === "live" ? (
-              <Badge className="bg-primary text-white hover:bg-primary/90">
+              <Badge className="bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold shadow-sm">
                 <span className="w-2 h-2 bg-white rounded-full animate-pulse mr-1.5"></span>
                 LIVE NOW
               </Badge>
             ) : status === "upcoming" ? (
-              <Badge className="bg-accent text-dark hover:bg-accent/90">
-                <span className="w-2 h-2 bg-dark rounded-full mr-1.5"></span>
+              <Badge className="bg-gradient-to-r from-indigo-600 to-blue-500 text-white font-semibold shadow-sm">
+                <span className="w-2 h-2 bg-white rounded-full mr-1.5"></span>
                 UPCOMING
               </Badge>
             ) : (
-              <Badge className="bg-destructive text-white hover:bg-destructive/90">
+              <Badge className="bg-gradient-to-r from-rose-600 to-pink-500 text-white font-semibold shadow-sm">
                 <span className="w-2 h-2 bg-white rounded-full mr-1.5"></span>
                 COMPLETED
               </Badge>
@@ -71,11 +71,11 @@ export function TournamentCard({ tournament, onRegister, registered = false, reg
             
             {/* Entry Fee / Prize Badge */}
             {!isPaid ? (
-              <Badge variant="outline" className="text-accent border-accent">
+              <Badge className="bg-gradient-to-r from-amber-400 to-yellow-500 text-black font-semibold shadow-sm">
                 FREE ENTRY
               </Badge>
             ) : prizePool && prizePool > 0 ? (
-              <Badge variant="outline" className="text-secondary border-secondary">
+              <Badge className="bg-gradient-to-r from-purple-600 to-indigo-700 text-white font-semibold shadow-sm">
                 ₹{prizePool.toLocaleString()} PRIZE
               </Badge>
             ) : null}
@@ -85,10 +85,10 @@ export function TournamentCard({ tournament, onRegister, registered = false, reg
           <div className="flex items-center mb-3">
             <h3 className="text-xl font-bold text-white mr-2">{title}</h3>
             <Badge className={`
-              ${gameType === 'BGMI' ? 'bg-primary' : 
-                gameType === 'COD' ? 'bg-primary/80' : 
-                  gameType === 'FREEFIRE' ? 'bg-accent' : 'bg-primary'} 
-              text-white hover:bg-opacity-90
+              ${gameType === 'BGMI' ? 'bg-gradient-to-r from-fuchsia-600 to-pink-600' : 
+                gameType === 'COD' ? 'bg-gradient-to-r from-blue-600 to-cyan-600' : 
+                  gameType === 'FREEFIRE' ? 'bg-gradient-to-r from-orange-500 to-amber-500' : 'bg-gradient-to-r from-fuchsia-600 to-pink-600'} 
+              text-white font-semibold shadow-sm
             `}>
               {gameType}
             </Badge>

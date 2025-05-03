@@ -102,122 +102,133 @@ export default function UserDashboard() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* User Profile Card */}
-          <Card className="bg-dark-card border-gray-800 shadow-lg">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-white text-xl">My Profile</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center space-x-4">
-                <div className="flex-shrink-0 h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-                  <User className="h-8 w-8 text-primary" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-white">{user?.username}</h3>
-                  <p className="text-gray-400">Game ID: {user?.gameId}</p>
-                </div>
-              </div>
-              <div className="mt-4 flex justify-end">
-                <Link href="/user/profile" className="inline-block">
-                  <Button variant="outline" size="sm" className="border-gray-700 text-white hover:bg-dark-surface">
-                    Edit Profile
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Teams Card */}
-          <Card className="bg-dark-card border-gray-800 shadow-lg">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-white text-xl">My Teams</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoadingTeams ? (
-                <p className="text-gray-400">Loading teams...</p>
-              ) : teams && teams.length > 0 ? (
-                <div className="space-y-4">
-                  {teams.slice(0, 2).map((team: any) => (
-                    <TeamCard key={team.id} team={team} />
-                  ))}
-                  {teams.length > 2 && (
-                    <p className="text-gray-400 text-sm text-center mt-2">
-                      +{teams.length - 2} more teams
-                    </p>
-                  )}
-                  <div className="flex justify-center mt-4">
-                    <Link href="/user/team" className="inline-block">
-                      <Button 
-                        variant="outline"
-                        className="border-gray-700 text-white hover:bg-dark-surface"
-                      >
-                        <Users className="h-4 w-4 mr-2" />
-                        Manage Teams
-                      </Button>
-                    </Link>
+        {/* Profile and Statistics - 40% width */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            {/* User Profile Card */}
+            <Card className="bg-dark-card border-gray-800 shadow-lg">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-white text-xl">My Profile</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center space-x-4">
+                  <div className="flex-shrink-0 h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                    <User className="h-8 w-8 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white">{user?.username}</h3>
+                    <p className="text-gray-400">Game ID: {user?.gameId}</p>
                   </div>
                 </div>
-              ) : (
-                <div className="text-center py-6">
-                  <Users className="h-12 w-12 text-gray-600 mx-auto mb-3" />
-                  <p className="text-gray-400 mb-4">You haven't created any teams yet</p>
-                  <Link href="/user/team/create" className="inline-block">
-                    <Button className="bg-primary hover:bg-primary/90 text-white">
-                      Create a Team
+                <div className="mt-4 flex justify-end">
+                  <Link href="/user/profile" className="inline-block">
+                    <Button variant="outline" size="sm" className="border-gray-700 text-white hover:bg-dark-surface">
+                      Edit Profile
                     </Button>
                   </Link>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          {/* Statistics Card */}
-          <Card className="bg-dark-card border-gray-800 shadow-lg">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-white text-xl">Statistics</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-dark-surface p-4 rounded-lg border border-gray-800">
-                  <Trophy className="h-6 w-6 text-primary mb-2" />
-                  <p className="text-2xl font-bold text-white">{registrations?.length || 0}</p>
-                  <p className="text-gray-400 text-sm">Tournaments Joined</p>
+            {/* Statistics Card */}
+            <Card className="bg-dark-card border-gray-800 shadow-lg">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-white text-xl">Statistics</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-dark-surface p-4 rounded-lg border border-gray-800">
+                    <Trophy className="h-6 w-6 text-primary mb-2" />
+                    <p className="text-2xl font-bold text-white">{registrations?.length || 0}</p>
+                    <p className="text-gray-400 text-sm">Tournaments Joined</p>
+                  </div>
+                  <div className="bg-dark-surface p-4 rounded-lg border border-gray-800">
+                    <Users className="h-6 w-6 text-accent mb-2" />
+                    <p className="text-2xl font-bold text-white">{teams?.length || 0}</p>
+                    <p className="text-gray-400 text-sm">Teams Created</p>
+                  </div>
+                  <div className="bg-dark-surface p-4 rounded-lg border border-gray-800">
+                    <Clock className="h-6 w-6 text-secondary mb-2" />
+                    <p className="text-2xl font-bold text-white">0</p>
+                    <p className="text-gray-400 text-sm">Matches Played</p>
+                  </div>
+                  <div className="bg-dark-surface p-4 rounded-lg border border-gray-800">
+                    <CalendarCheck className="h-6 w-6 text-[#00CC66] mb-2" />
+                    <p className="text-2xl font-bold text-white">0</p>
+                    <p className="text-gray-400 text-sm">Tournaments Won</p>
+                  </div>
                 </div>
-                <div className="bg-dark-surface p-4 rounded-lg border border-gray-800">
-                  <Users className="h-6 w-6 text-accent mb-2" />
-                  <p className="text-2xl font-bold text-white">{teams?.length || 0}</p>
-                  <p className="text-gray-400 text-sm">Teams Created</p>
-                </div>
-                <div className="bg-dark-surface p-4 rounded-lg border border-gray-800">
-                  <Clock className="h-6 w-6 text-secondary mb-2" />
-                  <p className="text-2xl font-bold text-white">0</p>
-                  <p className="text-gray-400 text-sm">Matches Played</p>
-                </div>
-                <div className="bg-dark-surface p-4 rounded-lg border border-gray-800">
-                  <CalendarCheck className="h-6 w-6 text-[#00CC66] mb-2" />
-                  <p className="text-2xl font-bold text-white">0</p>
-                  <p className="text-gray-400 text-sm">Tournaments Won</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Teams and Tournaments Cards - 60% width */}
+          <div className="lg:col-span-3 space-y-6">
+            {/* Teams Card */}
+            <Card className="bg-dark-card border-gray-800 shadow-lg">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-white text-xl">My Teams</CardTitle>
+                <Link href="/user/team" className="inline-block">
+                  <Button variant="link" className="text-accent hover:text-accent/80 p-0 h-auto">
+                    Manage All
+                  </Button>
+                </Link>
+              </CardHeader>
+              <CardContent>
+                {isLoadingTeams ? (
+                  <p className="text-gray-400">Loading teams...</p>
+                ) : teams && teams.length > 0 ? (
+                  <div className="space-y-4">
+                    {teams.slice(0, 2).map((team: any) => (
+                      <TeamCard key={team.id} team={team} />
+                    ))}
+                    {teams.length > 2 && (
+                      <p className="text-gray-400 text-sm text-center mt-2">
+                        +{teams.length - 2} more teams
+                      </p>
+                    )}
+                    <div className="flex justify-center mt-4">
+                      <Link href="/user/team" className="inline-block">
+                        <Button 
+                          variant="outline"
+                          className="border-gray-700 text-white hover:bg-dark-surface"
+                        >
+                          <Users className="h-4 w-4 mr-2" />
+                          Manage Teams
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-6">
+                    <Users className="h-12 w-12 text-gray-600 mx-auto mb-3" />
+                    <p className="text-gray-400 mb-4">You haven't created any teams yet</p>
+                    <Link href="/user/team/create" className="inline-block">
+                      <Button className="bg-primary hover:bg-primary/90 text-white">
+                        Create a Team
+                      </Button>
+                    </Link>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Registered Tournaments */}
+            <Card className="bg-dark-card border-gray-800 shadow-lg">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-white text-xl">My Registered Tournaments</CardTitle>
+                <Link href="/tournaments" className="inline-block">
+                  <Button variant="link" className="text-accent hover:text-accent/80 p-0 h-auto">
+                    View All
+                  </Button>
+                </Link>
+              </CardHeader>
+              <CardContent>
+                <TournamentList showRegisteredOnly={true} limit={5} />
+              </CardContent>
+            </Card>
+          </div>
         </div>
-
-        {/* Registered Tournaments */}
-        <Card className="bg-dark-card border-gray-800 shadow-lg mt-6">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-white text-xl">My Registered Tournaments</CardTitle>
-            <Link href="/tournaments" className="inline-block">
-              <Button variant="link" className="text-accent hover:text-accent/80 p-0 h-auto">
-                View All
-              </Button>
-            </Link>
-          </CardHeader>
-          <CardContent>
-            <TournamentList showRegisteredOnly={true} limit={5} />
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

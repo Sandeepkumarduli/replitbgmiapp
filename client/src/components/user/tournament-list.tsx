@@ -179,6 +179,21 @@ export function TournamentList({
     return registrations.some((reg: any) => reg.tournamentId === tournamentId);
   };
 
+  // Handle API errors gracefully
+  if (tournamentsError) {
+    return (
+      <div className="py-8 text-center">
+        <p className="text-red-400">Error loading tournaments. Please try again.</p>
+        <Button 
+          onClick={() => refetchTournaments()}
+          className="mt-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white"
+        >
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
   if (isLoadingTournaments || (showRegisteredOnly && isLoadingRegistrations) || isLoadingCounts) {
     return (
       <div className="py-8 text-center">

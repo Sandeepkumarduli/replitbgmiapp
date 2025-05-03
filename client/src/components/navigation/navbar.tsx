@@ -58,6 +58,12 @@ export default function Navbar() {
                   </Link>
                 </>
               )}
+              {isAuthenticated && (
+                <Link href={isAdmin ? "/admin/dashboard" : "/user/dashboard"} className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${isActive(isAdmin ? "/admin/dashboard" : "/user/dashboard") ? "border-primary text-white" : "border-transparent text-gray-300 hover:text-white hover:border-accent"}`}>
+                  Dashboard
+                </Link>
+              )}
+              
               {isAuthenticated && !isAdmin && (
                 <Link href="/user/team" className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${isActive("/user/team") ? "border-primary text-white" : "border-transparent text-gray-300 hover:text-white hover:border-accent"}`}>
                   Teams

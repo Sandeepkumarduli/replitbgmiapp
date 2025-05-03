@@ -259,16 +259,8 @@ export default function UserDashboard() {
                 </Link>
               </CardHeader>
               <CardContent>
-                {/* Custom tournament list for dashboard, one per row */}
-                <div className="tournament-dashboard-list">
-                  <style jsx>{`
-                    /* Custom styles for tournament cards in dashboard */
-                    :global(.tournament-dashboard-list .grid) {
-                      grid-template-columns: 1fr !important;
-                    }
-                  `}</style>
-                  <TournamentList showRegisteredOnly={true} limit={5} />
-                </div>
+                {/* The TournamentList component now handles single column display when showRegisteredOnly is true */}
+                <TournamentList showRegisteredOnly={true} limit={5} />
               </CardContent>
             </Card>
           </div>

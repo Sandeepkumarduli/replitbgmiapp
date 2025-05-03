@@ -386,9 +386,27 @@ export class MemStorage implements IStorage {
   }
 
   async getUserNotifications(userId: number): Promise<Notification[]> {
-    return Array.from(this.notifications.values()).filter(
-      (notification) => notification.userId === userId || notification.userId === null
-    ).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()); // Sort by newest first
+    // Get all user-specific and broadcast notifications
+    const allNotifications = Array.from(this.notifications.values())
+      .filter(notification => notification.userId === userId || notification.userId === null)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()); // Sort by newest first
+    
+    // Get the list of broadcast notification IDs that this user has already read
+    const readNotificationIds = await this.getUserReadNotifications(userId);
+    
+    // Mark broadcast notifications as read or unread based on the user's read status
+    return allNotifications.map(notification => {
+      // For broadcast notifications, check if this user has read it
+      if (notification.userId === null) {
+        return {
+          ...notification,
+          isRead: readNotificationIds.includes(notification.id)
+        };
+      }
+      
+      // User-specific notifications keep their original isRead status
+      return notification;
+    });
   }
 
   async getBroadcastNotifications(): Promise<Notification[]> {
@@ -398,9 +416,29 @@ export class MemStorage implements IStorage {
   }
 
   async getUnreadNotificationsCount(userId: number): Promise<number> {
-    return Array.from(this.notifications.values()).filter(
-      (notification) => (notification.userId === userId || notification.userId === null) && !notification.isRead
-    ).length;
+    // Get all notifications for this user (personal and broadcast)
+    const userNotifications = Array.from(this.notifications.values())
+      .filter(notification => notification.userId === userId || notification.userId === null);
+    
+    // Get the list of broadcast notifications this user has already read
+    const readNotificationIds = await this.getUserReadNotifications(userId);
+    
+    // Count unread notifications by checking:
+    // - For personal notifications: notification.isRead is false
+    // - For broadcast notifications: notification not in the readNotificationIds list
+    let count = 0;
+    
+    for (const notification of userNotifications) {
+      if (notification.userId === userId && !notification.isRead) {
+        // User's personal notifications - check isRead flag
+        count++;
+      } else if (notification.userId === null && !readNotificationIds.includes(notification.id)) {
+        // Broadcast notifications - check if in user's read list
+        count++;
+      }
+    }
+    
+    return count;
   }
 
   async createNotification(insertNotification: InsertNotification): Promise<Notification> {
@@ -416,23 +454,91 @@ export class MemStorage implements IStorage {
     return notification;
   }
 
-  async markNotificationAsRead(id: number): Promise<Notification | undefined> {
+  // Map to track which users have read which broadcast notifications
+  private notificationReads: Map<string, Date> = new Map();
+
+  // Helper to create a unique key for the notificationReads map
+  private makeReadKey(userId: number, notificationId: number): string {
+    return `${userId}-${notificationId}`;
+  }
+
+  async markNotificationAsRead(id: number, userId: number): Promise<Notification | undefined> {
     const notification = this.notifications.get(id);
     if (!notification) return undefined;
     
-    const updatedNotification = { ...notification, isRead: true };
-    this.notifications.set(id, updatedNotification);
-    return updatedNotification;
+    // If it's a user-specific notification, update the isRead flag
+    if (notification.userId === userId) {
+      const updatedNotification = { ...notification, isRead: true };
+      this.notifications.set(id, updatedNotification);
+      return updatedNotification;
+    } 
+    // If it's a broadcast notification, mark it as read for this user
+    else if (notification.userId === null) {
+      // Add to the notificationReads map
+      this.notificationReads.set(this.makeReadKey(userId, id), new Date());
+      
+      // Return the notification with isRead=true for this request
+      return {
+        ...notification,
+        isRead: true
+      };
+    }
+    
+    return notification;
+  }
+  
+  async hasUserReadNotification(userId: number, notificationId: number): Promise<boolean> {
+    const notification = this.notifications.get(notificationId);
+    if (!notification) return false;
+    
+    // For user-specific notifications, check the isRead flag
+    if (notification.userId === userId) {
+      return notification.isRead;
+    }
+    // For broadcast notifications, check in our notificationReads map
+    else if (notification.userId === null) {
+      return this.notificationReads.has(this.makeReadKey(userId, notificationId));
+    }
+    
+    return false;
+  }
+  
+  async getUserReadNotifications(userId: number): Promise<number[]> {
+    const readNotificationIds: number[] = [];
+    
+    // Find all keys in the map that match this user's ID
+    for (const key of this.notificationReads.keys()) {
+      if (key.startsWith(`${userId}-`)) {
+        const notificationId = parseInt(key.split('-')[1]);
+        readNotificationIds.push(notificationId);
+      }
+    }
+    
+    return readNotificationIds;
   }
 
   async markAllNotificationsAsRead(userId: number): Promise<void> {
-    const userNotifications = await this.getUserNotifications(userId);
+    // Mark all user-specific notifications as read
+    const userNotifications = Array.from(this.notifications.values())
+      .filter(notification => notification.userId === userId && !notification.isRead);
     
     userNotifications.forEach(notification => {
-      if (!notification.isRead) {
-        this.notifications.set(notification.id, { ...notification, isRead: true });
-      }
+      this.notifications.set(notification.id, { ...notification, isRead: true });
     });
+    
+    // Mark all broadcast notifications as read for this user
+    const broadcastNotifications = Array.from(this.notifications.values())
+      .filter(notification => notification.userId === null);
+    
+    // Get which broadcast notifications the user has already read
+    const readNotificationIds = await this.getUserReadNotifications(userId);
+    
+    // Add each unread broadcast notification to the read map
+    for (const notification of broadcastNotifications) {
+      if (!readNotificationIds.includes(notification.id)) {
+        this.notificationReads.set(this.makeReadKey(userId, notification.id), new Date());
+      }
+    }
   }
 
   async deleteNotification(id: number): Promise<boolean> {

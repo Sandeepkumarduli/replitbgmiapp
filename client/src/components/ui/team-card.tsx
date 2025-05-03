@@ -86,7 +86,7 @@ export function TeamCard({ team, members = [], onManage, onAddMember, onRemoveMe
                       <Button 
                         variant="ghost" 
                         size="icon" 
-                        onClick={() => onRemoveMember(member.id)}
+                        onClick={() => onRemoveMember(member.id, member.username)}
                         className="h-6 w-6 text-gray-400 hover:text-destructive"
                       >
                         <X className="h-4 w-4" />
@@ -156,7 +156,7 @@ export function TeamCard({ team, members = [], onManage, onAddMember, onRemoveMe
               variant="outline" 
               size="sm" 
               className="w-full mt-4 text-destructive hover:text-destructive border-destructive/30 hover:bg-destructive/10" 
-              onClick={() => onDeleteTeam(team.id)}
+              onClick={() => onDeleteTeam(team.id, team.name)}
             >
               <X className="h-4 w-4 mr-2" /> Delete Team
             </Button>

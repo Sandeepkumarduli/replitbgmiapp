@@ -23,12 +23,13 @@ import { Team, TeamMember } from "@shared/schema";
 import { Users, AlertTriangle, Plus, RefreshCw } from "lucide-react";
 
 export default function UserTeam() {
-  const { isAuthenticated, isAdmin, isLoading } = useAuth();
+  const { isAuthenticated, isAdmin, isLoading, user } = useAuth();
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [memberToDelete, setMemberToDelete] = useState<number | null>(null);
+  const [memberToDeleteName, setMemberToDeleteName] = useState<string>("");
   const [addMemberDialogOpen, setAddMemberDialogOpen] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [memberData, setMemberData] = useState({
@@ -39,6 +40,8 @@ export default function UserTeam() {
   const [createTeamDialogOpen, setCreateTeamDialogOpen] = useState(false);
   const [deleteTeamDialogOpen, setDeleteTeamDialogOpen] = useState(false);
   const [teamToDelete, setTeamToDelete] = useState<number | null>(null);
+  const [teamToDeleteName, setTeamToDeleteName] = useState<string>("");
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Fetch user's teams
   const { data: teams, isLoading: isTeamsLoading } = useQuery<Team[]>({
@@ -160,14 +163,45 @@ export default function UserTeam() {
     },
   });
 
-  const handleRemoveMember = (memberId: number) => {
+  const handleRemoveMember = (memberId: number, memberName: string = "") => {
     setMemberToDelete(memberId);
+    setMemberToDeleteName(memberName);
     setDeleteDialogOpen(true);
   };
 
-  const handleDeleteTeam = (teamId: number) => {
+  const handleDeleteTeam = (teamId: number, teamName: string = "") => {
     setTeamToDelete(teamId);
+    setTeamToDeleteName(teamName);
     setDeleteTeamDialogOpen(true);
+  };
+  
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["/api/teams/my"] }),
+      ...(teams && teams.length > 0 
+        ? teams.map(team => queryClient.invalidateQueries({ 
+            queryKey: [`/api/teams/${team.id}/members`] 
+          }))
+        : [])
+    ])
+    .then(() => {
+      toast({
+        title: "Teams refreshed",
+        description: "Your team data has been updated successfully",
+      });
+    })
+    .catch(error => {
+      toast({
+        title: "Refresh failed",
+        description: "Failed to update team data. Please try again.",
+        variant: "destructive"
+      });
+    })
+    .finally(() => {
+      setIsRefreshing(false);
+    });
   };
 
   const confirmDelete = () => {
@@ -207,21 +241,13 @@ export default function UserTeam() {
           
           <div className="flex gap-3">
             <Button
-              onClick={() => {
-                queryClient.invalidateQueries({ queryKey: ["/api/teams/my"] });
-                if (teams && teams.length > 0) {
-                  queryClient.invalidateQueries({ queryKey: [`/api/teams/${teams[0].id}/members`] });
-                }
-                toast({
-                  title: "Refreshed",
-                  description: "Team data has been refreshed",
-                });
-              }}
+              onClick={handleRefresh}
               variant="outline"
               className="border-gray-700 text-white hover:bg-dark-surface"
+              disabled={isRefreshing}
             >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
+              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+              {isRefreshing ? 'Refreshing...' : 'Refresh'}
             </Button>
             
             {hasTeam && teams && teams.length < 3 && (
@@ -229,7 +255,7 @@ export default function UserTeam() {
                 onClick={() => {
                   setCreateTeamDialogOpen(true);
                 }}
-                className="bg-primary hover:bg-primary/90 text-white"
+                className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-md"
               >
                 <Plus className="h-4 w-4 mr-2" /> Create New Team
               </Button>
@@ -314,9 +340,15 @@ export default function UserTeam() {
                 Remove Team Member
               </DialogTitle>
               <DialogDescription className="text-gray-400">
-                Are you sure you want to remove this team member? This action cannot be undone.
+                Are you sure you want to remove {memberToDeleteName ? <span className="font-semibold text-white">{memberToDeleteName}</span> : "this team member"}? This action cannot be undone.
               </DialogDescription>
             </DialogHeader>
+            <div className="my-4 p-4 bg-red-500/10 border border-red-500/20 rounded-md">
+              <p className="text-red-400 text-sm flex items-start">
+                <AlertTriangle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+                Removing a member will permanently delete their association with this team.
+              </p>
+            </div>
             <DialogFooter>
               <Button 
                 variant="outline" 
@@ -326,11 +358,18 @@ export default function UserTeam() {
                 Cancel
               </Button>
               <Button 
-                variant="destructive" 
+                className="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white"
                 onClick={confirmDelete}
                 disabled={deleteMemberMutation.isPending}
               >
-                {deleteMemberMutation.isPending ? "Removing..." : "Remove Member"}
+                {deleteMemberMutation.isPending ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Removing...
+                  </>
+                ) : (
+                  "Remove Member"
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -401,7 +440,7 @@ export default function UserTeam() {
                 Cancel
               </Button>
               <Button 
-                className="bg-primary hover:bg-primary/90"
+                className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-md"
                 onClick={() => {
                   if (selectedTeam && memberData.username && memberData.gameId) {
                     addMemberMutation.mutate({
@@ -420,7 +459,17 @@ export default function UserTeam() {
                 }}
                 disabled={addMemberMutation.isPending || !memberData.username || !memberData.gameId}
               >
-                {addMemberMutation.isPending ? "Adding..." : "Add Member"}
+                {addMemberMutation.isPending ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Adding...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Member
+                  </>
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -435,9 +484,15 @@ export default function UserTeam() {
                 Delete Team
               </DialogTitle>
               <DialogDescription className="text-gray-400">
-                Are you sure you want to delete this team? All members and data will be permanently removed. This action cannot be undone.
+                Are you sure you want to delete {teamToDeleteName ? <span className="font-semibold text-white">{teamToDeleteName}</span> : "this team"}? All members and data will be permanently removed. This action cannot be undone.
               </DialogDescription>
             </DialogHeader>
+            <div className="my-4 p-4 bg-red-500/10 border border-red-500/20 rounded-md">
+              <p className="text-red-400 text-sm flex items-start">
+                <AlertTriangle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+                This is a permanent action. All team registrations, members, and tournament associations will be deleted.
+              </p>
+            </div>
             <DialogFooter>
               <Button 
                 variant="outline" 
@@ -447,11 +502,18 @@ export default function UserTeam() {
                 Cancel
               </Button>
               <Button 
-                variant="destructive" 
+                className="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white"
                 onClick={confirmDeleteTeam}
                 disabled={deleteTeamMutation.isPending}
               >
-                {deleteTeamMutation.isPending ? "Deleting..." : "Delete Team"}
+                {deleteTeamMutation.isPending ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  "Delete Team"
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>

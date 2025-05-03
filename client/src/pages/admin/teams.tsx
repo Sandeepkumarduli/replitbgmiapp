@@ -47,6 +47,7 @@ import {
   Eye, 
   User,
   UserCog,
+  Copy,
 } from "lucide-react";
 import { Link } from "wouter";
 import { format } from "date-fns";

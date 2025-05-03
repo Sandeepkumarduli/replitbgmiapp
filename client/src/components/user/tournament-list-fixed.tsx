@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/auth";
 import { TournamentCard } from "@/components/ui/tournament-card";
 import { 
   Dialog,
@@ -598,6 +599,8 @@ type TournamentListWithTabsProps = {
 };
 
 export function TournamentListWithTabs({ gameTypeFilter = null, searchTerm = "", dateFilter }: TournamentListWithTabsProps) {
+  const { isAuthenticated } = useAuth();
+  
   return (
     <Tabs defaultValue="all" className="w-full">
       <TabsList className="mb-6 bg-dark-surface border border-gray-800">
@@ -610,9 +613,11 @@ export function TournamentListWithTabs({ gameTypeFilter = null, searchTerm = "",
         <TabsTrigger value="all" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-600 data-[state=active]:to-purple-600 data-[state=active]:text-white">
           All
         </TabsTrigger>
-        <TabsTrigger value="completed" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-500 data-[state=active]:to-red-600 data-[state=active]:text-white">
-          Completed
-        </TabsTrigger>
+        {isAuthenticated && (
+          <TabsTrigger value="completed" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-500 data-[state=active]:to-red-600 data-[state=active]:text-white">
+            Completed
+          </TabsTrigger>
+        )}
       </TabsList>
       
       <TabsContent value="live" className="mt-0">

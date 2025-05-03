@@ -74,8 +74,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     }
   ];
   
-  const handleLogout = () => {
-    navigate("/auth");
+  const { logout } = useAuth();
+  
+  const handleLogout = async () => {
+    try {
+      await logout();
+      // Navigation to auth page is handled in the logout function
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
   
   return (

@@ -1068,22 +1068,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Cannot delete system administrator account" });
       }
       
-      // Delete the user
-      const isDeleted = await storage.deleteUser(userId);
-      
-      if (!isDeleted) {
-        return res.status(500).json({ message: "Failed to delete user" });
+      try {
+        // Delete the user and all associated data
+        await storage.deleteUser(userId);
+        
+        // Log this security-sensitive action
+        logSecurityEvent('Admin deleted user', req, { 
+          deletedUserId: userId,
+          deletedUsername: user.username 
+        });
+        
+        res.json({ message: "User deleted successfully" });
+      } catch (deleteError) {
+        console.error('Error in user deletion:', deleteError);
+        res.status(500).json({ 
+          message: "Failed to delete user", 
+          error: "There might be data associated with this user that cannot be deleted. Please contact support." 
+        });
       }
-      
-      // Log this security-sensitive action
-      logSecurityEvent('Admin deleted user', req, { 
-        deletedUserId: userId,
-        deletedUsername: user.username 
-      });
-      
-      res.json({ message: "User deleted successfully" });
     } catch (error) {
-      res.status(500).json({ message: "Internal server error" });
+      console.error('Error in user deletion process:', error);
+      res.status(500).json({ message: "Internal server error", error: error instanceof Error ? error.message : String(error) });
     }
   });
   
@@ -1272,22 +1277,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         teamOwnerId: team.ownerId
       });
       
-      // Delete the team
+      // Delete the team and all associated data
       try {
-        const isDeleted = await storage.deleteTeam(teamId);
-        
-        if (!isDeleted) {
-          return res.status(404).json({ message: "Team not found" });
-        }
-        
+        await storage.deleteTeam(teamId);
         res.json({ message: "Team deleted successfully" });
-      } catch (error) {
-        console.error("Error deleting team:", error);
-        return res.status(500).json({ message: "Failed to delete team" });
+      } catch (deleteError) {
+        console.error("Error deleting team:", deleteError);
+        return res.status(500).json({ 
+          message: "Failed to delete team", 
+          error: "There might be data associated with this team that cannot be deleted. Please contact support."
+        });
       }
     } catch (error) {
       console.error("Admin delete team error:", error);
-      res.status(500).json({ message: "Internal server error" });
+      res.status(500).json({ 
+        message: "Internal server error", 
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   });
   

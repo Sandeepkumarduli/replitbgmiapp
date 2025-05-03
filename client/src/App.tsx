@@ -114,9 +114,12 @@ function Router() {
   const [location] = useLocation();
   const { isAuthenticated } = useAuth();
   
+  // Don't show navbar on admin pages, auth pages, and forgot password page
   const showNavbar = !location.startsWith("/auth") && 
-                     !location.startsWith("/forgot-password");
+                     !location.startsWith("/forgot-password") && 
+                     !location.startsWith("/admin");
   
+  // Don't show footer on auth pages and forgot password page
   const showFooter = !location.startsWith("/auth") && 
                      !location.startsWith("/forgot-password");
   

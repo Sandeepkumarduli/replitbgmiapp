@@ -1148,6 +1148,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get all users (for notifications - admin only)
+  app.get("/api/users", isAdmin, async (req, res) => {
+    try {
+      // Get all users
+      const users = await storage.getAllUsers();
+      
+      // Filter out sensitive information
+      const safeUsers = users.map(user => ({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role
+      }));
+      
+      // Return as JSON array
+      return res.json(safeUsers);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      return res.status(500).json({ 
+        message: "Failed to fetch users",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+  
   // Get all admin users (admin only, with enhanced security)
   app.get("/api/admin/users/admins", isEnhancedAdmin, async (req, res) => {
     try {

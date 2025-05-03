@@ -230,6 +230,14 @@ export function setupAuth(app: Express) {
       req.session.username = user.username;
       req.session.role = user.role;
 
+      // Get notification count for this user (includes broadcast notifications)
+      try {
+        const notificationCount = await storage.getUnreadNotificationsCount(user.id);
+        console.log(`User ${user.id} logged in with ${notificationCount} unread notifications`);
+      } catch (err) {
+        console.error("Error getting notification count on login:", err);
+      }
+
       // Return user without password
       const { password: _, ...userWithoutPassword } = user;
       return res.status(200).json(userWithoutPassword);

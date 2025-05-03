@@ -95,7 +95,7 @@ export function NotificationDropdown() {
     return localStorage.getItem(`notifications_cleared_${user.id}`) === 'true';
   }, [user]);
 
-  // Query to get unread notification count (skip if notifications are cleared)
+  // Query to get unread notification count - always fetch for logged-in users
   const {
     data: countData,
     isLoading: isLoadingCount,
@@ -103,7 +103,7 @@ export function NotificationDropdown() {
     queryKey: ["/api/notifications/count"],
     refetchInterval: 30000, // Refetch every 30 seconds
     initialData: { count: 0 },
-    enabled: !shouldSkipNotifications(), // Don't fetch if notifications are cleared
+    enabled: !!user, // Always fetch for logged-in users
   });
 
   // Query to get notifications (only loaded when dropdown is open and not cleared)

@@ -470,7 +470,7 @@ export class DatabaseStorage implements IStorage {
       return true;
     } catch (error) {
       console.error('Error deleting registration:', error);
-      return false;
+      throw error; // Rethrow to handle in the controller
     }
   }
 }

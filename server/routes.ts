@@ -537,11 +537,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Tournament not found" });
       }
       
-      await storage.deleteTournament(tournamentId);
-      
-      res.json({ message: "Tournament deleted successfully" });
+      // Delete the tournament and all associated registrations
+      try {
+        await storage.deleteTournament(tournamentId);
+        
+        // Log this security-sensitive action
+        logSecurityEvent('Admin deleted tournament', req, { 
+          tournamentId,
+          tournamentInfo: `Tournament #${tournamentId}`
+        });
+        
+        res.json({ message: "Tournament deleted successfully" });
+      } catch (deleteError) {
+        console.error("Error deleting tournament:", deleteError);
+        return res.status(500).json({ 
+          message: "Failed to delete tournament", 
+          error: "There might be data associated with this tournament that cannot be deleted. Please contact support."
+        });
+      }
     } catch (error) {
-      res.status(500).json({ message: "Internal server error" });
+      console.error("Tournament delete error:", error);
+      res.status(500).json({ 
+        message: "Internal server error", 
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   });
 
@@ -731,11 +750,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You did not create this registration" });
       }
       
-      await storage.deleteRegistration(registrationId);
-      
-      res.json({ message: "Registration canceled successfully" });
+      try {
+        await storage.deleteRegistration(registrationId);
+        res.json({ message: "Registration canceled successfully" });
+      } catch (deleteError) {
+        console.error("Error deleting registration:", deleteError);
+        return res.status(500).json({ 
+          message: "Failed to cancel registration", 
+          error: "There was an error processing your request. Please try again later."
+        });
+      }
     } catch (error) {
-      res.status(500).json({ message: "Internal server error" });
+      console.error("Registration cancellation error:", error);
+      res.status(500).json({ 
+        message: "Internal server error", 
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   });
 

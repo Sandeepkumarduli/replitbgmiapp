@@ -1908,14 +1908,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Store connected client
     clients.set(ws, {});
     
-    ws.on('message', (message) => {
+    ws.on('message', async (message) => {
       try {
         const data = JSON.parse(message.toString());
         
         // Authentication message to associate websocket with user
         if (data.type === 'auth' && data.userId) {
-          clients.set(ws, { userId: data.userId });
-          console.log(`WebSocket client authenticated for user ${data.userId}`);
+          const userId = data.userId;
+          clients.set(ws, { userId });
+          console.log(`WebSocket client authenticated for user ${userId}`);
+          
+          // Send the current notification count to the user immediately after authentication
+          if (ws.readyState === WebSocket.OPEN) {
+            try {
+              const count = await storage.getUnreadNotificationsCount(userId);
+              ws.send(JSON.stringify({
+                type: 'notification_update',
+                count: count
+              }));
+              console.log(`Sent initial notification count ${count} to user ${userId}`);
+            } catch (err) {
+              console.error('Error getting notification count:', err);
+            }
+          }
         }
       } catch (error) {
         console.error('Error processing WebSocket message:', error);

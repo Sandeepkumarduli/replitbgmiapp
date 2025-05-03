@@ -50,6 +50,8 @@ export function NotificationDropdown() {
         const data = JSON.parse(event.data);
         
         if (data.type === 'notification_update') {
+          console.log('Received notification update:', data);
+          
           // If this is a hide action from another device of the same user, save to localStorage
           if (data.isHideAction && user) {
             localStorage.setItem(`notifications_cleared_${user.id}`, 'true');
@@ -65,10 +67,9 @@ export function NotificationDropdown() {
           // Update notification count immediately without a query
           queryClient.setQueryData(['/api/notifications/count'], { count: data.count });
           
-          // Also refresh notifications list if the dropdown is open
-          if (isOpen) {
-            queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
-          }
+          // Always force refresh notifications on updates to ensure we have the latest data
+          queryClient.invalidateQueries({ queryKey: ["/api/notifications/count"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
         }
       } catch (error) {
         console.error('Error processing notification update:', error);
@@ -191,11 +192,11 @@ export function NotificationDropdown() {
   return (
     <div data-dropdown="notification">
       <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-        <DropdownMenuTrigger asChild onClick={handleToggle}>
+        <DropdownMenuTrigger asChild onClick={handleToggle} className="focus:outline-none focus:ring-0">
           <Button
             variant="ghost"
             size="sm"
-            className="relative h-9 w-9 rounded-full p-0 focus:outline-none focus:ring-0"
+            className="relative h-9 w-9 rounded-full p-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
           >
             <BellRing className="h-5 w-5 text-gray-300" />
             {unreadCount > 0 && (
@@ -207,7 +208,7 @@ export function NotificationDropdown() {
         </DropdownMenuTrigger>
         <DropdownMenuContent
           align="end"
-          className="w-[360px] p-0 bg-dark-card border border-gray-800 focus:outline-none"
+          className="w-[360px] p-0 bg-dark-card border border-gray-800 focus:outline-none shadow-lg shadow-black/50"
         >
           <div className="flex flex-col p-4 border-b border-gray-800">
             <div className="flex items-center justify-between mb-2">

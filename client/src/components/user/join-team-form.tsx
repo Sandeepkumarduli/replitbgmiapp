@@ -16,14 +16,28 @@ export function JoinTeamForm() {
       const res = await apiRequest("POST", "/api/teams/join", { inviteCode: code });
       return await res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
         title: "Team joined successfully!",
-        description: "You are now a member of this team.",
+        description: `You are now a member of the team: ${data.team.name}`,
       });
       setInviteCode("");
-      // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ["/api/teams/my"] });
+      
+      // Force refresh all relevant queries
+      Promise.all([
+        // This invalidates teams data
+        queryClient.invalidateQueries({ queryKey: ["/api/teams/my"] }),
+        // This invalidates any team member data
+        queryClient.invalidateQueries({ queryKey: ["/api/teams"] }),
+        // Force refetch for the specific team
+        queryClient.invalidateQueries({ queryKey: [`/api/teams/${data.team.id}`] }),
+        queryClient.invalidateQueries({ queryKey: [`/api/teams/${data.team.id}/members`] })
+      ]);
+      
+      // Force a page refresh after a short delay to ensure UI is updated
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     },
     onError: (error: any) => {
       toast({

@@ -85,11 +85,21 @@ export default function UserDashboard() {
     setIsRefreshing(true);
     
     try {
+      // Force refetch all relevant queries
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["/api/teams/my"] }),
         queryClient.invalidateQueries({ queryKey: ["/api/registrations/user"] }),
         queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] }),
-        queryClient.invalidateQueries({ queryKey: ["/api/registrations/counts"] })
+        queryClient.invalidateQueries({ queryKey: ["/api/registrations/counts"] }),
+        // Force refetch team members data
+        refetchTeams(),
+        refetchRegistrations()
+      ]);
+      
+      // After invalidating queries, force a refetch
+      await Promise.all([
+        refetchTeams(),
+        refetchRegistrations()
       ]);
       
       toast({

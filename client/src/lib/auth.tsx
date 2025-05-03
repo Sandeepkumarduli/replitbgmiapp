@@ -78,10 +78,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch (error) {
         // Handle specific error cases more gracefully
         if (error instanceof Error) {
-          if (error.message.includes("Invalid username or password")) {
-            throw new Error("Invalid username or password. Please check your credentials or sign up if you don't have an account.");
+          if (error.message.includes("Wrong username or password")) {
+            throw new Error("Wrong username or password. Please check your credentials and try again.");
           } else if (error.message.includes("401") || error.message.includes("Unauthorized")) {
-            throw new Error("Invalid username or password. Please check your credentials and try again.");
+            throw new Error("Wrong username or password. Please check your credentials and try again.");
           } else {
             throw new Error("Login failed. Please try again later.");
           }

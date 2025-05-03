@@ -129,7 +129,7 @@ export function NotificationDropdown() {
 
   return (
     <div data-dropdown="notification">
-      <DropdownMenu open={isOpen} onOpenChange={setIsOpen} modal={true}>
+      <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
         <DropdownMenuTrigger asChild onClick={handleToggle}>
           <Button
             variant="ghost"

@@ -63,8 +63,19 @@ export interface IStorage {
   getBroadcastNotifications(): Promise<Notification[]>; // Notifications for all users
   getUnreadNotificationsCount(userId: number): Promise<number>;
   createNotification(notification: InsertNotification): Promise<Notification>;
-  markNotificationAsRead(id: number): Promise<Notification | undefined>;
+  
+  // Mark a notification as read for a specific user
+  markNotificationAsRead(id: number, userId: number): Promise<Notification | undefined>;
+  
+  // Mark all notifications as read for a specific user
   markAllNotificationsAsRead(userId: number): Promise<void>;
+  
+  // Check if a user has read a specific notification
+  hasUserReadNotification(userId: number, notificationId: number): Promise<boolean>;
+  
+  // Get all notifications a user has read
+  getUserReadNotifications(userId: number): Promise<number[]>; // Returns notification IDs
+  
   deleteNotification(id: number): Promise<boolean>;
   deleteAllUserNotifications(userId: number): Promise<number>; // Delete all notifications for a user
   cleanupOldNotifications(olderThan: Date): Promise<number>; // Returns count of deleted notifications

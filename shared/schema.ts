@@ -74,8 +74,25 @@ export const notifications = pgTable("notifications", {
   message: text("message").notNull(),
   type: text("type").notNull().default("general"), // general, tournament, system
   relatedId: integer("related_id"), // could be tournament ID, etc.
-  isRead: boolean("is_read").notNull().default(false),
+  isRead: boolean("is_read").notNull().default(false), // Only used for user-specific notifications
   createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Track which users have read which broadcast notifications
+export const notificationReads = pgTable("notification_reads", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  notificationId: integer("notification_id").notNull().references(() => notifications.id),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => {
+  return {
+    // Ensure each user can only mark a notification as read once
+    // (but allow updating the timestamp if needed)
+    userNotificationUnique: uniqueIndex("user_notification_unique").on(
+      table.userId, 
+      table.notificationId
+    ),
+  };
 });
 
 // Zod schemas for validation
@@ -154,3 +171,9 @@ export type InsertRegistration = z.infer<typeof insertRegistrationSchema>;
 
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+
+export type NotificationRead = typeof notificationReads.$inferSelect;
+export type InsertNotificationRead = {
+  userId: number;
+  notificationId: number;
+};

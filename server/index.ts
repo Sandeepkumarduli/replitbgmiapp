@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { scheduleBackups, initializeBackup } from "./backup";
+import { scheduleTournamentStatusUpdates } from "./tournament-manager";
 import dotenv from "dotenv";
 
 // Load environment variables
@@ -77,6 +78,10 @@ app.use((req, res, next) => {
       // Schedule automatic backups every 5 minutes
       scheduleBackups(5 * 60 * 1000);
       log('Data backup system initialized');
+      
+      // Schedule tournament status updates every minute
+      scheduleTournamentStatusUpdates(60 * 1000);
+      log('Tournament status updater initialized');
     }).catch(err => {
       console.error('Failed to initialize backup system:', err);
     });

@@ -225,7 +225,14 @@ export function TournamentForm({ tournament, isEditing = false }: TournamentForm
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
                           {field.value ? (
-                            format(new Date(field.value), "PPP p")
+                            (() => {
+                              try {
+                                return format(new Date(field.value), "PPP p");
+                              } catch (error) {
+                                console.error("Invalid date format:", error);
+                                return <span>Pick a date</span>;
+                              }
+                            })()
                           ) : (
                             <span>Pick a date</span>
                           )}
@@ -245,12 +252,23 @@ export function TournamentForm({ tournament, isEditing = false }: TournamentForm
                           type="time"
                           className="bg-dark-surface border-gray-700 text-white"
                           onChange={(e) => {
-                            const [hours, minutes] = e.target.value.split(':');
-                            const newDate = new Date(field.value);
-                            newDate.setHours(parseInt(hours), parseInt(minutes));
-                            field.onChange(newDate);
+                            try {
+                              const [hours, minutes] = e.target.value.split(':');
+                              const newDate = new Date(field.value || new Date());
+                              newDate.setHours(parseInt(hours || "0"), parseInt(minutes || "0"));
+                              field.onChange(newDate);
+                            } catch (error) {
+                              console.error("Error setting time:", error);
+                            }
                           }}
-                          value={format(new Date(field.value), "HH:mm")}
+                          value={(() => {
+                            try {
+                              return field.value ? format(new Date(field.value), "HH:mm") : "00:00";
+                            } catch (error) {
+                              console.error("Invalid time format:", error);
+                              return "00:00";
+                            }
+                          })()}
                         />
                       </div>
                     </PopoverContent>

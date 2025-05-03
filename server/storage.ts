@@ -1,10 +1,11 @@
 import { 
-  users, teams, teamMembers, tournaments, registrations,
+  users, teams, teamMembers, tournaments, registrations, notifications,
   type User, type InsertUser, 
   type Team, type InsertTeam, 
   type TeamMember, type InsertTeamMember,
   type Tournament, type InsertTournament, type UpdateTournament,
-  type Registration, type InsertRegistration
+  type Registration, type InsertRegistration,
+  type Notification, type InsertNotification
 } from "@shared/schema";
 import session from "express-session";
 
@@ -55,6 +56,16 @@ export interface IStorage {
   createRegistration(registration: InsertRegistration): Promise<Registration>;
   updateRegistration(id: number, registration: Partial<Registration>): Promise<Registration | undefined>;
   deleteRegistration(id: number): Promise<boolean>;
+  
+  // Notification operations
+  getNotification(id: number): Promise<Notification | undefined>;
+  getUserNotifications(userId: number): Promise<Notification[]>;
+  getBroadcastNotifications(): Promise<Notification[]>; // Notifications for all users
+  getUnreadNotificationsCount(userId: number): Promise<number>;
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  markNotificationAsRead(id: number): Promise<Notification | undefined>;
+  markAllNotificationsAsRead(userId: number): Promise<void>;
+  deleteNotification(id: number): Promise<boolean>;
 }
 
 import createMemoryStore from "memorystore";
@@ -66,12 +77,14 @@ export class MemStorage implements IStorage {
   private teamMembers: Map<number, TeamMember>;
   private tournaments: Map<number, Tournament>;
   private registrations: Map<number, Registration>;
+  private notifications: Map<number, Notification>;
   
   private userId: number;
   private teamId: number;
   private teamMemberId: number;
   private tournamentId: number;
   private registrationId: number;
+  private notificationId: number;
 
   // Session store for express-session
   sessionStore: session.Store;

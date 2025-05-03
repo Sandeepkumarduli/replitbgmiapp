@@ -9,7 +9,7 @@ import {
 } from "@shared/schema";
 import { IStorage } from "./storage";
 import { db } from "./db";
-import { eq, and, desc, asc, or, isNull, count } from "drizzle-orm";
+import { eq, and, desc, asc, or, isNull, count, lt } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";

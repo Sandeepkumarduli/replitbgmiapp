@@ -3,6 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { scheduleBackups, initializeBackup } from "./backup";
 import { scheduleTournamentStatusUpdates } from "./tournament-manager";
+import { scheduleNotificationCleanup } from "./notification-manager";
 import dotenv from "dotenv";
 
 // Load environment variables
@@ -82,6 +83,10 @@ app.use((req, res, next) => {
       // Schedule tournament status updates every minute
       scheduleTournamentStatusUpdates(60 * 1000);
       log('Tournament status updater initialized');
+      
+      // Schedule notification cleanup every 6 hours (delete notifications older than 1 day)
+      scheduleNotificationCleanup(6 * 60 * 60 * 1000);
+      log('Notification cleanup scheduler initialized');
     }).catch(err => {
       console.error('Failed to initialize backup system:', err);
     });

@@ -97,6 +97,13 @@ export function setupAuth(app: Express) {
       if (existingEmail) {
         return res.status(400).json({ message: "Email already exists" });
       }
+      
+      // Check if BGMI ID already exists
+      const allUsers = await storage.getAllUsers();
+      const existingGameId = allUsers.find(user => user.gameId === gameId);
+      if (existingGameId) {
+        return res.status(400).json({ message: "BGMI ID already exists" });
+      }
 
       // Hash password
       const hashedPassword = await hashPassword(password);

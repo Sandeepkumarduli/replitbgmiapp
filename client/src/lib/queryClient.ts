@@ -1,5 +1,10 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { handleError } from "./error-handler";
 
+/**
+ * Throws an error with a user-friendly message if the response is not OK
+ * Uses the error handler to format errors consistently
+ */
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     let errorMessage = res.statusText;
@@ -27,7 +32,10 @@ async function throwIfResNotOk(res: Response) {
       // If any error happens during text extraction, use the status text
       errorMessage = res.statusText;
     }
-    throw new Error(errorMessage);
+    
+    // Create and throw the error (but don't display it yet - that will be handled by React Query's onError)
+    const error = new Error(errorMessage);
+    throw error;
   }
 }
 
@@ -83,9 +91,17 @@ export const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       staleTime: Infinity,
       retry: false,
+      onError: (error) => {
+        // Global error handler for all queries
+        handleError(error);
+      }
     },
     mutations: {
       retry: false,
+      onError: (error) => {
+        // Global error handler for all mutations
+        handleError(error);
+      }
     },
   },
 });

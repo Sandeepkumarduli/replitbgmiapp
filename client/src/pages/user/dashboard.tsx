@@ -143,41 +143,41 @@ export default function UserDashboard() {
           </Button>
         </div>
 
-        {/* Profile and Statistics - 40% width */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            {/* User Profile Card */}
-            <Card className="bg-dark-card border-gray-800 shadow-lg">
+        {/* Top Row: Profile and Statistics */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+          {/* User Profile Card */}
+          <div className="lg:col-span-1">
+            <Card className="bg-dark-card border-gray-800 shadow-lg h-full">
               <CardHeader className="pb-2">
                 <CardTitle className="text-white text-xl">My Profile</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center space-x-4">
-                  <div className="flex-shrink-0 h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-                    <User className="h-8 w-8 text-primary" />
+                <div className="flex flex-col items-center space-y-4">
+                  <div className="flex-shrink-0 h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
+                    <User className="h-10 w-10 text-primary" />
                   </div>
-                  <div>
+                  <div className="text-center">
                     <h3 className="text-xl font-bold text-white">{user?.username}</h3>
                     <p className="text-gray-400">Game ID: {user?.gameId}</p>
                   </div>
-                </div>
-                <div className="mt-4 flex justify-end">
-                  <Link href="/user/profile" className="inline-block">
-                    <Button variant="outline" size="sm" className="border-gray-700 text-white hover:bg-dark-surface">
+                  <Link href="/user/profile" className="w-full">
+                    <Button variant="outline" size="sm" className="border-gray-700 text-white hover:bg-dark-surface w-full">
                       Edit Profile
                     </Button>
                   </Link>
                 </div>
               </CardContent>
             </Card>
+          </div>
 
-            {/* Statistics Card */}
-            <Card className="bg-dark-card border-gray-800 shadow-lg">
+          {/* Statistics Card */}
+          <div className="lg:col-span-3">
+            <Card className="bg-dark-card border-gray-800 shadow-lg h-full">
               <CardHeader className="pb-2">
                 <CardTitle className="text-white text-xl">Statistics</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="bg-dark-surface p-4 rounded-lg border border-gray-800">
                     <Trophy className="h-6 w-6 text-primary mb-2" />
                     <p className="text-2xl font-bold text-white">{registrations?.length || 0}</p>
@@ -202,155 +202,154 @@ export default function UserDashboard() {
               </CardContent>
             </Card>
           </div>
-
-          {/* Teams and Tournaments Cards - 60% width */}
-          <div className="lg:col-span-3 space-y-6">
-            {/* Teams Card */}
-            <Card className="bg-dark-card border-gray-800 shadow-lg">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-white text-xl">My Teams</CardTitle>
-                <Link href="/user/team" className="inline-block">
-                  <Button variant="link" className="text-accent hover:text-accent/80 p-0 h-auto">
-                    Manage All
-                  </Button>
-                </Link>
-              </CardHeader>
-              <CardContent>
-                {isLoadingTeams ? (
-                  <p className="text-gray-400">Loading teams...</p>
-                ) : teams && teams.length > 0 ? (
-                  <div className="space-y-4">
-                    {teams.slice(0, 2).map((team: any) => (
-                      <TeamCard key={team.id} team={team} />
-                    ))}
-                    {teams.length > 2 && (
-                      <p className="text-gray-400 text-sm text-center mt-2">
-                        +{teams.length - 2} more teams
-                      </p>
-                    )}
-                    <div className="grid grid-cols-2 gap-4 mt-4">
-                      <Link href="/user/team" className="inline-block">
-                        <Button 
-                          variant="outline"
-                          className="border-gray-700 text-white hover:bg-dark-surface w-full"
-                        >
-                          <Users className="h-4 w-4 mr-2" />
-                          Manage Teams
-                        </Button>
-                      </Link>
-                      {teams && teams.length < 3 && (
-                        <Link href="/user/team" className="inline-block">
-                          <Button 
-                            variant="outline"
-                            className="border-indigo-600 text-indigo-400 hover:bg-indigo-600/10 w-full"
-                          >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Join Team
-                          </Button>
-                        </Link>
-                      )}
-                    </div>
-                    
-                    {/* Join Team Form */}
-                    {teams && teams.length < 3 && (
-                      <div className="mt-6 border-t border-gray-800 pt-6">
-                        <JoinTeamForm />
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div>
-                    <div className="text-center py-6">
-                      <Users className="h-12 w-12 text-gray-600 mx-auto mb-3" />
-                      <p className="text-gray-400 mb-4">You haven't created any teams yet</p>
-                      <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                        <Link href="/user/team" className="inline-block">
-                          <Button className="bg-primary hover:bg-primary/90 text-white">
-                            <Plus className="h-4 w-4 mr-2" />
-                            Create a Team
-                          </Button>
-                        </Link>
-                        <Link href="/user/team" className="inline-block">
-                          <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
-                            Join a Team
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-                    
-                    {/* Join Team Form */}
-                    <div className="mt-4 border-t border-gray-800 pt-6">
-                      <JoinTeamForm />
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Registered Tournaments */}
-            <Card className="bg-dark-card border-gray-800 shadow-lg">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <div className="flex items-center">
-                  <Trophy className="h-5 w-5 text-primary mr-2" />
-                  <CardTitle className="text-white text-xl">My Registered Tournaments</CardTitle>
+        </div>
+        
+        {/* Registered Tournaments - Full Width */}
+        <Card className="bg-dark-card border-gray-800 shadow-lg mb-6">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <div className="flex items-center">
+              <Trophy className="h-5 w-5 text-primary mr-2" />
+              <CardTitle className="text-white text-xl">My Registered Tournaments</CardTitle>
+            </div>
+            <div className="flex items-center gap-2">
+              <Link href="/tournaments" className="inline-block">
+                <Button variant="ghost" size="sm" className="text-accent hover:text-accent/80">
+                  Browse All Tournaments
+                </Button>
+              </Link>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="p-2">
+              {/* Tournament Status Tabs */}
+              <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700"
+                  onClick={() => navigate("/tournaments")}
+                >
+                  All
+                </Button>
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  className="bg-green-600 text-white hover:bg-green-700"
+                  onClick={() => navigate("/tournaments?status=live")}
+                >
+                  Live
+                </Button>
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  className="bg-amber-600 text-white hover:bg-amber-700"
+                  onClick={() => navigate("/tournaments?status=upcoming")}
+                >
+                  Upcoming
+                </Button>
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  className="bg-gray-600 text-white hover:bg-gray-700"
+                  onClick={() => navigate("/tournaments?status=completed")}
+                >
+                  Completed
+                </Button>
+              </div>
+              
+              {/* Registered tournaments with enhanced visibility */}
+              <div className="bg-dark-surface rounded-lg border border-gray-800 p-4">
+                <h3 className="text-white font-medium mb-3">Your Registered Tournaments</h3>
+                {/* The TournamentList component now handles single column display when showRegisteredOnly is true */}
+                <TournamentList showRegisteredOnly={true} limit={4} />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* Teams Card */}
+        <Card className="bg-dark-card border-gray-800 shadow-lg">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-white text-xl">My Teams</CardTitle>
+            <Link href="/user/team" className="inline-block">
+              <Button variant="link" className="text-accent hover:text-accent/80 p-0 h-auto">
+                Manage All
+              </Button>
+            </Link>
+          </CardHeader>
+          <CardContent>
+            {isLoadingTeams ? (
+              <p className="text-gray-400">Loading teams...</p>
+            ) : teams && teams.length > 0 ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {teams.slice(0, 2).map((team: any) => (
+                    <TeamCard key={team.id} team={team} />
+                  ))}
                 </div>
-                <div className="flex items-center gap-2">
-                  <Link href="/tournaments" className="inline-block">
-                    <Button variant="ghost" size="sm" className="text-accent hover:text-accent/80">
-                      Browse All Tournaments
+                {teams.length > 2 && (
+                  <p className="text-gray-400 text-sm text-center mt-2">
+                    +{teams.length - 2} more teams
+                  </p>
+                )}
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <Link href="/user/team" className="inline-block">
+                    <Button 
+                      variant="outline"
+                      className="border-gray-700 text-white hover:bg-dark-surface w-full"
+                    >
+                      <Users className="h-4 w-4 mr-2" />
+                      Manage Teams
                     </Button>
                   </Link>
+                  {teams && teams.length < 3 && (
+                    <Link href="/user/team" className="inline-block">
+                      <Button 
+                        variant="outline"
+                        className="border-indigo-600 text-indigo-400 hover:bg-indigo-600/10 w-full"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Join Team
+                      </Button>
+                    </Link>
+                  )}
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="p-2">
-                  {/* Tournament Status Tabs */}
-                  <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
-                    <Button 
-                      variant="default" 
-                      size="sm" 
-                      className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700"
-                      onClick={() => navigate("/tournaments")}
-                    >
-                      All
-                    </Button>
-                    <Button 
-                      variant="default" 
-                      size="sm" 
-                      className="bg-green-600 text-white hover:bg-green-700"
-                      onClick={() => navigate("/tournaments?status=live")}
-                    >
-                      Live
-                    </Button>
-                    <Button 
-                      variant="default" 
-                      size="sm" 
-                      className="bg-amber-600 text-white hover:bg-amber-700"
-                      onClick={() => navigate("/tournaments?status=upcoming")}
-                    >
-                      Upcoming
-                    </Button>
-                    <Button 
-                      variant="default" 
-                      size="sm" 
-                      className="bg-gray-600 text-white hover:bg-gray-700"
-                      onClick={() => navigate("/tournaments?status=completed")}
-                    >
-                      Completed
-                    </Button>
+                
+                {/* Join Team Form */}
+                {teams && teams.length < 3 && (
+                  <div className="mt-6 border-t border-gray-800 pt-6">
+                    <JoinTeamForm />
                   </div>
-                  
-                  {/* Registered tournaments with enhanced visibility */}
-                  <div className="bg-dark-surface rounded-lg border border-gray-800 p-4">
-                    <h3 className="text-white font-medium mb-3">Your Registered Tournaments</h3>
-                    {/* The TournamentList component now handles single column display when showRegisteredOnly is true */}
-                    <TournamentList showRegisteredOnly={true} limit={4} />
+                )}
+              </div>
+            ) : (
+              <div>
+                <div className="text-center py-6">
+                  <Users className="h-12 w-12 text-gray-600 mx-auto mb-3" />
+                  <p className="text-gray-400 mb-4">You haven't created any teams yet</p>
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    <Link href="/user/team" className="inline-block">
+                      <Button className="bg-primary hover:bg-primary/90 text-white">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create a Team
+                      </Button>
+                    </Link>
+                    <Link href="/user/team" className="inline-block">
+                      <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                        Join a Team
+                      </Button>
+                    </Link>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+                
+                {/* Join Team Form */}
+                <div className="mt-4 border-t border-gray-800 pt-6">
+                  <JoinTeamForm />
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

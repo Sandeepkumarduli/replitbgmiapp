@@ -135,8 +135,17 @@ export function TournamentList({
   // Registration mutation
   const registerMutation = useMutation({
     mutationFn: async ({ tournamentId, teamId }: { tournamentId: number; teamId: number }) => {
-      const res = await apiRequest("POST", `/api/tournaments/${tournamentId}/register`, { teamId });
-      return res.json();
+      try {
+        const res = await apiRequest("POST", `/api/tournaments/${tournamentId}/register`, { teamId });
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.message || "Failed to register for tournament");
+        }
+        return await res.json();
+      } catch (error) {
+        console.error("Registration error:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/registrations/user"] });
@@ -158,10 +167,11 @@ export function TournamentList({
         setIsJustRegistered(prev => [...prev, selectedTournament.id]);
       }
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
+      console.error("Registration mutation error:", error);
       toast({
         title: "Registration failed",
-        description: error.message,
+        description: error.message || "An unexpected error occurred",
         variant: "destructive",
       });
     },
@@ -216,20 +226,11 @@ export function TournamentList({
     
     // For solo tournaments, directly register without team validation
     if (tournamentType === 'solo') {
-      try {
-        registerMutation.mutate({
-          tournamentId: selectedTournament.id,
-          teamId
-        });
-        setRegisterDialogOpen(false);
-        return;
-      } catch (error) {
-        toast({
-          title: 'Registration Error',
-          description: error instanceof Error ? error.message : 'Failed to register for tournament',
-          variant: 'destructive'
-        });
-      }
+      registerMutation.mutate({
+        tournamentId: selectedTournament.id,
+        teamId
+      });
+      // Dialog will be closed by the mutation's onSuccess handler
       return;
     }
     
@@ -260,6 +261,7 @@ export function TournamentList({
         tournamentId: selectedTournament.id,
         teamId
       });
+      // Dialog will be closed by the mutation's onSuccess handler
     } catch (error) {
       toast({
         title: 'Error',

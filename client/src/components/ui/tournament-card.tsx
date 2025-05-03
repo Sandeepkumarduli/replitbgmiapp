@@ -104,7 +104,7 @@ export function TournamentCard({ tournament, onRegister, registered = false, reg
           </div>
           
           {/* Tournament Details */}
-          <div className="grid grid-cols-3 gap-2 mb-4">
+          <div className="grid grid-cols-3 gap-2 mb-2">
             <div className="flex items-center text-gray-400 text-sm">
               <Users className="h-4 w-4 mr-2" />
               {teamType}
@@ -118,6 +118,18 @@ export function TournamentCard({ tournament, onRegister, registered = false, reg
               {slotsTaken}/{totalSlots}
             </div>
           </div>
+          
+          {/* Prize Pool */}
+          {prizePool && prizePool > 0 && (
+            <div className="mb-4">
+              <div className="bg-gradient-to-r from-purple-900/20 to-indigo-900/20 border border-indigo-800/30 rounded-md px-3 py-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-indigo-300 font-medium">Prize Pool</span>
+                  <span className="text-lg font-bold text-white">₹{prizePool.toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
         
         {/* Room Info for Registered Users - Now showing if registered regardless of tournament status */}

@@ -1682,25 +1682,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Delete all notifications for the current user
-  app.delete("/api/notifications/all", isAuthenticated, async (req, res) => {
+  // Hide notifications for the current user (frontend only, doesn't actually delete)
+  app.post("/api/notifications/hide", isAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId!;
-      const deletedCount = await storage.deleteAllUserNotifications(userId);
       
-      // Send WebSocket notification update
+      // We're not deleting anything on the server, just updating the count to 0 for this user's WebSocket
       if (app.locals.broadcastNotification) {
-        app.locals.broadcastNotification(userId, 0);
+        app.locals.broadcastNotification(userId, 0, true); // The third parameter indicates this is a temporary hide
       }
       
       res.json({ 
         success: true, 
-        deletedCount,
-        message: "All notifications deleted successfully" 
+        message: "Notifications hidden for current session" 
       });
     } catch (error) {
-      console.error("Error deleting all notifications:", error);
-      res.status(500).json({ message: "Failed to delete notifications" });
+      console.error("Error hiding notifications:", error);
+      res.status(500).json({ message: "Failed to hide notifications" });
     }
   });
 
@@ -1892,14 +1890,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Add a function to broadcast notification updates to connected clients
-  const broadcastNotification = (userId: number | null, count: number) => {
+  const broadcastNotification = (userId: number | null, count: number, isHideAction: boolean = false) => {
     clients.forEach((client, ws) => {
       // For broadcast notifications (userId is null) or targeted notifications
       if (ws.readyState === WebSocket.OPEN && 
           (userId === null || client.userId === userId)) {
         ws.send(JSON.stringify({
           type: 'notification_update',
-          count: count
+          count: count,
+          isHideAction: isHideAction // This flag tells the client this is a temporary hide, not a real count update
         }));
       }
     });

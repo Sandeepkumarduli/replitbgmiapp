@@ -50,8 +50,13 @@ export function NotificationDropdown() {
         const data = JSON.parse(event.data);
         
         if (data.type === 'notification_update') {
-          // Reset the cleared notifications state when new notifications arrive
-          if (data.count > 0 && user) {
+          // If this is a hide action from another device of the same user, save to localStorage
+          if (data.isHideAction && user) {
+            localStorage.setItem(`notifications_cleared_${user.id}`, 'true');
+            setHiddenNotifications(true);
+          }
+          // If this is a regular notification update with new notifications
+          else if (data.count > 0 && user && !data.isHideAction) {
             // Remove the localStorage flag so new notifications can be seen
             localStorage.removeItem(`notifications_cleared_${user.id}`);
             setHiddenNotifications(false);
@@ -143,24 +148,36 @@ export function NotificationDropdown() {
     }
   }, [user, notifications, queryClient]);
   
-  // This function clears notifications only on the frontend (no server request)
-  const clearAllNotifications = () => {
+  // This function clears notifications by calling the hide API
+  const clearAllNotifications = async () => {
     if (!user) return;
     
-    // Hide notifications in the UI
-    setHiddenNotifications(true);
-    
-    // Store this preference in localStorage to persist across page refreshes
-    localStorage.setItem(`notifications_cleared_${user.id}`, 'true');
-    
-    // Update the count to zero in the cache (frontend only)
-    queryClient.setQueryData(["/api/notifications/count"], { count: 0 });
-    
-    // Show success toast
-    toast({
-      title: "Notifications cleared",
-      description: "All notifications have been cleared from your view.",
-    });
+    try {
+      // Call the server to hide notifications for this user
+      await apiRequest("POST", "/api/notifications/hide", {});
+      
+      // Hide notifications in the UI
+      setHiddenNotifications(true);
+      
+      // Store this preference in localStorage to persist across page refreshes
+      localStorage.setItem(`notifications_cleared_${user.id}`, 'true');
+      
+      // Update the count to zero in the cache (frontend only)
+      queryClient.setQueryData(["/api/notifications/count"], { count: 0 });
+      
+      // Show success toast
+      toast({
+        title: "Notifications cleared",
+        description: "All notifications have been cleared from your view.",
+      });
+    } catch (error) {
+      console.error("Error hiding notifications:", error);
+      toast({
+        title: "Error",
+        description: "Failed to clear notifications. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   // Count of unread notifications

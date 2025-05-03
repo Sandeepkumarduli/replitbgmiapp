@@ -723,7 +723,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if team registration is needed (Solo tournaments don't need teams)
       if (tournamentType === 'solo') {
-        // For Solo tournaments, the user registers directly
+        // For Solo tournaments, the user registers directly without a team
         // Check if user is already registered
         const userRegistrations = await storage.getRegistrationsByUser(userId);
         const alreadyRegistered = userRegistrations.some(reg => reg.tournamentId === tournamentId);
@@ -738,56 +738,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: "Tournament is already full" });
         }
         
-        // Check if user has a personal team, or create one for solo tournaments
-        const user = await storage.getUser(userId);
-        if (!user) {
-          return res.status(404).json({ message: "User not found" });
-        }
+        // For solo tournaments, we'll use a special teamId value of null (handled in database layer)
+        // This indicates a solo registration that doesn't need a team
         
-        // Find user's teams
-        const userTeams = await storage.getTeamsByOwnerId(userId);
-        let soloTeamId;
-        
-        // Look for a team named "Solo-{username}" or create one
-        const soloTeamName = `Solo-${user.username}`;
-        const existingSoloTeam = userTeams.find(team => team.name === soloTeamName);
-        
-        if (existingSoloTeam) {
-          soloTeamId = existingSoloTeam.id;
-        } else {
-          // Create a personal solo team for the user
-          const inviteCode = await generate6DigitCode(storage);
-          const soloTeam = await storage.createTeam({
-            name: soloTeamName,
-            ownerId: userId,
-            gameType: tournament.gameType || 'BGMI',
-            inviteCode
-          });
+        // Create a registration directly for the user
+        // Create the registration object for solo player (no team needed)
+        try {
+          // For solo tournaments, we'll use a special format in the storage layer
+          // that indicates this is a solo registration
+          const soloRegistration = {
+            tournamentId,
+            userId,
+            // This will be specially handled in the storage layer
+            teamId: -1, // Special marker for solo registrations
+            slot: registrations.length + 1
+          };
           
-          // Add user as the solo team captain
-          await storage.addTeamMember({
-            teamId: soloTeam.id,
-            username: user.username,
-            gameId: user.gameId,
-            role: "captain"
+          const registration = await storage.createRegistration(soloRegistration);
+          return res.status(201).json(registration);
+        } catch (err) {
+          console.error("Error creating solo registration:", err);
+          return res.status(500).json({ 
+            message: "Failed to register for solo tournament. Please try again.",
+            error: err instanceof Error ? err.message : String(err)
           });
-          
-          soloTeamId = soloTeam.id;
         }
-        
-        // Create a registration using the solo team
-        const soloResult = insertRegistrationSchema.safeParse({
-          tournamentId,
-          teamId: soloTeamId,
-          userId
-        });
-        
-        if (!soloResult.success) {
-          return res.status(400).json({ message: soloResult.error.format() });
-        }
-        
-        const registration = await storage.createRegistration(soloResult.data);
-        return res.status(201).json(registration);
       }
       
       // For Duo and Squad tournaments, proceed with team validation
@@ -902,7 +877,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       allRegistrations = [...userRegistrations];
       
       // 2. Get registrations for all teams the user is a member of
-      for (const teamId of userTeamIds) {
+      // Convert Set to Array to avoid iteration issues
+      const teamIdArray = Array.from(userTeamIds);
+      for (const teamId of teamIdArray) {
         const teamRegistrations = await storage.getRegistrationsByTeam(teamId);
         // Avoid duplicates by checking if registration is already in the array
         for (const reg of teamRegistrations) {

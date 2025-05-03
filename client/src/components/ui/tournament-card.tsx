@@ -47,7 +47,7 @@ export function TournamentCard({ tournament, onRegister, registered = false, reg
   };
   
   return (
-    <Card className="tournament-card border border-gray-800 overflow-hidden bg-dark-card hover:bg-dark-card/90 transition-colors shadow-lg">
+    <Card className="tournament-card border border-gray-800 overflow-hidden bg-dark-card hover:bg-dark-card/90 transition-colors shadow-lg ring-1 ring-white/5 hover:ring-white/10">
       <CardContent className="p-0">
         <div className="p-4">
           {/* Status Badge */}

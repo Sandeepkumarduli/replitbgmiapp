@@ -40,6 +40,7 @@ export function TournamentList({
   const [registerDialogOpen, setRegisterDialogOpen] = useState(false);
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
   const [selectedTeamId, setSelectedTeamId] = useState<string>("");
+  const [isJustRegistered, setIsJustRegistered] = useState<number[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -94,12 +95,30 @@ export function TournamentList({
       return res.json();
     },
     onSuccess: () => {
+      // Invalidate all relevant queries to refresh the data
       queryClient.invalidateQueries({ queryKey: ["/api/registrations/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/registrations/counts"] });
+      
+      // Also invalidate the specific tournament status to refresh registered status
+      const statusFilter = selectedTournament?.status || '';
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/tournaments?status=${statusFilter}`]
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api/tournaments"]
+      });
+      
       toast({
         title: "Registration successful",
         description: "You have successfully registered for the tournament",
       });
       setRegisterDialogOpen(false);
+      
+      // Force local state update to immediately reflect changes
+      if (selectedTournament) {
+        const tournamentId = selectedTournament.id;
+        setIsJustRegistered(prevState => [...prevState, tournamentId]);
+      }
     },
     onError: (error: Error) => {
       toast({
@@ -115,8 +134,19 @@ export function TournamentList({
     if (!tournament) return;
 
     setSelectedTournament(tournament);
+    
+    // Check if user is logged in first
+    if (!teams) {
+      toast({
+        title: "Authentication Required",
+        description: "You need to log in first to register for tournaments",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    if (!teams || teams.length === 0) {
+    // Check if user has teams
+    if (teams.length === 0) {
       toast({
         title: "No teams found",
         description: "You need to create a team before registering for a tournament",
@@ -184,6 +214,8 @@ export function TournamentList({
   };
 
   const isRegistered = (tournamentId: number) => {
+    // Check both API data and local state
+    if (isJustRegistered.includes(tournamentId)) return true;
     if (!registrations) return false;
     return registrations.some((reg: any) => reg.tournamentId === tournamentId);
   };

@@ -62,15 +62,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     },
     {
       icon: <BellRing className="h-5 w-5 mr-3" />,
-      text: "Notifications",
+      text: "Notification Center",
       path: "/admin/notifications",
-      active: location === "/admin/notifications"
-    },
-    {
-      icon: <Megaphone className="h-5 w-5 mr-3" />,
-      text: "Broadcast Messages",
-      path: "/admin/notifications/broadcast",
-      active: location === "/admin/notifications/broadcast"
+      active: location === "/admin/notifications" || location === "/admin/notifications/broadcast"
     },
     {
       icon: <Settings className="h-5 w-5 mr-3" />,

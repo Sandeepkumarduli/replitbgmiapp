@@ -1681,10 +1681,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Create a notification (broadcast to all or send to specific user)
+  // Create a notification (broadcast to all, send to specific user, or multiple users)
   app.post("/api/notifications", isAdmin, async (req, res) => {
     try {
-      const { title, message, type = "broadcast", userId = null } = req.body;
+      const { title, message, type = "broadcast", userId = null, userIds = [] } = req.body;
       
       if (!title || !message) {
         return res.status(400).json({ 
@@ -1693,27 +1693,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Create notification (userId = null means it's for all users)
-      const notification = await storage.createNotification({
-        title,
-        message,
-        type,
-        userId,
-        relatedId: null
-      });
-      
-      // Log the notification creation
-      logSecurityEvent('Admin created notification', req, { 
-        notificationId: notification.id,
-        title,
-        isPersonal: userId !== null
-      });
-      
-      // Return proper JSON response
-      return res.status(201).json({ 
-        success: true, 
-        notification
-      });
+      // Handle multiple user notifications
+      if (Array.isArray(userIds) && userIds.length > 0) {
+        const notifications = [];
+        
+        // Create individual notifications for each user
+        for (const uid of userIds) {
+          const notification = await storage.createNotification({
+            title,
+            message,
+            type: "personal",
+            userId: uid,
+            relatedId: null
+          });
+          
+          notifications.push(notification);
+        }
+        
+        // Log the notifications creation
+        logSecurityEvent('Admin created multiple notifications', req, { 
+          notificationCount: notifications.length,
+          title,
+          userIds
+        });
+        
+        // Return proper JSON response
+        return res.status(201).json({ 
+          success: true, 
+          notificationsCreated: notifications.length,
+          notifications
+        });
+      } else {
+        // Create a single notification (userId = null means it's for all users)
+        const notification = await storage.createNotification({
+          title,
+          message,
+          type,
+          userId,
+          relatedId: null
+        });
+        
+        // Log the notification creation
+        logSecurityEvent('Admin created notification', req, { 
+          notificationId: notification.id,
+          title,
+          isPersonal: userId !== null
+        });
+        
+        // Return proper JSON response
+        return res.status(201).json({ 
+          success: true, 
+          notification
+        });
+      }
     } catch (error) {
       console.error("Error creating notification:", error);
       // Ensure we're returning proper JSON

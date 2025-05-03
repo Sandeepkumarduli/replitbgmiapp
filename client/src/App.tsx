@@ -160,7 +160,10 @@ function Router() {
           <ProtectedRoute path="/admin/users/:id" component={AdminUserDetails} adminOnly={true}/>
           <ProtectedRoute path="/admin/admins" component={AdminManagement} adminOnly={true}/>
           <ProtectedRoute path="/admin/notifications" component={AdminNotifications} adminOnly={true}/>
-          <ProtectedRoute path="/admin/notifications/broadcast" component={AdminNotificationsBroadcast} adminOnly={true}/>
+          {/* Redirect the old broadcast page URL to the main notifications page with the broadcast tab active */}
+          <Route path="/admin/notifications/broadcast">
+            <Redirect to="/admin/notifications" />
+          </Route>
           <ProtectedRoute path="/admin/settings" component={AdminSettings} adminOnly={true}/>
           <Route path="/admin/tournaments/edit/:id">
             {(params) => (

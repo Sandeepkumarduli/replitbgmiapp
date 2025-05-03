@@ -184,6 +184,26 @@ export function TournamentList({
 
     setSelectedTournament(tournament);
     
+    // Check if tournament is live (can't register for live tournaments)
+    if (tournament.status === 'live') {
+      toast({
+        title: "Registration Closed",
+        description: "This tournament is already live. Registration is no longer available.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Check if tournament is completed
+    if (tournament.status === 'completed') {
+      toast({
+        title: "Tournament Completed",
+        description: "This tournament has already ended.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     if (!teams) {
       toast({
         title: "Authentication Required",
@@ -389,8 +409,16 @@ export function TournamentList({
           {filter === "completed" && !registrations
             ? "Please log in to view completed tournaments. Only tournaments you registered for will be visible."
             : showRegisteredOnly
-              ? "You haven't registered for any tournaments yet"
-              : "No tournaments available at the moment"}
+              ? filter 
+                ? `You haven't registered for any ${filter} tournaments`
+                : "You haven't registered for any tournaments yet"
+              : filter === "live"
+                ? "No live tournaments available at the moment"
+                : filter === "upcoming"
+                  ? "No upcoming tournaments available at the moment"
+                  : filter === "completed"
+                    ? "No completed tournaments available at the moment"
+                    : "No tournaments available at the moment"}
         </p>
         {filter === "completed" && !registrations && (
           <Button

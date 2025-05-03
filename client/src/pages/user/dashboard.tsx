@@ -357,7 +357,11 @@ export default function UserDashboard() {
               <div className="bg-dark-surface rounded-lg border border-gray-800 p-4">
                 <h3 className="text-white font-medium mb-3">Your Registered Tournaments</h3>
                 {/* The TournamentList component now handles single column display when showRegisteredOnly is true */}
-                <TournamentList showRegisteredOnly={true} limit={4} />
+                <TournamentList 
+                  showRegisteredOnly={true} 
+                  filter={tournamentFilter === 'all' ? undefined : tournamentFilter} 
+                  limit={4} 
+                />
               </div>
             </div>
           </CardContent>

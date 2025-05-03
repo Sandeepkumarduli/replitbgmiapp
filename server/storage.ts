@@ -447,8 +447,8 @@ export class MemStorage implements IStorage {
   async deleteAllUserNotifications(userId: number): Promise<number> {
     const notificationsToDelete = Array.from(this.notifications.values())
       .filter(notification => 
-        notification.userId === userId || // User's personal notifications
-        notification.userId === null      // All broadcast notifications (regardless of type)
+        notification.userId === userId // Only delete the user's personal notifications
+        // Don't delete broadcast notifications for everyone
       );
     
     // Delete each notification

@@ -78,15 +78,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch (error) {
         // Handle specific error cases more gracefully
         if (error instanceof Error) {
-          if (error.message.includes("Wrong username or password")) {
-            throw new Error("Wrong username or password. Please check your credentials and try again.");
-          } else if (error.message.includes("401") || error.message.includes("Unauthorized")) {
-            throw new Error("Wrong username or password. Please check your credentials and try again.");
+          if (error.message.includes("Wrong username or password") || 
+              error.message.includes("401") || 
+              error.message.includes("Unauthorized") ||
+              error.message.includes("Please check username or password")) {
+            throw new Error("Login failed. Please check username or password.");
           } else {
             throw new Error("Login failed. Please try again later.");
           }
         } else {
-          throw new Error("An unexpected error occurred. Please try again later.");
+          throw new Error("Login failed. Please try again later.");
         }
       }
     },
@@ -105,8 +106,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onError: (error: Error) => {
       toast({
-        title: "Login failed",
-        description: error.message || "Please check your credentials and try again.",
+        title: "Login Failed",
+        description: error.message || "Try again later.",
         variant: "destructive",
       });
     },

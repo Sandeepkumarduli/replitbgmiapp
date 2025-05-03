@@ -14,8 +14,8 @@
   --popover: 240 10% 3.9%;
   --popover-foreground: 0 0% 98%;
   
-  /* Reverted back to purple */
-  --primary: 276 84% 54%;
+  /* Updated to rgb(79, 70, 229, 1) */
+  --primary: 244 76% 59%;
   --primary-foreground: 211 100% 99%;
   
   /* Keeping the gold color for secondary */
@@ -25,8 +25,8 @@
   --muted: 240 3.7% 15.9%;
   --muted-foreground: 240 5% 64.9%;
   
-  /* Reverted back to original accent */
-  --accent: 267 68% 54%;
+  /* Updated accent to match primary */
+  --accent: 244 76% 59%;
   --accent-foreground: 0 0% 100%;
   
   --destructive: 0 62.8% 30.6%;
@@ -38,19 +38,19 @@
   
   --radius: 0.5rem;
 
-  /* Reverted chart colors to match purple theme */
-  --chart-1: 276 84% 54%; /* Purple */
+  /* Updated chart colors to match indigo theme */
+  --chart-1: 244 76% 59%; /* Indigo */
   --chart-2: 45 93% 47%;  /* Gold */
-  --chart-3: 267 68% 54%; /* Purple-accent */
-  --chart-4: 290 70% 60%; /* Violet */
-  --chart-5: 260 90% 50%; /* Lavender */
+  --chart-3: 244 76% 59%; /* Indigo-accent */
+  --chart-4: 230 70% 60%; /* Blue */
+  --chart-5: 250 90% 50%; /* Purple */
 
-  /* Reverted sidebar colors to purple theme */
+  /* Updated sidebar colors to indigo theme */
   --sidebar-background: 240 10% 3.9%;
   --sidebar-foreground: 0 0% 98%;
-  --sidebar-primary: 276 84% 54%;
+  --sidebar-primary: 244 76% 59%;
   --sidebar-primary-foreground: 211 100% 99%;
-  --sidebar-accent: 267 68% 54%;
+  --sidebar-accent: 244 76% 59%;
   --sidebar-accent-foreground: 0 0% 100%;
   --sidebar-border: 240 3.7% 15.9%;
   --sidebar-ring: 240 4.9% 83.9%;
@@ -63,13 +63,13 @@
   --card-foreground: 0 0% 98%;
   --popover: 240 10% 3.9%;
   --popover-foreground: 0 0% 98%;
-  --primary: 276 84% 54%;
+  --primary: 244 76% 59%;
   --primary-foreground: 211 100% 99%;
   --secondary: 45 93% 47%;
   --secondary-foreground: 0 0% 98%;
   --muted: 240 3.7% 15.9%;
   --muted-foreground: 240 5% 64.9%;
-  --accent: 267 68% 54%;
+  --accent: 244 76% 59%;
   --accent-foreground: 0 0% 100%;
   --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 0 0% 98%;
@@ -122,11 +122,11 @@
   }
   
   .tournament-card {
-    @apply bg-dark-card border border-primary/30 rounded-lg overflow-hidden transition-all duration-300 hover:translate-y-[-5px] hover:shadow-[0_0_20px_rgba(108,45,199,0.4)];
+    @apply bg-dark-card border border-primary/30 rounded-lg overflow-hidden transition-all duration-300 hover:translate-y-[-5px] hover:shadow-[0_0_20px_rgba(79,70,229,0.4)];
   }
   
   .glow-hover {
-    @apply transition-all duration-300 hover:shadow-[0_0_15px_rgba(108,45,199,0.6)];
+    @apply transition-all duration-300 hover:shadow-[0_0_15px_rgba(79,70,229,0.6)];
   }
   
   .text-gradient-indigo-purple {

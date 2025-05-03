@@ -738,19 +738,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: "Tournament is already full" });
         }
         
-        // For solo tournaments, we'll use a special teamId value of null (handled in database layer)
-        // This indicates a solo registration that doesn't need a team
-        
-        // Create a registration directly for the user
-        // Create the registration object for solo player (no team needed)
         try {
-          // For solo tournaments, we'll use a special format in the storage layer
-          // that indicates this is a solo registration
+          // For solo tournaments, let's use the team provided by the client
+          // This ensures we meet the foreign key constraint
+          // while still allowing solo tournament registrations
+          if (!teamId) {
+            return res.status(400).json({ message: "Team ID is required even for solo tournaments" });
+          }
+
+          // Verify this team belongs to the user
+          const team = await storage.getTeam(teamId);
+          if (!team) {
+            return res.status(404).json({ message: "Team not found" });
+          }
+          
+          // Check if user is a member or owner of the team
+          if (team.ownerId !== userId) {
+            const userIsMember = await storage.getTeamMembers(teamId)
+              .then(members => members.some(member => member.userId === userId));
+            
+            if (!userIsMember) {
+              return res.status(403).json({ message: "You are not a member of this team" });
+            }
+          }
+          
+          // Create registration with the verified team
           const soloRegistration = {
             tournamentId,
             userId,
-            // This will be specially handled in the storage layer
-            teamId: -1, // Special marker for solo registrations
+            teamId, // Use the actual team ID
             slot: registrations.length + 1
           };
           

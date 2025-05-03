@@ -8,8 +8,8 @@ type TeamCardProps = {
   members?: TeamMember[];
   onManage?: () => void;
   onAddMember?: (team?: Team) => void;
-  onRemoveMember?: (memberId: number) => void;
-  onDeleteTeam?: (teamId: number) => void;
+  onRemoveMember?: (memberId: number, memberName?: string) => void;
+  onDeleteTeam?: (teamId: number, teamName?: string) => void;
 };
 
 export function TeamCard({ team, members = [], onManage, onAddMember, onRemoveMember, onDeleteTeam }: TeamCardProps) {
@@ -118,7 +118,7 @@ export function TeamCard({ team, members = [], onManage, onAddMember, onRemoveMe
                         <Button 
                           variant="ghost" 
                           size="icon" 
-                          onClick={() => onRemoveMember(sub.id)}
+                          onClick={() => onRemoveMember(sub.id, sub.username)}
                           className="h-6 w-6 text-gray-400 hover:text-destructive"
                         >
                           <X className="h-4 w-4" />

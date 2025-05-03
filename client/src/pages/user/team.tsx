@@ -20,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Team, TeamMember } from "@shared/schema";
-import { Users, AlertTriangle, Plus, RefreshCw } from "lucide-react";
+import { Users, AlertTriangle, Plus, RefreshCw, User } from "lucide-react";
 
 export default function UserTeam() {
   const { isAuthenticated, isAdmin, isLoading, user } = useAuth();
@@ -388,9 +388,16 @@ export default function UserTeam() {
               </DialogDescription>
             </DialogHeader>
             
+            <div className="p-2 mb-4 bg-indigo-600/10 border border-indigo-600/20 rounded-md">
+              <p className="text-indigo-400 text-sm flex items-start">
+                <User className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+                Adding a member to <span className="font-semibold text-indigo-300 mx-1">{selectedTeam?.name}</span>
+              </p>
+            </div>
+            
             <div className="space-y-4 py-2">
               <div className="space-y-2">
-                <Label htmlFor="username" className="text-white">Username</Label>
+                <Label htmlFor="username" className="text-white">Username <span className="text-red-400">*</span></Label>
                 <Input
                   id="username"
                   placeholder="Enter member's username"
@@ -398,10 +405,11 @@ export default function UserTeam() {
                   value={memberData.username}
                   onChange={(e) => setMemberData({ ...memberData, username: e.target.value })}
                 />
+                <p className="text-xs text-gray-400">The username must match an existing user in the system</p>
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="gameId" className="text-white">Game ID</Label>
+                <Label htmlFor="gameId" className="text-white">Game ID <span className="text-red-400">*</span></Label>
                 <Input
                   id="gameId"
                   placeholder="Enter member's BGMI ID"
@@ -409,10 +417,11 @@ export default function UserTeam() {
                   value={memberData.gameId}
                   onChange={(e) => setMemberData({ ...memberData, gameId: e.target.value })}
                 />
+                <p className="text-xs text-gray-400">Enter the in-game ID (BGMI/FREEFIRE/COD) for this member</p>
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="role" className="text-white">Role</Label>
+                <Label htmlFor="role" className="text-white">Role <span className="text-red-400">*</span></Label>
                 <Select
                   value={memberData.role}
                   onValueChange={(value) => setMemberData({ ...memberData, role: value })}
@@ -425,6 +434,7 @@ export default function UserTeam() {
                     <SelectItem value="substitute" className="text-white hover:bg-dark-surface">Substitute</SelectItem>
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-gray-400">Regular team members count toward team size limits</p>
               </div>
             </div>
             

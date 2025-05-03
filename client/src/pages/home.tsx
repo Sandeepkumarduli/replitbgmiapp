@@ -127,8 +127,8 @@ export default function Home() {
               </Button>
             </div>
 
-            {/* Display all tournaments instead of filtering by "upcoming" to ensure something displays */}
-            <TournamentList key={gameFilter} limit={6} gameTypeFilter={gameFilter} />
+            {/* Display only upcoming tournaments by default */}
+            <TournamentList key={gameFilter} filter="upcoming" limit={6} gameTypeFilter={gameFilter} />
           </div>
         </div>
       </section>

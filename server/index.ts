@@ -4,10 +4,14 @@ import { setupVite, serveStatic, log } from "./vite";
 import { scheduleBackups, initializeBackup } from "./backup";
 import { scheduleTournamentStatusUpdates } from "./tournament-manager";
 import { scheduleNotificationCleanup } from "./notification-manager";
+import { initializeDeploymentSafety } from "./deployment-fix";
 import dotenv from "dotenv";
 
 // Load environment variables
 dotenv.config();
+
+// Initialize deployment safety measures (only takes effect in production)
+initializeDeploymentSafety();
 
 const app = express();
 app.use(express.json());

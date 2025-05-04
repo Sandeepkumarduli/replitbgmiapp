@@ -179,6 +179,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Enhanced Admin Check middleware for high-security routes
   const isEnhancedAdmin = async (req: Request, res: Response, next: NextFunction) => {
+    // Development mode bypass for debugging - allows unrestricted access in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Development mode: Completely bypassing admin security checks');
+      
+      // Set a mock admin session if none exists
+      if (!req.session) {
+        console.log('Warning: No session object available');
+      } else if (!req.session.userId) {
+        console.log('Setting mock admin session for development');
+        req.session.userId = 1; // Mock admin ID
+        req.session.role = 'admin';
+        req.session.username = 'dev_admin';
+      }
+      
+      return next();
+    }
+    
+    // PRODUCTION MODE - normal security checks
+    
     // Log the access attempt for diagnostics
     console.log('Admin route accessed with session:', 
       req.session ? 
@@ -190,13 +209,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.session || !req.session.userId) {
       logSecurityEvent('Unauthorized admin access attempt (not authenticated)', req);
       return res.status(401).json({ message: "Not authenticated" });
-    }
-    
-    // For development environment, provide looser security for the master admin account
-    if (process.env.NODE_ENV === 'development' && req.session.userId === 1) {
-      console.log('Development mode: Bypassing enhanced security for master admin (id=1)');
-      req.session.role = 'admin'; // Ensure the role is set correctly
-      return next();
     }
     
     // Check specifically if the role is not admin

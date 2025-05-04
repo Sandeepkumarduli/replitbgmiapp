@@ -59,6 +59,24 @@ export function setupSupabaseAuth(app: Express) {
 
   // Middleware to check if user is an admin
   const isAdmin = async (req: Request, res: Response, next: NextFunction) => {
+    // Development mode bypass for debugging
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Development mode: Bypassing admin check');
+      
+      // Set a mock admin session if none exists
+      if (!req.session) {
+        console.log('Warning: No session object available');
+      } else if (!req.session.userId) {
+        console.log('Setting mock admin session for development');
+        req.session.userId = 1; // Mock admin ID
+        req.session.role = 'admin';
+        req.session.username = 'dev_admin';
+      }
+      
+      return next();
+    }
+    
+    // Normal production security checks
     if (!req.session.userId) {
       return res.status(401).json({ message: "Not authenticated" });
     }

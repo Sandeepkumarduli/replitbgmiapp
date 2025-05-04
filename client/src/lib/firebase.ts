@@ -1,42 +1,77 @@
-import { initializeApp } from "firebase/app";
-import { 
-  getAuth, 
-  RecaptchaVerifier, 
-  signInWithPhoneNumber, 
-  ConfirmationResult
-} from "firebase/auth";
+/**
+ * DEPRECATED: This file is kept only for reference but is no longer used.
+ * All authentication has been migrated to Supabase.
+ * See supabase-auth.ts and supabase.ts for the new implementation.
+ */
 
-// Firebase configuration - using environment variables
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "rdtournamentshub-f08c5",
-  storageBucket: `${import.meta.env.VITE_FIREBASE_PROJECT_ID || "rdtournamentshub-f08c5"}.appspot.com`,
-  messagingSenderId: "590155313623",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
+console.warn("Firebase module loaded but it's deprecated - using Supabase instead");
+
+// Define types for compatibility with old code
+type ConfirmationResult = {
+  confirm: (code: string) => Promise<{ user: any }>;
 };
 
-// Log the configuration for debugging
-console.log("Firebase config:", {
-  apiKey: firebaseConfig.apiKey ? "[PRESENT]" : "[MISSING]",
-  authDomain: firebaseConfig.authDomain,
-  projectId: firebaseConfig.projectId,
-  appId: firebaseConfig.appId ? "[PRESENT]" : "[MISSING]"
-});
+// Mock implementations to avoid breaking existing code during transition
+const mockFirebaseAuth = {
+  signInWithPhoneNumber: async () => {
+    console.error("Firebase auth is deprecated, use Supabase instead");
+    throw new Error("Firebase auth is no longer supported. The application has been migrated to Supabase.");
+  },
+  verifyPhoneNumber: async () => {
+    console.error("Firebase auth is deprecated, use Supabase instead");
+    throw new Error("Firebase auth is no longer supported. The application has been migrated to Supabase.");
+  }
+};
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-console.log("Firebase initialized successfully");
+// Mock objects for compatibility with existing code
+const mockConfirmationResult = {
+  confirm: async (code: string) => {
+    console.error("Firebase confirmation is deprecated, use Supabase instead");
+    throw new Error("Firebase auth is no longer supported. The application has been migrated to Supabase.");
+    return { user: null };
+  }
+};
 
-// Get auth instance
-const auth = getAuth(app);
+/**
+ * Sends OTP to the provided phone number
+ * @deprecated Use Supabase auth instead
+ */
+export const sendOTP = async (
+  phoneNumber: string,
+  containerId?: string
+): Promise<{ success: boolean; confirmationResult?: ConfirmationResult; error?: string }> => {
+  console.error("Firebase sendOTP is deprecated - use Supabase auth.signInWithOtp() instead");
+  
+  return { 
+    success: false, 
+    error: "Firebase auth is no longer supported. The application has been migrated to Supabase."
+  };
+};
 
-// For development fallback if SMS verification isn't properly configured
-let mockMode = false;
-let mockConfirmationResult: any = null;
+/**
+ * Verifies the OTP entered by the user
+ * @deprecated Use Supabase auth instead
+ */
+export const verifyOTP = async (
+  confirmationResult: ConfirmationResult,
+  otp: string
+): Promise<{ success: boolean; user?: any; error?: string }> => {
+  console.error("Firebase verifyOTP is deprecated - use Supabase auth.verifyOtp() instead");
+  
+  return { 
+    success: false, 
+    error: "Firebase auth is no longer supported. The application has been migrated to Supabase."
+  };
+};
 
-// Track reCAPTCHA instance to avoid multiple instances
-let recaptchaVerifier: RecaptchaVerifier | null = null;
+/**
+ * Clears any existing reCAPTCHA widgets
+ * @deprecated No longer needed with Supabase
+ */
+export const clearRecaptcha = async (): Promise<void> => {
+  console.error("Firebase clearRecaptcha is deprecated - no longer needed with Supabase");
+  return;
+};
 
 /**
  * Sends OTP to the provided phone number

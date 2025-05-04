@@ -182,7 +182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       res.json({
         sessionExists: req.session ? true : false,
-        sessionId: req.session?.id || 'none',
+        sessionId: req.sessionID || 'none',
         userId: req.session?.userId || 'none',
         role: req.session?.role || 'none',
         username: req.session?.username || 'none',
@@ -194,6 +194,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({
         error: 'Session diagnostic check failed',
         message: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // Add a special diagnostics route for the admin account
+  app.get('/api/diagnostic/admin', async (req, res) => {
+    try {
+      // Only allow in development or with proper auth in production
+      if (process.env.NODE_ENV !== 'production' || 
+          (req.session?.role === 'admin' && req.session?.userId)) {
+        
+        // Check if admin exists
+        const adminUsername = "Sandeepkumarduli";
+        const adminEmail = "admin@bgmi-tournaments.com";
+        
+        const adminByUsername = await storage.getUserByUsername(adminUsername);
+        const adminByEmail = adminEmail ? await storage.getUserByEmail(adminEmail) : null;
+        
+        // Determine which admin record to use
+        const adminUser = adminByUsername || adminByEmail;
+        
+        if (adminUser) {
+          // Return sanitized admin data
+          const { password, ...adminInfo } = adminUser;
+          
+          res.json({
+            adminExists: true,
+            adminInfo: {
+              ...adminInfo,
+              password: '[REDACTED]'  // Never expose the actual password
+            },
+            matchingUsernames: adminByUsername ? true : false,
+            matchingEmails: adminByEmail ? true : false
+          });
+        } else {
+          res.json({
+            adminExists: false,
+            adminByUsername: !!adminByUsername,
+            adminByEmail: !!adminByEmail,
+            message: 'No admin user found in database'
+          });
+        }
+      } else {
+        // Not authorized for this diagnostic
+        res.status(403).json({
+          error: 'Not authorized',
+          message: 'You must be an admin to access this diagnostic'
+        });
+      }
+    } catch (error) {
+      console.error('Error in admin diagnostic route:', error);
+      res.status(500).json({
+        error: 'Admin diagnostic check failed',
+        message: error instanceof Error ? error.message : String(error),
+        stack: process.env.NODE_ENV !== 'production' ? (error as Error).stack : undefined
       });
     }
   });

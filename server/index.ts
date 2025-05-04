@@ -61,12 +61,37 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // Create a fallback API handler for missing API endpoints
-  // We'll change our approach to only handle paths that don't exist
+  // Improve API error handling
+  // 1. Check for missing API endpoints
+  // 2. Prevent HTML responses for API routes
   app.use((req, res, next) => {
-    // Only care about API requests
+    // Only proceed for API requests that haven't sent headers yet
     if (req.path.startsWith('/api/') && !res.headersSent) {
-      // Let the regular 404 handler take care of this later
+      // Store the original send method
+      const originalSend = res.send;
+      
+      // Override send to check for HTML responses in API routes
+      res.send = function(body) {
+        // Check if the response is HTML (common error case)
+        if (typeof body === 'string' && 
+            (body.startsWith('<!DOCTYPE') || body.startsWith('<html'))) {
+          
+          // Log the issue for debugging
+          console.error(`HTML response detected for API route: ${req.path}`);
+          
+          // Replace HTML response with proper JSON error
+          return res.status(500).json({
+            error: 'API endpoint error',
+            message: 'Server returned HTML instead of JSON',
+            path: req.path
+          });
+        }
+        
+        // Otherwise, proceed normally
+        return originalSend.call(res, body);
+      };
+      
+      // Continue processing the request
       next();
     } else {
       next();

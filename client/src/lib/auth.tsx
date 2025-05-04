@@ -75,15 +75,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginCredentials) => {
       try {
+        // Log login attempt data for debugging (not in production)
+        if (process.env.NODE_ENV !== 'production') {
+          console.log(`Login attempt for ${credentials.username}`);
+        }
+        
+        // Make the login request
         const res = await apiRequest("POST", "/api/login", credentials);
+        
+        // Check if the response is valid
+        if (!res.ok) {
+          // Try to get the error message from the response
+          try {
+            const errorData = await res.json();
+            throw new Error(errorData.message || "Login failed due to server error");
+          } catch (jsonError) {
+            // If JSON parsing fails, use the status text
+            throw new Error(`Login failed: ${res.status} ${res.statusText}`);
+          }
+        }
+        
+        // Parse the response JSON
         return res.json();
       } catch (error) {
-        // Handle all login errors with a consistent message about checking credentials
-        // This is more secure and better UX than revealing specific error reasons
+        // Enhanced error logging
+        if (process.env.NODE_ENV !== 'production') {
+          console.error("Login error details:", error);
+          
+          // Special handling for admin login
+          if (credentials.username === "Sandeepkumarduli" || 
+              credentials.username === "admin@bgmi-tournaments.com") {
+            console.error("Admin login failed with error:", error);
+          }
+        }
+        
+        // User-facing message remains simple
         throw new Error("Login failed. Please check username or password.");
       }
     },
     onSuccess: (data: User) => {
+      // Log success for debugging
+      console.log(`Login successful for ${data.username} with role ${data.role}`);
+      
       setUser(data);
       refetch();
       toast({

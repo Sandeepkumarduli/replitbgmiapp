@@ -8,6 +8,7 @@ export const sendOTP = async (
 ): Promise<{ success: boolean; error?: string }> => {
   try {
     console.log("Preparing to send OTP via Supabase to:", phoneNumber);
+    console.log("Using Supabase client:", supabase ? "Available" : "Missing");
     
     // Format phone number if needed
     if (!phoneNumber.startsWith('+')) {
@@ -15,7 +16,24 @@ export const sendOTP = async (
       console.log("Formatted phone number:", phoneNumber);
     }
     
+    // If supabase is the dummy client, handle it specially
+    if (!supabase.auth || typeof supabase.auth.signInWithOtp !== 'function') {
+      console.warn("Using dummy Supabase client for OTP - this won't send real messages");
+      if (import.meta.env.DEV) {
+        return { 
+          success: true,
+          error: "Development mode - using code 123456" 
+        };
+      } else {
+        return { 
+          success: false, 
+          error: "Supabase authentication is not available. Check configuration." 
+        };
+      }
+    }
+    
     // Attempt to send OTP through Supabase Auth
+    console.log("Calling Supabase auth.signInWithOtp...");
     const { error } = await supabase.auth.signInWithOtp({
       phone: phoneNumber,
     });

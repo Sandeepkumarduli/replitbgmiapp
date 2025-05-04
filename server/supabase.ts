@@ -8,6 +8,9 @@ dotenv.config();
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
+console.log('Server supabaseUrl:', supabaseUrl ? supabaseUrl.substring(0, 15) + '...' : 'Missing');
+console.log('Server supabaseAnonKey:', supabaseAnonKey ? supabaseAnonKey.substring(0, 15) + '...' : 'Missing');
+
 // Check if URLs are valid
 if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('Missing Supabase credentials. Using memory storage instead.');
@@ -20,6 +23,8 @@ try {
   if (supabaseUrl && supabaseAnonKey) {
     supabase = createClient(supabaseUrl, supabaseAnonKey);
     console.log('Supabase client initialized successfully.');
+  } else {
+    console.error('Cannot initialize Supabase client: Missing credentials');
   }
 } catch (error) {
   console.error('Error initializing Supabase client:', error);

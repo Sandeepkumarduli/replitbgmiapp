@@ -1,8 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Use VITE_ prefixed env vars for Vite-based projects
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || import.meta.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+// Use NEXT_PUBLIC_ prefixed env vars for consistency
+const supabaseUrl = import.meta.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+console.log('Client supabaseUrl:', supabaseUrl ? 'Available' : 'Missing');
+console.log('Client supabaseAnonKey:', supabaseAnonKey ? 'Available' : 'Missing');
 
 // Create a dummy client for development with DEV mode capabilities
 const dummyClient = {

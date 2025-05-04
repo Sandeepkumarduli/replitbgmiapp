@@ -28,8 +28,18 @@ const OtpLogin: React.FC = () => {
         formattedPhone = `+91${formattedPhone.replace(/^0+/, '')}`;
       }
       
+      console.log("Starting OTP send process for phone:", formattedPhone);
+      
+      // Environment debug logging
+      console.log("Environment check:");
+      console.log("- NEXT_PUBLIC_SUPABASE_URL:", import.meta.env.NEXT_PUBLIC_SUPABASE_URL ? "Available" : "Missing");
+      console.log("- NEXT_PUBLIC_SUPABASE_ANON_KEY:", import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? "Available" : "Missing");
+      console.log("- Development mode:", import.meta.env.DEV ? "Yes" : "No");
+      
       // Send OTP via Supabase
       const result = await sendOTP(formattedPhone);
+      
+      console.log("OTP send result:", result);
       
       if (result.success) {
         setStep("otp");
@@ -42,7 +52,7 @@ const OtpLogin: React.FC = () => {
         if (result.error?.includes('Development mode')) {
           toast({
             title: "Development Mode",
-            description: "OTP functionality is disabled in development mode. Please setup Supabase credentials.",
+            description: "Using development OTP: 123456",
             variant: "default",
           });
           

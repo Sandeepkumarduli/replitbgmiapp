@@ -84,22 +84,34 @@ export async function updatePhoneVerification(req: Request, res: Response) {
  */
 export async function phoneLogin(req: Request, res: Response) {
   try {
-    const { phone, otp } = req.body;
+    const { phone, otp, dev_mode } = req.body;
     
     if (!phone || !otp) {
       return res.status(400).json({ message: "Phone number and OTP are required" });
     }
     
-    // First, verify the OTP with Supabase
-    const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
-      phone,
-      token: otp,
-      type: 'sms'
-    });
+    // Check if dev_mode is enabled and we're in a development environment
+    const isDevMode = dev_mode && process.env.NODE_ENV === 'development';
+    let verifySuccess = false;
     
-    if (verifyError) {
-      console.error("Error verifying OTP for phone login:", verifyError);
-      return res.status(401).json({ message: "Invalid or expired OTP" });
+    if (!isDevMode) {
+      // Normal path: verify OTP with Supabase
+      const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
+        phone,
+        token: otp,
+        type: 'sms'
+      });
+      
+      if (verifyError) {
+        console.error("Error verifying OTP for phone login:", verifyError);
+        return res.status(401).json({ message: "Invalid or expired OTP" });
+      }
+      
+      verifySuccess = true;
+    } else {
+      // Development mode - bypass OTP verification
+      console.log("DEVELOPMENT MODE: Bypassing OTP verification");
+      verifySuccess = true;
     }
     
     // Find user with this phone number in our database
@@ -110,7 +122,7 @@ export async function phoneLogin(req: Request, res: Response) {
     }
     
     // Update user phone verification status if not already verified
-    if (!users.phoneVerified) {
+    if (!users.phoneVerified && verifySuccess) {
       await storage.updateUser(users.id, {
         phoneVerified: true
       });

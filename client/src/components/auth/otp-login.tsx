@@ -113,12 +113,55 @@ const OtpLogin: React.FC = () => {
           throw new Error(errorData.message || "Login failed");
         }
       } else {
-        setErrorMessage(result.error || "Failed to verify code");
-        toast({
-          title: "Verification failed",
-          description: "The code you entered is incorrect. Please check and try again.",
-          variant: "destructive",
-        });
+        // Check if it's a development mode message
+        if (result.error?.includes('Development mode')) {
+          toast({
+            title: "Development Mode",
+            description: "OTP verification is disabled in development mode. Using development fallback.",
+            variant: "default",
+          });
+          
+          // For development, allow proceeding without real verification
+          if (import.meta.env.DEV) {
+            console.warn("DEV MODE: Proceeding with phone login without real verification");
+            
+            // Try to login with the development bypass
+            try {
+              const loginResult = await apiRequest("POST", "/api/auth/phone-login", {
+                phone: formattedPhone,
+                otp: "123456", // Development bypass code
+                dev_mode: true  // Signal that this is development mode
+              });
+              
+              if (loginResult.ok) {
+                const userData = await loginResult.json();
+                toast({
+                  title: "Development Login",
+                  description: `Development mode login as ${userData.username}`,
+                });
+                
+                // Refresh the user data in the auth context
+                refreshUser();
+                
+                // Redirect to home page
+                window.location.href = "/";
+              } else {
+                const errorData = await loginResult.json();
+                throw new Error(errorData.message || "Development login failed");
+              }
+            } catch (devError) {
+              console.error("Development login error:", devError);
+              setErrorMessage("Development login failed. Please check if the phone number exists in the database.");
+            }
+          }
+        } else {
+          setErrorMessage(result.error || "Failed to verify code");
+          toast({
+            title: "Verification failed",
+            description: "The code you entered is incorrect. Please check and try again.",
+            variant: "destructive",
+          });
+        }
       }
     } catch (error) {
       console.error("Error verifying OTP:", error);

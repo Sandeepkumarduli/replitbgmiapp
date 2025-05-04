@@ -11,20 +11,25 @@ import path from 'path';
  * This adds various fallbacks and error recovery for production
  */
 export function initializeDeploymentSafety() {
-  // Only run in production environments
   if (process.env.NODE_ENV !== 'production') {
+    console.log('Development mode: bypassing deployment safety measures');
     return;
   }
   
-  console.log('🛡️ Initializing deployment safety measures');
+  console.log('Production mode: initializing deployment safety measures');
   
-  // Set default fallback values for critical environment variables if missing
+  // Apply safety measures for production
   ensureEnvironmentVariables();
-  
-  // Check for public directory
   ensurePublicDirectory();
   
-  console.log('✅ Deployment safety measures initialized');
+  // Set global error handlers for production
+  process.on('uncaughtException', (err) => {
+    console.error('UNCAUGHT EXCEPTION - keeping process alive:', err);
+  });
+  
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('UNHANDLED REJECTION - keeping process alive:', reason);
+  });
 }
 
 /**
@@ -32,17 +37,19 @@ export function initializeDeploymentSafety() {
  * These fallbacks allow the application to start but with limited functionality
  */
 function ensureEnvironmentVariables() {
-  // If no DATABASE_URL, use in-memory mode
+  // Database fallback - only show a warning about missing database
+  // but don't crash the app (it will use the in-memory store as fallback)
   if (!process.env.DATABASE_URL) {
-    console.warn('⚠️ No DATABASE_URL provided, using fallback memory mode');
-    process.env.USE_DATABASE = 'false';
+    console.warn('⚠️ DATABASE_URL not found, will attempt to use fallback mechanisms');
   }
   
-  // Ensure Supabase variables have fallbacks (but prevent crashes)
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    console.warn('⚠️ Supabase credentials missing, enabling fallback mode');
-    // Don't set fake values, just make sure the app knows to use fallbacks
-    process.env.USE_SUPABASE = 'false';
+  // Supabase fallbacks
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    console.warn('⚠️ NEXT_PUBLIC_SUPABASE_URL not found, authentication features will be limited');
+  }
+  
+  if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    console.warn('⚠️ NEXT_PUBLIC_SUPABASE_ANON_KEY not found, authentication features will be limited');
   }
 }
 
@@ -52,61 +59,39 @@ function ensureEnvironmentVariables() {
  */
 function ensurePublicDirectory() {
   const publicDir = path.join(process.cwd(), 'dist', 'public');
+  const indexPath = path.join(publicDir, 'index.html');
   
-  if (!fs.existsSync(publicDir)) {
-    console.warn('⚠️ Public directory missing, creating minimal fallback');
-    
-    // Create dist directory if it doesn't exist
-    const distDir = path.join(process.cwd(), 'dist');
-    if (!fs.existsSync(distDir)) {
-      fs.mkdirSync(distDir, { recursive: true });
+  try {
+    // Check if the directory exists
+    if (!fs.existsSync(publicDir)) {
+      console.warn('⚠️ Public directory not found, creating minimal fallback');
+      fs.mkdirSync(publicDir, { recursive: true });
+      
+      // Create a minimal index.html
+      const minimalHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RD TOURNAMENTS HUB</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; text-align: center; }
+    .message { margin-top: 40px; color: #666; }
+    .error { color: #e74c3c; }
+  </style>
+</head>
+<body>
+  <h1>RD TOURNAMENTS HUB</h1>
+  <p class="message">The application is currently being deployed...</p>
+  <p class="error">If you continue seeing this message, please contact support.</p>
+</body>
+</html>
+      `;
+      
+      fs.writeFileSync(indexPath, minimalHtml);
     }
-    
-    // Create public directory
-    fs.mkdirSync(publicDir, { recursive: true });
-    
-    // Create a minimal index.html for emergency fallback
-    const indexPath = path.join(publicDir, 'index.html');
-    const fallbackHtml = `
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>RD Tournaments Hub</title>
-        <style>
-          body { font-family: system-ui, sans-serif; display: flex; align-items: center; 
-                justify-content: center; height: 100vh; margin: 0; background: #0f172a; color: white; }
-          .message { max-width: 500px; text-align: center; padding: 2rem; border-radius: 0.5rem; 
-                    background: rgba(15, 23, 42, 0.8); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-          h1 { margin-top: 0; color: #38bdf8; }
-          .loading { margin-top: 1.5rem; display: flex; justify-content: center; }
-          .loading div { width: 12px; height: 12px; margin: 0 4px; background: #38bdf8;
-                       border-radius: 50%; animation: loading 1.2s infinite ease-in-out; }
-          .loading div:nth-child(2) { animation-delay: 0.2s; }
-          .loading div:nth-child(3) { animation-delay: 0.4s; }
-          @keyframes loading { 
-            0%, 100% { transform: scale(0.6); opacity: 0.4; } 
-            50% { transform: scale(1); opacity: 1; } 
-          }
-        </style>
-      </head>
-      <body>
-        <div class="message">
-          <h1>RD Tournaments Hub</h1>
-          <p>The application is currently initializing. Please wait while we set things up...</p>
-          <div class="loading"><div></div><div></div><div></div></div>
-          <p>If you continue to see this message, please contact support.</p>
-        </div>
-        <script>
-          // Auto-refresh to retry loading the application
-          setTimeout(() => { window.location.reload(); }, 10000);
-        </script>
-      </body>
-      </html>
-    `;
-    
-    fs.writeFileSync(indexPath, fallbackHtml);
-    console.log('✅ Created fallback index.html');
+  } catch (error) {
+    console.error('Error ensuring public directory:', error);
   }
 }

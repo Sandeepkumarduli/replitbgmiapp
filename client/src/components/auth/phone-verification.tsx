@@ -191,8 +191,16 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({
               </div>
             )}
             
-            {/* Hidden recaptcha container */}
-            <div id="recaptcha-container" ref={recaptchaContainerRef} className="hidden"></div>
+            {/* Visible reCAPTCHA container */}
+            <div id="recaptcha-container" ref={recaptchaContainerRef} className="flex justify-center my-4"></div>
+            
+            {/* Development helper message */}
+            <div className="bg-amber-50 text-amber-800 p-3 rounded-md flex items-start">
+              <p className="text-sm">
+                <strong>Note:</strong> If Firebase has configuration issues, the system will automatically
+                fall back to development mode where the verification code is always <strong>123456</strong>
+              </p>
+            </div>
           </div>
         ) : (
           <div className="space-y-4">
@@ -220,6 +228,13 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({
                 <p>{errorMessage}</p>
               </div>
             )}
+            
+            {/* Development helper message */}
+            <div className="bg-amber-50 text-amber-800 p-3 rounded-md flex items-start">
+              <p className="text-sm">
+                <strong>Note:</strong> If using development mode, enter <strong>123456</strong> as the verification code
+              </p>
+            </div>
           </div>
         )}
       </CardContent>

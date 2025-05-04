@@ -8,10 +8,14 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import { Pool } from '@neondatabase/serverless';
+import { Pool, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import * as schema from '../shared/schema';
 import dotenv from 'dotenv';
+import ws from 'ws';
+
+// Configure neon WebSocket
+neonConfig.webSocketConstructor = ws;
 
 // Load environment variables
 dotenv.config();
@@ -81,15 +85,19 @@ async function checkSupabaseTables() {
   // Fallback: Test access to each table we expect to exist
   const expectedTables = Object.values(tableMapping);
   const tablesToCheck = [...new Set(expectedTables)];
-  const results = [];
+  const results: string[] = [];
   
   for (const table of tablesToCheck) {
-    const { data, error } = await supabase
-      .from(table)
-      .select('count', { count: 'exact', head: true });
-    
-    if (!error) {
-      results.push(table);
+    try {
+      const { error } = await supabase
+        .from(table)
+        .select('*', { count: 'exact', head: true });
+      
+      if (!error) {
+        results.push(table);
+      }
+    } catch (err) {
+      console.warn(`Error checking table ${table}:`, err);
     }
   }
   
@@ -99,9 +107,9 @@ async function checkSupabaseTables() {
 /**
  * Creates SQL statements for tables based on our schema
  */
-function createSqlForMissingTables(missingTables) {
+function createSqlForMissingTables(missingTables: string[]): Record<string, string> {
   // These should match the definitions in schema.ts
-  const tableDefinitions = {
+  const tableDefinitions: Record<string, string> = {
     users: `
       CREATE TABLE IF NOT EXISTS "profiles" (
         "id" SERIAL PRIMARY KEY,
@@ -192,7 +200,7 @@ function createSqlForMissingTables(missingTables) {
     `
   };
 
-  const sqlStatements = {};
+  const sqlStatements: Record<string, string> = {};
   for (const table of missingTables) {
     if (tableDefinitions[table]) {
       sqlStatements[table] = tableDefinitions[table];
@@ -205,11 +213,11 @@ function createSqlForMissingTables(missingTables) {
 /**
  * Executes the SQL statements against Supabase using the REST API
  */
-async function createTablesInSupabase(sqlStatements) {
+async function createTablesInSupabase(sqlStatements: Record<string, string>): Promise<void> {
   console.log('Creating tables in Supabase...');
   
   for (const [table, sql] of Object.entries(sqlStatements)) {
-    const supabaseTable = tableMapping[table];
+    const supabaseTable = tableMapping[table as keyof typeof tableMapping];
     console.log(`Creating ${table} as ${supabaseTable}...`);
     
     try {
@@ -222,13 +230,18 @@ async function createTablesInSupabase(sqlStatements) {
         // Try fallback method if RPC fails (might not have exec_sql function)
         try {
           // Direct REST call to pg endpoint (this requires special permissions)
+          const headers: Record<string, string> = {
+            'Content-Type': 'application/json'
+          };
+          
+          if (supabaseAnonKey) {
+            headers['apikey'] = supabaseAnonKey;
+            headers['Authorization'] = `Bearer ${supabaseAnonKey}`;
+          }
+          
           const pgResp = await fetch(`${supabaseUrl}/rest/v1/`, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'apikey': supabaseAnonKey,
-              'Authorization': `Bearer ${supabaseAnonKey}`
-            },
+            headers,
             body: JSON.stringify({ query: sql })
           });
           
@@ -252,7 +265,7 @@ async function createTablesInSupabase(sqlStatements) {
 /**
  * Copy data from PostgreSQL to Supabase
  */
-async function syncData(tableMap) {
+async function syncData(tableMap: Record<string, string>): Promise<void> {
   console.log('Syncing data between PostgreSQL and Supabase...');
   
   for (const [pgTable, supabaseTable] of Object.entries(tableMap)) {
@@ -270,14 +283,18 @@ async function syncData(tableMap) {
       console.log(`Found ${rows.length} rows in ${pgTable}.`);
       
       // Insert data into Supabase
-      const { data, error } = await supabase
-        .from(supabaseTable)
-        .upsert(rows, { onConflict: 'id' });
-      
-      if (error) {
-        console.error(`Error syncing data for ${pgTable}:`, error);
-      } else {
-        console.log(`Successfully synced ${rows.length} rows from ${pgTable} to ${supabaseTable}.`);
+      try {
+        const { error } = await supabase
+          .from(supabaseTable)
+          .upsert(rows, { onConflict: 'id' });
+        
+        if (error) {
+          console.error(`Error syncing data for ${pgTable}:`, error);
+        } else {
+          console.log(`Successfully synced ${rows.length} rows from ${pgTable} to ${supabaseTable}.`);
+        }
+      } catch (supabaseError) {
+        console.error(`Supabase error syncing data for ${pgTable}:`, supabaseError);
       }
     } catch (error) {
       console.error(`Exception syncing data for ${pgTable}:`, error);
@@ -286,68 +303,51 @@ async function syncData(tableMap) {
 }
 
 async function main() {
-  console.log('Checking PostgreSQL tables...');
-  const pgTables = await checkPostgresqlTables();
-  console.log('PostgreSQL tables:', pgTables);
-  
-  console.log('Checking Supabase tables...');
-  const supabaseTables = await checkSupabaseTables();
-  console.log('Supabase tables:', supabaseTables);
-  
-  // Check which tables from our schema are missing in Supabase
-  const missingInSupabase = Object.keys(tableMapping).filter(pgTable => {
-    const supabaseTable = tableMapping[pgTable];
-    return !supabaseTables.includes(supabaseTable);
-  });
-  
-  if (missingInSupabase.length > 0) {
-    console.log('Tables missing in Supabase:', missingInSupabase);
+  try {
+    console.log('Checking PostgreSQL tables...');
+    const pgTables = await checkPostgresqlTables();
+    console.log('PostgreSQL tables:', pgTables);
     
-    const sqlStatements = createSqlForMissingTables(missingInSupabase);
-    console.log('SQL statements to create missing tables:', sqlStatements);
+    console.log('Checking Supabase tables...');
+    const supabaseTables = await checkSupabaseTables();
+    console.log('Supabase tables:', supabaseTables);
     
-    // Confirm before proceeding
-    const readline = require('readline').createInterface({
-      input: process.stdin,
-      output: process.stdout
+    // Check which tables from our schema are missing in Supabase
+    const missingInSupabase = Object.keys(tableMapping).filter(pgTable => {
+      const supabaseTable = tableMapping[pgTable];
+      return !supabaseTables.includes(supabaseTable);
     });
     
-    readline.question('Do you want to create these tables in Supabase? (y/n) ', async (answer) => {
-      readline.close();
-      if (answer.toLowerCase() === 'y') {
-        await createTablesInSupabase(sqlStatements);
-        
-        // After creating tables, sync data
-        const syncMap = {};
-        for (const pgTable of pgTables) {
-          if (tableMapping[pgTable]) {
-            syncMap[pgTable] = tableMapping[pgTable];
-          }
+    if (missingInSupabase.length > 0) {
+      console.log('Tables missing in Supabase:', missingInSupabase);
+      
+      const sqlStatements = createSqlForMissingTables(missingInSupabase);
+      console.log('SQL statements to create missing tables:', Object.keys(sqlStatements));
+      
+      // In non-interactive mode, just proceed with creating tables
+      console.log('Creating missing tables in Supabase automatically...');
+      await createTablesInSupabase(sqlStatements);
+      
+      // After creating tables, sync data
+      const syncMap: Record<string, string> = {};
+      for (const pgTable of pgTables) {
+        if (tableMapping[pgTable as keyof typeof tableMapping]) {
+          syncMap[pgTable] = tableMapping[pgTable as keyof typeof tableMapping];
         }
-        
-        console.log('Tables to sync:', syncMap);
-        
-        // Ask for confirmation again
-        const readline2 = require('readline').createInterface({
-          input: process.stdin,
-          output: process.stdout
-        });
-        
-        readline2.question('Do you want to sync data between PostgreSQL and Supabase? (y/n) ', async (answer) => {
-          readline2.close();
-          if (answer.toLowerCase() === 'y') {
-            await syncData(syncMap);
-          }
-          await pool.end();
-          console.log('Done.');
-        });
-      } else {
-        await pool.end();
-        console.log('Operation cancelled.');
       }
-    });
-  } else {
-    console.log('All tables from schema exist in Supabase.');
+      
+      console.log('Tables to sync:', Object.keys(syncMap));
+      
+      // In non-interactive mode, just proceed with syncing data
+      console.log('Syncing data automatically...');
+      await syncData(syncMap);
+      
+      console.log('Done.');
+    } else {
+      console.log('All tables from schema exist in Supabase.');
+    }
+  } finally {
+    // Always close the pool
     await pool.end();
   }
 }

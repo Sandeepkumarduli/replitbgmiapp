@@ -1,11 +1,48 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-// Use NEXT_PUBLIC_ prefixed env vars for consistency
-const supabaseUrl = import.meta.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+// Variables to store Supabase credentials
+let supabaseUrl: string | undefined = import.meta.env.NEXT_PUBLIC_SUPABASE_URL;
+let supabaseAnonKey: string | undefined = import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
+// Log the initial state
 console.log('Client supabaseUrl:', supabaseUrl ? 'Available' : 'Missing');
 console.log('Client supabaseAnonKey:', supabaseAnonKey ? 'Available' : 'Missing');
+
+// Fetch Supabase credentials from the server
+async function fetchSupabaseCredentials() {
+  try {
+    const response = await fetch('/api/config/supabase');
+    if (!response.ok) {
+      throw new Error(`Failed to fetch Supabase credentials: ${response.status}`);
+    }
+    
+    const credentials = await response.json();
+    if (credentials.url && credentials.anonKey) {
+      supabaseUrl = credentials.url;
+      supabaseAnonKey = credentials.anonKey;
+      console.log('Supabase credentials loaded from server');
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error('Error fetching Supabase credentials:', error);
+    return false;
+  }
+}
+
+// Try to fetch credentials if they're not already available
+if (!supabaseUrl || !supabaseAnonKey) {
+  fetchSupabaseCredentials()
+    .then(success => {
+      if (success) {
+        // Reinitialize the Supabase client with the fetched credentials
+        initializeSupabaseClient();
+      }
+    })
+    .catch(err => {
+      console.error('Failed to load Supabase credentials:', err);
+    });
+}
 
 // Interface for our mock Supabase client
 interface MockSupabaseClient {
@@ -90,21 +127,30 @@ const dummyClient: MockSupabaseClient = {
 // Export the appropriate client
 let supabase: SupabaseClient | MockSupabaseClient;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase credentials. Please check environment variables.');
-  
-  // Use dummy client in development or if credentials are missing in production
-  console.warn('Using dummy Supabase client');
-  supabase = dummyClient;
-} else {
-  // Real Supabase client
-  try {
-    supabase = createClient(supabaseUrl, supabaseAnonKey);
-    console.log('Supabase client initialized successfully');
-  } catch (error) {
-    console.error('Failed to initialize Supabase client:', error);
+// Function to initialize the Supabase client with current credentials
+function initializeSupabaseClient() {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.error('Missing Supabase credentials. Please check environment variables.');
+    
+    // Use dummy client in development or if credentials are missing in production
+    console.warn('Using dummy Supabase client');
     supabase = dummyClient;
+    return false;
+  } else {
+    // Real Supabase client
+    try {
+      supabase = createClient(supabaseUrl, supabaseAnonKey);
+      console.log('Supabase client initialized successfully');
+      return true;
+    } catch (error) {
+      console.error('Failed to initialize Supabase client:', error);
+      supabase = dummyClient;
+      return false;
+    }
   }
 }
 
-export { supabase };
+// Initial initialization
+initializeSupabaseClient();
+
+export { supabase, initializeSupabaseClient };

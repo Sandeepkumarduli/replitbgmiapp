@@ -112,6 +112,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Add session diagnostic endpoint to debug authentication issues
+  // Add endpoint to provide Supabase credentials to the client
+  app.get('/api/config/supabase', (req, res) => {
+    res.json({
+      url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    });
+  });
+  
   // Add schema diagnostic endpoint to check database structure
   app.get('/api/diagnostic/schema', async (req, res) => {
     try {

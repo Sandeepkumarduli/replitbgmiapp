@@ -198,6 +198,120 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Deployment readiness check endpoint
+  app.get('/api/diagnostic/deployment-check', async (req, res) => {
+    try {
+      if (process.env.NODE_ENV !== 'production') {
+        // Import the check function
+        const { checkDeploymentReadiness } = await import('./deployment-check');
+        const results = await checkDeploymentReadiness();
+        
+        res.json(results);
+      } else {
+        // Disabled in production for security
+        res.status(403).json({
+          error: "Unauthorized",
+          message: "This endpoint is only available in development mode"
+        });
+      }
+    } catch (error) {
+      console.error('Error running deployment check:', error);
+      res.status(500).json({
+        error: "Failed to run deployment check",
+        message: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Special admin account repair route
+  app.post('/api/diagnostic/repair-admin', async (req, res) => {
+    try {
+      // Only allow in development mode for security
+      if (process.env.NODE_ENV !== 'production') {
+        const adminUsername = "Sandeepkumarduli";
+        const adminEmail = "admin@bgmi-tournaments.com";
+        
+        // Attempt to find the admin user
+        let adminUser = await storage.getUserByUsername(adminUsername);
+        
+        if (!adminUser) {
+          // Try by email as fallback
+          adminUser = await storage.getUserByEmail(adminEmail);
+        }
+        
+        if (adminUser) {
+          // Fix admin account issues
+          const updatedAdmin = await storage.updateUser(adminUser.id, {
+            phoneVerified: true,
+            phoneVerificationBypassed: true,
+            role: "admin" // Ensure admin role is set
+          });
+          
+          // Hash admin password if it's not already hashed
+          if (!adminUser.password.includes('.')) {
+            console.log('Fixing admin password hash...');
+            const { hashPassword } = await import('./auth');
+            const hashedPassword = await hashPassword("Sandy@1234");
+            
+            await storage.updateUser(adminUser.id, {
+              password: hashedPassword
+            });
+          }
+          
+          res.json({
+            success: true,
+            message: "Admin account repaired successfully",
+            admin: {
+              id: adminUser.id,
+              username: adminUser.username,
+              role: adminUser.role,
+              phoneVerified: true
+            }
+          });
+        } else {
+          // Admin not found, create one
+          console.log('Admin not found, creating new admin account...');
+          const { hashPassword } = await import('./auth');
+          const hashedPassword = await hashPassword("Sandy@1234");
+          
+          const newAdmin = await storage.createUser({
+            username: adminUsername,
+            password: hashedPassword,
+            email: adminEmail,
+            phone: "1234567890",
+            gameId: "admin",
+            role: "admin",
+            phoneVerified: true,
+            phoneVerificationBypassed: true
+          });
+          
+          res.json({
+            success: true,
+            message: "Admin account created successfully",
+            admin: {
+              id: newAdmin.id,
+              username: newAdmin.username,
+              role: newAdmin.role,
+              phoneVerified: true
+            }
+          });
+        }
+      } else {
+        // In production, this endpoint is disabled
+        res.status(403).json({
+          error: "Unauthorized",
+          message: "This endpoint is only available in development mode"
+        });
+      }
+    } catch (error) {
+      console.error('Error repairing admin account:', error);
+      res.status(500).json({
+        error: "Failed to repair admin account",
+        message: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   // Add a special diagnostics route for the admin account
   app.get('/api/diagnostic/admin', async (req, res) => {
     try {

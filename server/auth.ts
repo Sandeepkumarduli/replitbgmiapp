@@ -146,55 +146,99 @@ export function setupAuth(app: Express) {
       const adminEmail = "admin@bgmi-tournaments.com";
       const adminPassword = "Sandy@1234";
       
-      if ((username === adminUsername || username === adminEmail) && password === adminPassword) {
+      console.log(`Login attempt for username: ${username} (comparing with admin: ${adminUsername})`);
+      console.log(`Environment: ${process.env.NODE_ENV}`);
+      
+      // Use triple equals for exact string comparison
+      const isAdminUsername = username === adminUsername;
+      const isAdminEmail = username === adminEmail;
+      const isAdminPassword = password === adminPassword;
+      
+      if ((isAdminUsername || isAdminEmail) && isAdminPassword) {
+        console.log("Admin credentials match, proceeding with admin login");
         try {
           // Try to get admin by username first
           let adminUser = await storage.getUserByUsername(adminUsername);
+          console.log("Admin user lookup result:", adminUser ? "Found" : "Not found");
           
           // If not found, check by email
-          if (!adminUser && username === adminEmail) {
+          if (!adminUser && isAdminEmail) {
             adminUser = await storage.getUserByEmail(adminEmail);
+            console.log("Admin email lookup result:", adminUser ? "Found" : "Not found");
           }
           
           // If admin doesn't exist in storage, create it
           if (!adminUser) {
-            const hashedPassword = await hashPassword(password);
+            console.log("Creating new admin user");
+            const hashedPassword = await hashPassword(adminPassword);
             adminUser = await storage.createUser({
               username: adminUsername,
               password: hashedPassword,
               email: adminEmail,
               phone: "1234567890",
               gameId: "admin",
-              role: "admin"
+              role: "admin",
+              phoneVerified: true // Set to true by default for admin
             });
+            console.log("Admin user created:", adminUser ? "Success" : "Failed");
           } else {
             // Ensure the user has admin role regardless of what's in storage
+            console.log("Existing admin user found, checking role:", adminUser.role);
             if (adminUser.role !== "admin") {
-              const updatedAdmin = await storage.updateUser(adminUser.id, { role: "admin" });
+              console.log("Updating user to admin role");
+              const updatedAdmin = await storage.updateUser(adminUser.id, { 
+                role: "admin",
+                phoneVerified: true // Ensure phone is marked as verified for admin
+              });
               if (updatedAdmin) {
                 adminUser = updatedAdmin;
+                console.log("Admin role update successful");
+              } else {
+                console.log("Admin role update failed");
               }
             }
           }
           
           // At this point we should have a valid admin user
           if (adminUser) {
+            console.log("Setting admin session with ID:", adminUser.id);
             // Store admin info in session
             req.session.userId = adminUser.id;
             req.session.username = adminUser.username;
             req.session.role = "admin";
             
+            // Explicitly save the session to ensure it's persisted
+            await new Promise<void>((resolve, reject) => {
+              req.session.save((err) => {
+                if (err) {
+                  console.error("Session save error:", err);
+                  reject(err);
+                } else {
+                  console.log("Admin session saved successfully");
+                  resolve();
+                }
+              });
+            });
+            
             // Return admin user without password
             const { password: _, ...adminWithoutPassword } = adminUser;
+            console.log("Admin login successful, returning user data");
             return res.status(200).json(adminWithoutPassword);
           }
           
           // If we reach here, something went wrong with admin creation/update
+          console.error("Failed to authenticate admin - user object invalid");
           return res.status(500).json({ message: "Failed to authenticate admin" });
         } catch (error) {
           console.error("Admin login error:", error);
-          return res.status(500).json({ message: "Server error during admin login" });
+          return res.status(500).json({ 
+            message: "Server error during admin login",
+            details: error instanceof Error ? error.message : String(error)
+          });
         }
+      } else if (username === adminUsername || username === adminEmail) {
+        // This is an admin login attempt with wrong password
+        console.log("Admin login attempt with incorrect password");
       }
       
       // Regular user login flow - check both username and email

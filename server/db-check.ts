@@ -128,7 +128,7 @@ export async function getSessionDiagnostics(req: Request, res: Response) {
       userId: req.session?.userId || 'none',
       role: req.session?.role || 'none',
       username: req.session?.username || 'none',
-      authenticated: req.isAuthenticated ? req.isAuthenticated() : false,
+      authenticated: req.session?.userId ? true : false,
       cookies: req.headers.cookie || 'none'
     });
   } catch (error) {

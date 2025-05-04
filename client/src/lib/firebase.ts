@@ -44,20 +44,29 @@ export const sendOTP = async (
   try {
     console.log("Attempting to send OTP to:", phoneNumber);
     
-    // Validate phone number format
+    // Validate phone number format more strictly
     if (!phoneNumber.match(/^\+[1-9]\d{1,14}$/)) {
+      console.error("Invalid phone number format:", phoneNumber);
       return { 
         success: false, 
-        error: "Phone number must be in E.164 format (e.g., +91XXXXXXXXXX)" 
+        error: "Phone number must be in E.164 format (e.g., +91XXXXXXXXXX). Make sure your number includes the country code." 
       };
     }
+
+    // Log phone number details for debugging
+    console.log("Phone number details:", {
+      length: phoneNumber.length,
+      startsWithPlus: phoneNumber.startsWith('+'),
+      containsOnlyDigitsAfterPlus: phoneNumber.substring(1).match(/^\d+$/) !== null
+    });
 
     // Clear any existing recaptcha
     if (recaptchaVerifier) {
       try {
         await recaptchaVerifier.clear();
+        console.log("Successfully cleared existing reCAPTCHA");
       } catch (e) {
-        console.log("Error clearing recaptcha:", e);
+        console.error("Error clearing recaptcha:", e);
       }
       recaptchaVerifier = null;
     }
@@ -166,17 +175,64 @@ export const verifyOTP = async (
   otp: string
 ): Promise<{ success: boolean; user?: any; error?: string }> => {
   try {
+    console.log("Attempting to verify OTP:", { 
+      otpLength: otp.length, 
+      hasConfirmationResult: !!confirmationResult 
+    });
+    
+    // Additional validation
+    if (otp.length !== 6) {
+      console.error("Invalid OTP length:", otp.length);
+      return {
+        success: false,
+        error: "Verification code must be 6 digits."
+      };
+    }
+    
+    if (!confirmationResult) {
+      console.error("Missing confirmation result for OTP verification");
+      return {
+        success: false,
+        error: "Missing verification session. Please request a new code."
+      };
+    }
+    
+    console.log("Submitting OTP verification...");
     const result = await confirmationResult.confirm(otp);
+    
+    console.log("OTP verification successful:", { uid: result.user?.uid ? "present" : "missing" });
     return { success: true, user: result.user };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    console.error("Error verifying OTP:", errorMessage);
-    return { 
-      success: false, 
-      error: errorMessage.includes("auth/invalid-verification-code") 
-        ? "Invalid verification code. Please try again." 
-        : "Verification failed. Please try again."
-    };
+    console.error("Error verifying OTP:", error);
+    console.error("Verification error details:", {
+      message: errorMessage,
+      stack: error instanceof Error ? error.stack : "No stack trace",
+      name: error instanceof Error ? error.name : "Unknown error type"
+    });
+    
+    // Provide more specific error messages based on common Firebase errors
+    if (errorMessage.includes("auth/invalid-verification-code")) {
+      return { 
+        success: false, 
+        error: "The verification code is incorrect. Please check and try again." 
+      };
+    } else if (errorMessage.includes("auth/code-expired")) {
+      return {
+        success: false,
+        error: "The verification code has expired. Please request a new code."
+      };
+    } else if (errorMessage.includes("auth/missing-verification-code")) {
+      return {
+        success: false,
+        error: "Please enter the verification code sent to your phone."
+      };
+    } else {
+      return { 
+        success: false, 
+        error: "Verification failed. Please try again or request a new code." 
+      };
+    }
   }
 };
 

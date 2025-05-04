@@ -19,7 +19,7 @@ interface PhoneVerificationProps {
 const PhoneVerification: React.FC<PhoneVerificationProps> = ({
   phone,
   userId,
-  onSuccess,
+  onSuccess
 }) => {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -188,11 +188,26 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({
               </p>
             </div>
             <div className="flex flex-col items-center border border-slate-200 dark:border-slate-800 p-4 bg-white dark:bg-slate-950 rounded-md">
-              <p className="text-sm font-medium mb-2">Complete the reCAPTCHA to continue</p>
-              <div id="recaptcha-container" ref={recaptchaContainerRef} className="my-2 min-h-[80px] w-full flex justify-center"></div>
-              <p className="text-xs text-muted-foreground mt-1 text-center">
-                If you don't see the reCAPTCHA, please refresh the page
-              </p>
+              <p className="text-sm font-medium mb-2">Complete the reCAPTCHA challenge below</p>
+              <div 
+                id="recaptcha-container" 
+                ref={recaptchaContainerRef} 
+                className="my-2 min-h-[80px] w-full flex justify-center items-center"
+              >
+                {/* reCAPTCHA will be rendered inside this container */}
+                <div className="text-xs text-muted-foreground animate-pulse">
+                  Loading reCAPTCHA...
+                </div>
+              </div>
+              <div className="text-xs text-muted-foreground mt-3 space-y-1">
+                <p className="font-medium">Not seeing the reCAPTCHA?</p>
+                <ul className="list-disc pl-5">
+                  <li>Make sure JavaScript is enabled</li>
+                  <li>Check your internet connection</li>
+                  <li>Disable any ad blockers temporarily</li>
+                  <li>Try refreshing the page</li>
+                </ul>
+              </div>
             </div>
             {errorMessage && (
               <div className="text-sm text-destructive mt-2">{errorMessage}</div>

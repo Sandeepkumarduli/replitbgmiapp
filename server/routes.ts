@@ -120,6 +120,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
   
+  // Add endpoint to check Supabase tables
+  app.get('/api/diagnostic/supabase-tables', async (req, res) => {
+    try {
+      const { supabase } = await import('./supabase');
+      
+      if (!supabase) {
+        return res.status(500).json({ 
+          error: 'Supabase client not available',
+          message: 'Could not access Supabase client' 
+        });
+      }
+      
+      // Get list of tables from Supabase using RPC
+      const { data: tables, error } = await supabase.rpc('get_tables');
+      
+      if (error) {
+        return res.status(500).json({ 
+          error: 'Failed to get Supabase tables',
+          message: error.message 
+        });
+      }
+      
+      // If the RPC function doesn't exist, fallback to checking known tables
+      if (!tables) {
+        const testTables = ['profiles', 'users', 'tournaments', 'teams', 'team_members', 
+                           'registrations', 'notifications', 'notification_reads'];
+        
+        const tableResults = [];
+        
+        for (const table of testTables) {
+          const { data, error } = await supabase
+            .from(table)
+            .select('count(*)', { count: 'exact', head: true });
+          
+          tableResults.push({
+            name: table,
+            exists: !error,
+            count: data ? data.length : 0,
+            error: error ? error.message : null
+          });
+        }
+        
+        return res.json({
+          message: 'Tested tables using fallback method',
+          tables: tableResults
+        });
+      }
+      
+      res.json({
+        message: 'Retrieved Supabase tables',
+        tables
+      });
+    } catch (error) {
+      console.error('Error checking Supabase tables:', error);
+      res.status(500).json({
+        error: 'Failed to check Supabase tables',
+        message: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
   // Add schema diagnostic endpoint to check database structure
   app.get('/api/diagnostic/schema', async (req, res) => {
     try {

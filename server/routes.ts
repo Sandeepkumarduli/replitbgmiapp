@@ -1357,17 +1357,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Delete user (admin only, with enhanced security)
-  app.delete("/api/admin/users/:id", isEnhancedAdmin, async (req, res) => {
+  // Delete user (admin only)
+  app.delete("/api/admin/users/:id", async (req, res) => {
     try {
       const userId = parseInt(req.params.id);
       
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      // Check if user is admin
+      if (!req.session || !req.session.role || req.session.role !== "admin") {
+        return res.status(403).json({ message: "Unauthorized: Admin access required" });
+      }
+      
       // Get the current admin's userId from the session
-      const adminUserId = req.session.userId!;
+      const adminUserId = req.session.userId;
       
       // Don't allow deleting own account
       if (userId === adminUserId) {
-        logSecurityEvent('Admin attempted to delete own account', req);
+        console.log('Admin attempted to delete own account', { adminId: adminUserId });
         return res.status(400).json({ message: "You cannot delete your own account" });
       }
       
@@ -1379,31 +1388,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Don't allow deleting the hardcoded admin
       if (user.username === "Sandeepkumarduli") {
-        logSecurityEvent('Admin attempted to delete system admin account', req, { targetUser: user.username });
+        console.log('Admin attempted to delete system admin account', { targetUser: user.username });
         return res.status(403).json({ message: "Cannot delete system administrator account" });
       }
+
+      // Delete the user and all associated data
+      await storage.deleteUser(userId);
       
-      try {
-        // Delete the user and all associated data
-        await storage.deleteUser(userId);
-        
-        // Log this security-sensitive action
-        logSecurityEvent('Admin deleted user', req, { 
-          deletedUserId: userId,
-          deletedUsername: user.username 
-        });
-        
-        res.json({ message: "User deleted successfully" });
-      } catch (deleteError) {
-        console.error('Error in user deletion:', deleteError);
-        res.status(500).json({ 
-          message: "Failed to delete user", 
-          error: "There might be data associated with this user that cannot be deleted. Please contact support." 
-        });
-      }
+      // Log this security-sensitive action
+      console.log('Admin deleted user', { 
+        deletedUserId: userId,
+        deletedUsername: user.username 
+      });
+      
+      return res.json({ message: "User deleted successfully", success: true });
     } catch (error) {
       console.error('Error in user deletion process:', error);
-      res.status(500).json({ message: "Internal server error", error: error instanceof Error ? error.message : String(error) });
+      return res.status(500).json({ 
+        message: "Failed to delete user", 
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   });
   
@@ -1418,12 +1422,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get all teams with enhanced info (admin only)
-  app.get("/api/admin/teams", isEnhancedAdmin, async (req, res) => {
+  app.get("/api/admin/teams", async (req, res) => {
     try {
-      logSecurityEvent('Admin requested all teams list', req);
+      console.log('Admin requested all teams list');
+      
+      // Check if user is admin
+      if (!req.session || !req.session.role || req.session.role !== "admin") {
+        return res.status(403).json({ message: "Unauthorized: Admin access required" });
+      }
       
       // Get all teams
       const teams = await storage.getAllTeams();
+      console.log(`Found ${teams.length} teams`);
       
       // Enhance team info with owner and member counts
       const enhancedTeams = await Promise.all(teams.map(async (team) => {
@@ -1499,14 +1509,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Delete team member (admin only)
-  app.delete("/api/admin/teams/:teamId/members/:memberId", isEnhancedAdmin, async (req, res) => {
+  app.delete("/api/admin/teams/:teamId/members/:memberId", async (req, res) => {
     try {
+      // Check if user is admin
+      if (!req.session || !req.session.role || req.session.role !== "admin") {
+        return res.status(403).json({ message: "Unauthorized: Admin access required" });
+      }
+      
       const teamId = parseInt(req.params.teamId);
       const memberId = parseInt(req.params.memberId);
       
       if (isNaN(teamId) || isNaN(memberId)) {
         return res.status(400).json({ message: "Invalid ID format" });
       }
+      
+      console.log(`Admin attempting to delete team member ${memberId} from team ${teamId}`);
       
       const teamMember = await storage.getTeamMember(memberId);
       
@@ -1521,13 +1538,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const result = await storage.deleteTeamMember(memberId);
       
       if (result) {
-        res.status(200).json({ message: "Team member deleted successfully" });
+        console.log(`Team member ${memberId} deleted successfully`);
+        return res.status(200).json({ 
+          message: "Team member deleted successfully",
+          success: true 
+        });
       } else {
-        res.status(500).json({ message: "Failed to delete team member" });
+        console.error(`Failed to delete team member ${memberId}`);
+        return res.status(500).json({ message: "Failed to delete team member" });
       }
     } catch (error) {
       console.error("Error in DELETE /api/admin/teams/:teamId/members/:memberId:", error);
-      res.status(500).json({ message: "Internal server error" });
+      return res.status(500).json({ message: "Internal server error" });
     }
   });
   
@@ -1575,38 +1597,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Delete team through admin panel (admin only, with enhanced security)
-  app.delete("/api/admin/teams/:id", isEnhancedAdmin, async (req, res) => {
+  // Delete team through admin panel (admin only)
+  app.delete("/api/admin/teams/:id", async (req, res) => {
     try {
+      // Check if user is admin
+      if (!req.session || !req.session.role || req.session.role !== "admin") {
+        return res.status(403).json({ message: "Unauthorized: Admin access required" });
+      }
+      
       const teamId = parseInt(req.params.id);
+      
+      if (isNaN(teamId)) {
+        return res.status(400).json({ message: "Invalid team ID" });
+      }
+      
       const team = await storage.getTeam(teamId);
       
       if (!team) {
         return res.status(404).json({ message: "Team not found" });
       }
       
-      // Log this security-sensitive action
-      logSecurityEvent('Admin deleted team', req, { 
-        teamId,
-        teamName: team.name,
-        teamOwnerId: team.ownerId
-      });
+      console.log(`Admin attempting to delete team ${teamId}: ${team.name}`);
       
       // Delete the team and all associated data
-      try {
-        await storage.deleteTeam(teamId);
-        res.json({ message: "Team deleted successfully" });
-      } catch (deleteError) {
-        console.error("Error deleting team:", deleteError);
-        return res.status(500).json({ 
-          message: "Failed to delete team", 
-          error: "There might be data associated with this team that cannot be deleted. Please contact support."
-        });
-      }
+      await storage.deleteTeam(teamId);
+      
+      console.log(`Team ${teamId} deleted successfully`);
+      
+      return res.json({ 
+        message: "Team deleted successfully",
+        success: true
+      });
     } catch (error) {
       console.error("Admin delete team error:", error);
-      res.status(500).json({ 
-        message: "Internal server error", 
+      return res.status(500).json({ 
+        message: "Failed to delete team", 
         error: error instanceof Error ? error.message : String(error)
       });
     }

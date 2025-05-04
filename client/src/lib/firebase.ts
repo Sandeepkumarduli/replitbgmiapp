@@ -3,29 +3,36 @@ import {
   getAuth, 
   RecaptchaVerifier, 
   signInWithPhoneNumber, 
-  ConfirmationResult,
-  PhoneAuthProvider
+  ConfirmationResult
 } from "firebase/auth";
 
-// Firebase configuration
+// Firebase configuration - using environment variables
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.appspot.com`,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "rdtournamentshub-f08c5",
+  storageBucket: `${import.meta.env.VITE_FIREBASE_PROJECT_ID || "rdtournamentshub-f08c5"}.appspot.com`,
   messagingSenderId: "590155313623",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
+
+// Log the configuration for debugging
+console.log("Firebase config:", {
+  apiKey: firebaseConfig.apiKey ? "[PRESENT]" : "[MISSING]",
+  authDomain: firebaseConfig.authDomain,
+  projectId: firebaseConfig.projectId,
+  appId: firebaseConfig.appId ? "[PRESENT]" : "[MISSING]"
+});
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-console.log("Firebase initialized with project:", firebaseConfig.projectId);
+console.log("Firebase initialized successfully");
 
 // Get auth instance
 const auth = getAuth(app);
 
-// For mocking verification during development
-let mockConfirmationResult: any = null;
+// Track reCAPTCHA instance to avoid multiple instances
+let recaptchaVerifier: RecaptchaVerifier | null = null;
 
 /**
  * Sends OTP to the provided phone number
@@ -35,7 +42,7 @@ export const sendOTP = async (
   containerId: string
 ): Promise<{ success: boolean; confirmationResult?: ConfirmationResult; error?: string }> => {
   try {
-    console.log("Sending OTP to:", phoneNumber);
+    console.log("Preparing to send OTP to:", phoneNumber);
     
     // Format phone number if needed
     if (!phoneNumber.startsWith('+')) {
@@ -43,33 +50,60 @@ export const sendOTP = async (
       console.log("Formatted phone number:", phoneNumber);
     }
     
-    // For development: Create a mock confirmation result
-    // In production, this would use the actual Firebase phone authentication
-    mockConfirmationResult = {
-      verificationId: "mock-verification-id-" + Date.now(),
-      confirm: async (code: string) => {
-        // Simulate verification
-        if (code === "123456") {
-          return {
-            user: {
-              uid: "mock-user-" + Date.now(),
-              phoneNumber: phoneNumber
-            }
-          };
-        } else {
-          throw new Error("Invalid verification code");
-        }
+    // Clear previous reCAPTCHA if exists
+    if (recaptchaVerifier) {
+      try {
+        await recaptchaVerifier.clear();
+      } catch (e) {
+        console.log("Error clearing previous reCAPTCHA:", e);
       }
-    };
+      recaptchaVerifier = null;
+    }
     
-    console.log("OTP sent successfully (simulated)");
-    return { success: true, confirmationResult: mockConfirmationResult };
+    // Create invisible reCAPTCHA verifier
+    recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+      size: 'invisible',
+      callback: (response: any) => {
+        console.log("reCAPTCHA verified:", response ? "success" : "failed");
+      }
+    });
+    
+    console.log("reCAPTCHA verifier created");
+    
+    // Send verification code
+    const confirmationResult = await signInWithPhoneNumber(
+      auth,
+      phoneNumber,
+      recaptchaVerifier
+    );
+    
+    console.log("OTP sent successfully to phone");
+    return { success: true, confirmationResult };
     
   } catch (error) {
     console.error("Error sending OTP:", error);
     
+    // Clean up on error
+    if (recaptchaVerifier) {
+      try {
+        await recaptchaVerifier.clear();
+      } catch (e) {
+        console.log("Error clearing reCAPTCHA:", e);
+      }
+      recaptchaVerifier = null;
+    }
+    
+    // Provide better error messages
     if (error instanceof Error) {
-      return { success: false, error: "Failed to send verification code. Please try again." };
+      if (error.message.includes("invalid-phone-number")) {
+        return { success: false, error: "Invalid phone number format. Please use format: +91XXXXXXXXXX" };
+      } else if (error.message.includes("quota-exceeded")) {
+        return { success: false, error: "SMS quota exceeded. Please try again later." };
+      } else if (error.message.includes("captcha-check-failed")) {
+        return { success: false, error: "reCAPTCHA verification failed. Please refresh and try again." };
+      } else {
+        return { success: false, error: `Failed to send verification code: ${error.message}` };
+      }
     } else {
       return { success: false, error: "An unknown error occurred. Please try again." };
     }
@@ -80,14 +114,14 @@ export const sendOTP = async (
  * Verifies the OTP entered by the user
  */
 export const verifyOTP = async (
-  confirmationResult: any,
+  confirmationResult: ConfirmationResult,
   otp: string
 ): Promise<{ success: boolean; user?: any; error?: string }> => {
   try {
-    console.log("Verifying OTP:", otp);
+    console.log("Verifying OTP code...");
     
     const result = await confirmationResult.confirm(otp);
-    console.log("OTP verified successfully");
+    console.log("OTP verification successful");
     
     return { success: true, user: result.user };
     
@@ -95,10 +129,12 @@ export const verifyOTP = async (
     console.error("Error verifying OTP:", error);
     
     if (error instanceof Error) {
-      if (error.message.includes("Invalid verification code")) {
-        return { success: false, error: "Invalid code. Please enter 123456 to verify." };
+      if (error.message.includes("invalid-verification-code")) {
+        return { success: false, error: "Invalid verification code. Please check and try again." };
+      } else if (error.message.includes("code-expired")) {
+        return { success: false, error: "Verification code has expired. Please request a new code." };
       } else {
-        return { success: false, error: "Failed to verify code. Please try again." };
+        return { success: false, error: `Verification failed: ${error.message}` };
       }
     } else {
       return { success: false, error: "An unknown error occurred. Please try again." };
@@ -107,8 +143,17 @@ export const verifyOTP = async (
 };
 
 /**
- * Clears any existing reCAPTCHA widgets (not used with our approach)
+ * Clears any existing reCAPTCHA widgets
  */
 export const clearRecaptcha = async (): Promise<void> => {
-  // No need to clear anything with our approach
+  if (recaptchaVerifier) {
+    try {
+      await recaptchaVerifier.clear();
+      console.log("reCAPTCHA cleared successfully");
+    } catch (error) {
+      console.error("Error clearing reCAPTCHA:", error);
+    } finally {
+      recaptchaVerifier = null;
+    }
+  }
 };

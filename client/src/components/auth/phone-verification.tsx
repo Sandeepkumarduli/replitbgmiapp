@@ -65,13 +65,30 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({
     setErrorMessage(null);
     
     try {
+      console.log("Attempting to send OTP to:", formattedPhone);
+      
+      // Additional validation for phone number format
+      if (!formattedPhone.match(/^\+[1-9]\d{1,14}$/)) {
+        setErrorMessage("Phone number must be in international format with country code (e.g., +91XXXXXXXXXX)");
+        toast({
+          title: "Invalid phone number",
+          description: "Please enter a valid phone number with country code starting with +",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       if (!recaptchaContainerRef.current) {
+        console.error("reCAPTCHA container not found in DOM");
         throw new Error("reCAPTCHA container not found");
       }
       
+      console.log("Preparing to send OTP with recaptcha container:", "recaptcha-container");
       const result = await sendOTP(formattedPhone, "recaptcha-container");
+      console.log("sendOTP result:", result);
       
       if (result.success && result.confirmationResult) {
+        console.log("OTP sent successfully, confirmation result received");
         setConfirmationResult(result.confirmationResult);
         setStep("verify");
         toast({
@@ -79,19 +96,21 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({
           description: `We've sent a verification code to ${formattedPhone}`,
         });
       } else {
+        console.error("Failed to send OTP:", result.error);
         setErrorMessage(result.error || "Failed to send verification code");
         toast({
-          title: "Error",
-          description: result.error || "Failed to send verification code",
+          title: "SMS verification failed",
+          description: result.error || "Failed to send verification code. Please check your phone number format and try again.",
           variant: "destructive",
         });
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+      console.error("Exception in handleSendOTP:", error);
       setErrorMessage(errorMessage);
       toast({
-        title: "Error",
-        description: errorMessage,
+        title: "Verification error",
+        description: "An error occurred while attempting to send the verification code. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -101,6 +120,18 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({
 
   const handleVerifyOTP = async () => {
     if (!confirmationResult) {
+      setErrorMessage("Verification session expired. Please request a new code.");
+      toast({
+        title: "Session expired",
+        description: "Please request a new verification code by clicking 'Resend Code'",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Validate OTP format
+    if (otp.length !== 6 || !/^\d{6}$/.test(otp)) {
+      setErrorMessage("Please enter a valid 6-digit verification code");
       return;
     }
     
@@ -108,14 +139,27 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({
     setErrorMessage(null);
     
     try {
+      console.log("Verifying OTP:", { otpLength: otp.length });
       const result = await verifyOTP(confirmationResult, otp);
+      console.log("OTP verification result:", result);
       
       if (result.success && result.user) {
+        console.log("OTP verification successful, sending data to server:", {
+          userId,
+          firebaseUid: result.user.uid,
+          phoneNumber: formattedPhone
+        });
+        
         // Send verification result to server
         const serverResponse = await apiRequest("POST", "/api/auth/verify-phone", {
           userId: userId,
           firebaseUid: result.user.uid,
           phoneNumber: formattedPhone
+        });
+        
+        console.log("Server verification response:", { 
+          status: serverResponse.status,
+          ok: serverResponse.ok
         });
         
         // Handle server response
@@ -127,22 +171,25 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({
           onSuccess?.();
         } else {
           const errorData = await serverResponse.json();
+          console.error("Server verification error:", errorData);
           throw new Error(errorData.message || "Failed to verify phone on server");
         }
       } else {
+        console.error("Client-side verification failed:", result.error);
         setErrorMessage(result.error || "Failed to verify code");
         toast({
           title: "Verification failed",
-          description: result.error || "Failed to verify code",
+          description: result.error || "The code you entered is incorrect. Please check and try again.",
           variant: "destructive",
         });
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+      console.error("Exception in handleVerifyOTP:", error);
       setErrorMessage(errorMessage);
       toast({
-        title: "Error",
-        description: errorMessage,
+        title: "Verification error",
+        description: "There was a problem verifying your phone number. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -201,6 +248,27 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({
                 </p>
                 <p className="text-xs text-muted-foreground">
                   • This number will be used for account security only
+                </p>
+              </div>
+              
+              <div className="mt-4 p-3 bg-slate-100 dark:bg-slate-900 rounded-md border border-slate-200 dark:border-slate-800">
+                <h4 className="text-xs font-semibold mb-2">Country Code Examples:</h4>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <p><span className="font-mono font-bold">+91</span> - India</p>
+                    <p><span className="font-mono font-bold">+1</span> - USA/Canada</p>
+                    <p><span className="font-mono font-bold">+44</span> - UK</p>
+                    <p><span className="font-mono font-bold">+971</span> - UAE</p>
+                  </div>
+                  <div>
+                    <p><span className="font-mono font-bold">+61</span> - Australia</p>
+                    <p><span className="font-mono font-bold">+65</span> - Singapore</p>
+                    <p><span className="font-mono font-bold">+966</span> - Saudi Arabia</p>
+                    <p><span className="font-mono font-bold">+94</span> - Sri Lanka</p>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Format example: <span className="font-mono">+91XXXXXXXXXX</span> (no spaces)
                 </p>
               </div>
             </div>

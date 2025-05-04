@@ -33,7 +33,11 @@ const signupSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   email: z.string().email("Please enter a valid email"),
-  phone: z.string().min(10, "Please enter a valid phone number"),
+  phone: z.string()
+    .min(10, "Phone number is too short")
+    .regex(/^\+[1-9]\d{1,14}$/, {
+      message: "Phone number must include country code and start with '+' (e.g., +91XXXXXXXXXX)"
+    }),
   gameId: z.string().min(3, "Game ID must be at least 3 characters"),
   rememberMe: z.boolean().optional(),
 });
@@ -251,15 +255,25 @@ export function AuthForm({ type, role, initialTab = "user" }: AuthFormProps) {
                 name="phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-white">Phone Number</FormLabel>
-                    <FormControl>
+                    <FormLabel className="text-white flex items-center gap-1">
+                      Phone Number
+                      <span className="text-red-500">*</span>
+                      <span className="text-xs text-amber-400 ml-1">(Required for verification)</span>
+                    </FormLabel>
+                    <div className="relative">
                       <Input
-                        className="bg-dark-surface border-gray-700 text-white focus:ring-primary"
-                        placeholder="Enter your phone number"
+                        className="bg-dark-surface border-gray-700 text-white focus:ring-primary pl-12"
+                        placeholder="+91XXXXXXXXXX"
                         autoComplete="off"
                         {...field}
                       />
-                    </FormControl>
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                        <span className="font-mono">+91</span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-amber-400 mt-1">
+                      Must include country code (e.g., +91 for India) - no spaces
+                    </p>
                     <FormMessage />
                   </FormItem>
                 )}

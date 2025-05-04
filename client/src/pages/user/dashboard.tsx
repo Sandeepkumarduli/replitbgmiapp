@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { TournamentList } from "@/components/user/tournament-list-fixed";
 import { TeamCard } from "@/components/ui/team-card";
 import { JoinTeamForm } from "@/components/user/join-team-form";
-import { PhoneVerificationCheck } from "@/components/auth/phone-verification-modal";
+import { PhoneVerificationCheck } from "@/components/auth/phone-verification-check";
 import { 
   Trophy, 
   Users, 

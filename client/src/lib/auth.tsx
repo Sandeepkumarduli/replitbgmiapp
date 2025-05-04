@@ -89,6 +89,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Login successful",
         description: `Welcome back, ${data.username}!`,
       });
+      
+      // Redirect based on role
       if (data.role === "admin") {
         navigate("/admin/dashboard");
       } else {
@@ -136,6 +138,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Registration successful",
         description: `Welcome, ${data.username}!`,
       });
+      
+      // Redirect based on role
       if (data.role === "admin") {
         navigate("/admin/dashboard");
       } else {

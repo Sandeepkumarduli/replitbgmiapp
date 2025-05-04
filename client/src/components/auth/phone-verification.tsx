@@ -1,260 +1,253 @@
-import { useState, useRef, useEffect } from "react";
-import { sendOTP, verifyOTP, clearRecaptcha } from "@/lib/firebase";
+import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { sendOTP, verifyOTP, clearRecaptcha } from "@/lib/firebase";
+import { ConfirmationResult } from "firebase/auth";
+import { RotateCw, ShieldCheck, X } from "lucide-react";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/lib/auth";
 
 interface PhoneVerificationProps {
-  phoneNumber: string;
+  phone: string;
   userId: number;
-  onVerificationComplete: () => void;
-  onCancel: () => void;
+  onSuccess?: () => void;
+  onCancel?: () => void;
 }
 
-export function PhoneVerification({
-  phoneNumber,
+const PhoneVerification: React.FC<PhoneVerificationProps> = ({
+  phone,
   userId,
-  onVerificationComplete,
+  onSuccess,
   onCancel,
-}: PhoneVerificationProps) {
-  const [step, setStep] = useState<"sendOTP" | "verifyOTP">("sendOTP");
-  const [isLoading, setIsLoading] = useState(false);
-  const [otp, setOtp] = useState("");
-  const [confirmationResult, setConfirmationResult] = useState<any>(null);
-  const [error, setError] = useState("");
-  const recaptchaContainerRef = useRef<HTMLDivElement>(null);
+}) => {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const [step, setStep] = useState<"send" | "verify">("send");
+  const [loading, setLoading] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [formattedPhone, setFormattedPhone] = useState(phone);
+  const recaptchaContainerRef = useRef<HTMLDivElement>(null);
 
+  // Format phone number to E.164 format if needed
   useEffect(() => {
-    // Clean up on unmount
+    let formatted = phone;
+    
+    // If the phone doesn't start with +, add the country code
+    if (!formatted.startsWith("+")) {
+      formatted = `+91${formatted}`; // Assuming Indian number by default
+    }
+    
+    setFormattedPhone(formatted);
+    
+    // Cleanup recaptcha on unmount
     return () => {
       clearRecaptcha();
     };
-  }, []);
+  }, [phone]);
 
   const handleSendOTP = async () => {
-    setIsLoading(true);
-    setError("");
-
+    setLoading(true);
+    setErrorMessage(null);
+    
     try {
       if (!recaptchaContainerRef.current) {
-        throw new Error("reCAPTCHA container not ready");
+        throw new Error("reCAPTCHA container not found");
       }
-
-      // Format phone number to E.164 format if it doesn't already have country code
-      let formattedPhone = phoneNumber;
-      if (!phoneNumber.startsWith("+")) {
-        formattedPhone = "+91" + phoneNumber.replace(/^0/, "");
-      }
-
-      const result = await sendOTP(
-        formattedPhone,
-        "recaptcha-container"
-      );
-
-      if (result.success) {
+      
+      const result = await sendOTP(formattedPhone, "recaptcha-container");
+      
+      if (result.success && result.confirmationResult) {
         setConfirmationResult(result.confirmationResult);
-        setStep("verifyOTP");
+        setStep("verify");
         toast({
-          title: "OTP Sent",
-          description: "A verification code has been sent to your phone.",
+          title: "Verification code sent",
+          description: `We've sent a verification code to ${formattedPhone}`,
         });
       } else {
-        setError(result.error || "Failed to send OTP. Please try again.");
+        setErrorMessage(result.error || "Failed to send verification code");
         toast({
           title: "Error",
-          description: result.error || "Failed to send OTP. Please try again.",
+          description: result.error || "Failed to send verification code",
           variant: "destructive",
         });
       }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Unknown error";
-      setError(errorMessage);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+      setErrorMessage(errorMessage);
       toast({
         title: "Error",
         description: errorMessage,
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   const handleVerifyOTP = async () => {
-    if (otp.length < 6) {
-      setError("Please enter a valid 6-digit OTP");
+    if (!confirmationResult) {
       return;
     }
-
-    setIsLoading(true);
-    setError("");
-
+    
+    setLoading(true);
+    setErrorMessage(null);
+    
     try {
       const result = await verifyOTP(confirmationResult, otp);
-
-      if (result.success) {
-        // Call API to update user's verification status
-        const response = await fetch("/api/auth/verify-phone", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            userId,
-            firebaseUid: result.user.uid,
-            phoneNumber,
-          }),
+      
+      if (result.success && result.user) {
+        // Send verification result to server
+        const serverResponse = await apiRequest("POST", "/api/auth/verify-phone", {
+          userId: userId,
+          firebaseUid: result.user.uid,
+          phoneNumber: formattedPhone
         });
-
-        if (response.ok) {
+        
+        // Handle server response
+        if (serverResponse.ok) {
           toast({
-            title: "Phone Verified",
-            description: "Your phone number has been successfully verified.",
+            title: "Phone verified",
+            description: "Your phone number has been verified successfully",
           });
-          onVerificationComplete();
+          onSuccess?.();
         } else {
-          const data = await response.json();
-          throw new Error(data.message || "Failed to confirm verification");
+          const errorData = await serverResponse.json();
+          throw new Error(errorData.message || "Failed to verify phone on server");
         }
       } else {
-        setError(result.error || "Invalid OTP. Please try again.");
+        setErrorMessage(result.error || "Failed to verify code");
         toast({
-          title: "Verification Failed",
-          description: result.error || "Invalid OTP. Please try again.",
+          title: "Verification failed",
+          description: result.error || "Failed to verify code",
           variant: "destructive",
         });
       }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Unknown error";
-      setError(errorMessage);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+      setErrorMessage(errorMessage);
       toast({
         title: "Error",
         description: errorMessage,
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
+  };
+  
+  const handleResendOTP = async () => {
+    setStep("send");
+    setOtp("");
+    setConfirmationResult(null);
+    clearRecaptcha();
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto bg-dark-card border-gray-700">
+    <Card className="w-full max-w-md mx-auto">
       <CardHeader>
-        <CardTitle className="text-2xl font-bold text-white">
+        <CardTitle className="flex items-center">
+          <ShieldCheck className="mr-2 h-5 w-5 text-primary" />
           Phone Verification
         </CardTitle>
-        <CardDescription className="text-gray-400">
-          Verify your phone number to secure your account
+        <CardDescription>
+          {step === "send" 
+            ? "Verify your phone number to secure your account" 
+            : "Enter the verification code sent to your phone"}
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {step === "sendOTP" && (
+        {step === "send" ? (
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="phone" className="text-gray-300">
-                Phone Number
-              </Label>
-              <div className="flex items-center space-x-3">
-                <Input
-                  id="phone"
-                  value={phoneNumber}
-                  disabled
-                  className="bg-dark-input text-white border-gray-700"
-                />
-              </div>
+              <Label htmlFor="phone">Phone Number</Label>
+              <Input
+                id="phone"
+                value={formattedPhone}
+                onChange={(e) => setFormattedPhone(e.target.value)}
+                placeholder="+91XXXXXXXXXX"
+                disabled={loading}
+                className="mb-2"
+              />
+              <p className="text-xs text-muted-foreground">
+                Please ensure your phone number is in the correct format with country code
+              </p>
             </div>
-
-            <div id="recaptcha-container" ref={recaptchaContainerRef} className="mt-4"></div>
-
-            {error && (
-              <div className="text-red-500 flex items-center gap-2">
-                <AlertCircle className="h-4 w-4" />
-                <span>{error}</span>
-              </div>
+            <div id="recaptcha-container" ref={recaptchaContainerRef} className="flex justify-center"></div>
+            {errorMessage && (
+              <div className="text-sm text-destructive mt-2">{errorMessage}</div>
             )}
           </div>
-        )}
-
-        {step === "verifyOTP" && (
+        ) : (
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="otp" className="text-gray-300">
-                Enter OTP
-              </Label>
+              <Label htmlFor="otp">Verification Code</Label>
               <Input
                 id="otp"
                 value={otp}
-                onChange={(e) => setOtp(e.target.value.slice(0, 6))}
+                onChange={(e) => setOtp(e.target.value)}
+                placeholder="Enter 6-digit code"
                 maxLength={6}
-                placeholder="6-digit code"
-                className="bg-dark-input text-white border-gray-700"
+                autoComplete="one-time-code"
+                inputMode="numeric"
+                disabled={loading}
               />
-              <p className="text-sm text-gray-400">
-                A 6-digit code has been sent to your phone.
-              </p>
             </div>
-
-            {error && (
-              <div className="text-red-500 flex items-center gap-2">
-                <AlertCircle className="h-4 w-4" />
-                <span>{error}</span>
-              </div>
+            {errorMessage && (
+              <div className="text-sm text-destructive mt-2">{errorMessage}</div>
             )}
           </div>
         )}
       </CardContent>
-      <CardFooter className="flex justify-between">
-        <Button
-          variant="outline"
-          onClick={onCancel}
-          disabled={isLoading}
-          className="border-gray-700 text-gray-300 hover:bg-gray-800"
-        >
-          Cancel
-        </Button>
-
-        {step === "sendOTP" ? (
-          <Button
-            onClick={handleSendOTP}
-            disabled={isLoading}
-            className="bg-primary hover:bg-primary/90 text-white"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Sending...
-              </>
-            ) : (
-              "Send OTP"
-            )}
-          </Button>
+      <CardFooter className="flex flex-col sm:flex-row gap-2 justify-between">
+        {step === "send" ? (
+          <>
+            <Button 
+              variant="outline"
+              onClick={onCancel}
+              disabled={loading}
+              className="w-full sm:w-auto"
+            >
+              <X className="mr-2 h-4 w-4" />
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSendOTP}
+              disabled={!formattedPhone || loading}
+              className="w-full sm:w-auto"
+            >
+              {loading ? <RotateCw className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
+              Send Verification Code
+            </Button>
+          </>
         ) : (
-          <Button
-            onClick={handleVerifyOTP}
-            disabled={isLoading || otp.length < 6}
-            className="bg-primary hover:bg-primary/90 text-white"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Verifying...
-              </>
-            ) : (
-              "Verify OTP"
-            )}
-          </Button>
+          <>
+            <Button 
+              variant="outline"
+              onClick={handleResendOTP}
+              disabled={loading}
+              className="w-full sm:w-auto"
+            >
+              <RotateCw className="mr-2 h-4 w-4" />
+              Resend Code
+            </Button>
+            <Button 
+              onClick={handleVerifyOTP}
+              disabled={otp.length !== 6 || loading}
+              className="w-full sm:w-auto"
+            >
+              {loading ? <RotateCw className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
+              Verify
+            </Button>
+          </>
         )}
       </CardFooter>
     </Card>
   );
-}
+};
+
+export default PhoneVerification;

@@ -17,11 +17,12 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase only once
-let app;
+let app: ReturnType<typeof initializeApp>;
 try {
   app = initializeApp(firebaseConfig);
 } catch (error) {
   console.error("Firebase initialization error:", error);
+  throw new Error("Firebase initialization failed");
 }
 
 // Get auth instance
@@ -41,9 +42,6 @@ export const sendOTP = async (
   containerId: string
 ): Promise<{ success: boolean; confirmationResult?: ConfirmationResult; error?: string }> => {
   try {
-    if (!app) {
-      throw new Error("Firebase app not initialized");
-    }
 
     // Clear any existing recaptcha
     if (recaptchaVerifier) {

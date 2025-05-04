@@ -1,65 +1,72 @@
-import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { PhoneVerification } from "@/components/auth/phone-verification";
+import React, { useEffect, useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useAuth } from "@/lib/auth";
+import PhoneVerification from "./phone-verification";
 import { useQuery } from "@tanstack/react-query";
+import { getQueryFn } from "@/lib/queryClient";
 
-/**
- * A modal component that checks if the user needs to verify their phone number
- * and displays the phone verification UI if needed
- */
-export function PhoneVerificationCheck() {
-  const { user, isAuthenticated } = useAuth();
-  const [showVerification, setShowVerification] = useState(false);
+interface PhoneVerificationModalProps {
+  open: boolean;
+  onClose: () => void;
+}
 
-  // Check if phone verification is required (only if user is authenticated)
-  const { data: verificationStatus } = useQuery({
+const PhoneVerificationModal: React.FC<PhoneVerificationModalProps> = ({
+  open,
+  onClose,
+}) => {
+  const { user } = useAuth();
+  const [shouldShow, setShouldShow] = useState(false);
+  
+  // Check phone verification status
+  const { data, refetch } = useQuery<{ phoneVerified: boolean; phone: string }>({
     queryKey: ["/api/auth/phone-verification-status"],
-    enabled: !!isAuthenticated,
+    queryFn: getQueryFn({ on401: "returnNull" }),
+    enabled: !!user && open,
   });
-
+  
   useEffect(() => {
-    // If user is authenticated and has a phone number not yet verified
-    if (isAuthenticated && user && verificationStatus) {
-      const needsVerification = user.phoneVerified === false || 
-        (verificationStatus && verificationStatus.phoneVerified === false);
-        
-      setShowVerification(needsVerification);
+    if (user && open) {
+      // If user exists, phone exists, but not verified, show modal
+      setShouldShow(!data?.phoneVerified && !!user?.phone);
+    } else {
+      setShouldShow(false);
     }
-  }, [isAuthenticated, user, verificationStatus]);
-
-  // Handle verification completion
-  const handleVerificationComplete = () => {
-    setShowVerification(false);
+  }, [user, data, open]);
+  
+  const handleVerificationSuccess = () => {
+    refetch();
+    setShouldShow(false);
+    onClose();
   };
-
-  // Temporary placeholder for cancel - in real implementation, we may want to restrict
-  // access to app features until verification is complete
-  const handleCancel = () => {
-    setShowVerification(false);
-  };
-
-  if (!user || !isAuthenticated) {
-    return null;
-  }
 
   return (
-    <Dialog open={showVerification} onOpenChange={setShowVerification}>
-      <DialogContent className="sm:max-w-md bg-dark-card border-gray-700">
+    <Dialog open={shouldShow} onOpenChange={(open) => {
+      if (!open) onClose();
+    }}>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-white">Phone Verification Required</DialogTitle>
-          <DialogDescription className="text-gray-400">
-            For security purposes, we need to verify your phone number before you can access all features.
+          <DialogTitle>Phone Verification Required</DialogTitle>
+          <DialogDescription>
+            For security reasons, please verify your phone number to continue using the platform.
           </DialogDescription>
         </DialogHeader>
         
-        <PhoneVerification
-          phoneNumber={user.phone}
-          userId={user.id}
-          onVerificationComplete={handleVerificationComplete}
-          onCancel={handleCancel}
-        />
+        {user && (
+          <PhoneVerification
+            phone={user.phone}
+            userId={user.id}
+            onSuccess={handleVerificationSuccess}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );
-}
+};
+
+export default PhoneVerificationModal;

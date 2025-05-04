@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 // Use NEXT_PUBLIC_ prefixed env vars for consistency
 const supabaseUrl = import.meta.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -7,8 +7,32 @@ const supabaseAnonKey = import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 console.log('Client supabaseUrl:', supabaseUrl ? 'Available' : 'Missing');
 console.log('Client supabaseAnonKey:', supabaseAnonKey ? 'Available' : 'Missing');
 
+// Interface for our mock Supabase client
+interface MockSupabaseClient {
+  auth: {
+    signInWithOtp: (params: { phone: string }) => Promise<{
+      data: any;
+      error: any;
+    }>;
+    verifyOtp: (params: { phone: string; token: string }) => Promise<{
+      data: any;
+      error: any;
+    }>;
+  };
+  from: (table: string) => {
+    select: (columns?: string) => {
+      eq: (column: string, value: any) => {
+        single: () => Promise<{ data: any; error: any }>;
+      };
+    };
+    update: (data: any) => {
+      eq: (column: string, value: any) => Promise<{ error: any }>;
+    };
+  };
+}
+
 // Create a dummy client for development with DEV mode capabilities
-const dummyClient = {
+const dummyClient: MockSupabaseClient = {
   auth: {
     signInWithOtp: async ({ phone }: { phone: string }) => {
       console.log(`DEV MODE: Sending mock OTP to ${phone}`);
@@ -22,7 +46,7 @@ const dummyClient = {
           error: null 
         };
       }
-      return { error: { message: 'Development mode - Phone number required' } };
+      return { data: null, error: { message: 'Development mode - Phone number required' } };
     },
     
     verifyOtp: async ({ phone, token }: { phone: string, token: string }) => {
@@ -54,17 +78,17 @@ const dummyClient = {
   from: () => ({
     select: () => ({
       eq: () => ({
-        single: () => ({ data: null, error: null }),
+        single: () => Promise.resolve({ data: null, error: null }),
       }),
     }),
     update: () => ({
-      eq: () => ({ error: null }),
+      eq: () => Promise.resolve({ error: null }),
     }),
   }),
 };
 
 // Export the appropriate client
-let supabase;
+let supabase: SupabaseClient | MockSupabaseClient;
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error('Missing Supabase credentials. Please check environment variables.');

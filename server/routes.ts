@@ -74,6 +74,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register Supabase phone authentication routes
   registerSupabasePhoneAuthRoutes(app);
   
+  // Add diagnostic routes for debugging
+  app.get('/api/diagnostic/database', async (req, res) => {
+    try {
+      // @ts-ignore - checkDatabaseStatus may not be in IStorage interface
+      const dbStatus = await storage.checkDatabaseStatus();
+      
+      // Get supabase status from the imported module
+      const supabaseModule = await import('./supabase');
+      
+      res.json({
+        status: dbStatus?.status || 'unknown',
+        userCount: dbStatus?.userCount || 0,
+        tables: dbStatus?.tables || [],
+        supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'configured' : 'missing',
+        supabaseStatus: supabaseModule.supabase ? 'available' : 'unavailable',
+        env: process.env.NODE_ENV
+      });
+    } catch (error) {
+      console.error('Error in database diagnostic route:', error);
+      res.status(500).json({ 
+        error: 'Database diagnostic check failed',
+        message: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // Development-only route to create a test user if database is empty
+  if (process.env.NODE_ENV === 'development') {
+    app.post('/api/diagnostic/create-test-user', async (req, res) => {
+      try {
+        // Check if we already have users
+        const allUsers = await storage.getAllUsers();
+        
+        if (allUsers.length > 0) {
+          return res.json({
+            message: 'Users already exist in the database',
+            userCount: allUsers.length,
+            users: allUsers.map(u => ({ id: u.id, username: u.username, role: u.role, phone: u.phone }))
+          });
+        }
+        
+        // Create an admin user
+        const hashedPassword = await hashPassword('admin123');
+        const adminUser = await storage.createUser({
+          username: 'admin',
+          password: hashedPassword,
+          email: 'admin@bgmitournaments.com',
+          role: 'admin',
+          phone: '+919876543210',
+          phoneVerified: true,
+          gameId: 'ADMIN001'
+        });
+        
+        // Create a regular user
+        const hashedUserPassword = await hashPassword('user123');
+        const regularUser = await storage.createUser({
+          username: 'user',
+          password: hashedUserPassword,
+          email: 'user@bgmitournaments.com',
+          role: 'user',
+          phone: '+919876543211',
+          phoneVerified: true,
+          gameId: 'USER001'
+        });
+        
+        res.json({
+          message: 'Test users created successfully',
+          users: [
+            { id: adminUser.id, username: adminUser.username, role: adminUser.role, phone: adminUser.phone },
+            { id: regularUser.id, username: regularUser.username, role: regularUser.role, phone: regularUser.phone }
+          ]
+        });
+      } catch (error) {
+        console.error('Error creating test users:', error);
+        res.status(500).json({
+          error: 'Failed to create test users',
+          message: error instanceof Error ? error.message : String(error)
+        });
+      }
+    });
+  }
+  
   // Enhanced Admin Check middleware for high-security routes
   const isEnhancedAdmin = async (req: Request, res: Response, next: NextFunction) => {
     // First check if user is an admin

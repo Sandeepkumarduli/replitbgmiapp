@@ -23,6 +23,9 @@ export interface IStorage {
   deleteUser(id: number): Promise<boolean>; // For admin user management
   getAllUsers(): Promise<User[]>; // For admin user management
   
+  // Diagnostic function to check database status
+  checkDatabaseStatus?(): Promise<{ status: string, userCount: number, tables: string[] }>;
+  
   // Team operations
   getTeam(id: number): Promise<Team | undefined>;
   getTeamByName(name: string): Promise<Team | undefined>;

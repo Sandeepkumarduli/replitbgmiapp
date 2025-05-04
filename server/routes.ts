@@ -220,6 +220,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         username: user.username, 
         email: user.email,
         phone: user.phone,
+        phoneVerified: user.phoneVerified,
         gameId: user.gameId,
         role: user.role
       });

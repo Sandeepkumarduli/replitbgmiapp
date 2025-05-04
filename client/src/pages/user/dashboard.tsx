@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { TournamentList } from "@/components/user/tournament-list-fixed";
 import { TeamCard } from "@/components/ui/team-card";
 import { JoinTeamForm } from "@/components/user/join-team-form";
+import { PhoneVerificationCheck } from "@/components/auth/phone-verification-modal";
 import { 
   Trophy, 
   Users, 
@@ -128,6 +129,9 @@ export default function UserDashboard() {
 
   return (
     <div className="min-h-screen bg-dark pt-20 pb-10 px-4 sm:px-6 lg:px-8">
+      {/* Include phone verification modal */}
+      <PhoneVerificationCheck />
+      
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6">
           <div>

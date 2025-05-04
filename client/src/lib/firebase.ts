@@ -1,102 +1,134 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, PhoneAuthProvider, signInWithPhoneNumber, RecaptchaVerifier } from "firebase/auth";
+import { 
+  getAuth, 
+  RecaptchaVerifier, 
+  signInWithPhoneNumber, 
+  PhoneAuthProvider, 
+  ConfirmationResult
+} from "firebase/auth";
 
-// Initialize Firebase with environment variables
+// Firebase configuration
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
   storageBucket: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.appspot.com`,
-  messagingSenderId: "832946555126", // From your Firebase config
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase only once
+let app;
+try {
+  app = initializeApp(firebaseConfig);
+} catch (error) {
+  console.error("Firebase initialization error:", error);
+}
+
+// Get auth instance
 const auth = getAuth(app);
 
-// Phone authentication functions
+// Keep track of recaptcha instance
 let recaptchaVerifier: RecaptchaVerifier | null = null;
 
 /**
- * Initialize the reCAPTCHA verifier
- * @param containerId DOM element ID where the reCAPTCHA should be rendered
+ * Sends OTP to the provided phone number
+ * @param phoneNumber E.164 formatted phone number
+ * @param containerId ID of container element for reCAPTCHA
+ * @returns Object with success flag and confirmation result or error message
  */
-export function initializeRecaptcha(containerId: string) {
-  if (!recaptchaVerifier) {
+export const sendOTP = async (
+  phoneNumber: string,
+  containerId: string
+): Promise<{ success: boolean; confirmationResult?: ConfirmationResult; error?: string }> => {
+  try {
+    if (!app) {
+      throw new Error("Firebase app not initialized");
+    }
+
+    // Clear any existing recaptcha
+    if (recaptchaVerifier) {
+      await recaptchaVerifier.clear();
+      recaptchaVerifier = null;
+    }
+
+    // Create new reCAPTCHA verifier
     recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
       size: "normal",
       callback: () => {
-        // reCAPTCHA solved, allow sending OTP
+        // reCAPTCHA solved, allow signInWithPhoneNumber.
       },
       "expired-callback": () => {
-        // Reset reCAPTCHA
-        recaptchaVerifier = null;
-      }
+        // Response expired. Ask user to solve reCAPTCHA again.
+        throw new Error("reCAPTCHA expired. Please refresh and try again.");
+      },
     });
-  }
 
-  return recaptchaVerifier;
-}
+    // Render the reCAPTCHA
+    await recaptchaVerifier.render();
 
-/**
- * Send OTP to the provided phone number
- * @param phoneNumber Phone number in E.164 format (e.g., +919876543210)
- * @param recaptchaContainer DOM element ID where reCAPTCHA should be rendered
- * @returns confirmationResult object to use for code verification
- */
-export async function sendOTP(phoneNumber: string, recaptchaContainer: string) {
-  try {
-    const verifier = initializeRecaptcha(recaptchaContainer);
-    const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, verifier);
+    // Send verification code
+    const confirmationResult = await signInWithPhoneNumber(
+      auth,
+      phoneNumber,
+      recaptchaVerifier
+    );
+
     return { success: true, confirmationResult };
   } catch (error) {
-    console.error("Error sending OTP:", error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : "Unknown error sending OTP" 
-    };
-  }
-}
-
-/**
- * Verify the OTP code entered by the user
- * @param confirmationResult The confirmationResult from sendOTP function
- * @param code The OTP code entered by user
- * @returns Object containing verification result
- */
-export async function verifyOTP(confirmationResult: any, code: string) {
-  try {
-    const result = await confirmationResult.confirm(code);
-    const user = result.user;
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error("Error sending OTP:", errorMessage);
     
-    // Return the Firebase user object and token
-    const token = await user.getIdToken();
-    return { 
-      success: true, 
-      user: {
-        uid: user.uid,
-        phoneNumber: user.phoneNumber,
-      },
-      token 
-    };
-  } catch (error) {
-    console.error("Error verifying OTP:", error);
+    // Clean up on error
+    if (recaptchaVerifier) {
+      await recaptchaVerifier.clear();
+      recaptchaVerifier = null;
+    }
+    
     return { 
       success: false, 
-      error: error instanceof Error ? error.message : "Invalid verification code" 
+      error: errorMessage.includes("Firebase") 
+        ? "Could not send verification code. Please check your phone number and try again."
+        : errorMessage
     };
   }
-}
+};
 
 /**
- * Clear reCAPTCHA when no longer needed
+ * Verifies the OTP entered by the user
+ * @param confirmationResult The confirmation result returned from sendOTP
+ * @param otp The OTP entered by the user
+ * @returns Object with success flag and user or error message
  */
-export function clearRecaptcha() {
-  if (recaptchaVerifier) {
-    recaptchaVerifier.clear();
-    recaptchaVerifier = null;
+export const verifyOTP = async (
+  confirmationResult: ConfirmationResult,
+  otp: string
+): Promise<{ success: boolean; user?: any; error?: string }> => {
+  try {
+    const result = await confirmationResult.confirm(otp);
+    return { success: true, user: result.user };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error("Error verifying OTP:", errorMessage);
+    return { 
+      success: false, 
+      error: errorMessage.includes("auth/invalid-verification-code") 
+        ? "Invalid verification code. Please try again." 
+        : "Verification failed. Please try again."
+    };
   }
-}
+};
 
-export { auth };
+/**
+ * Clears any existing reCAPTCHA widgets
+ */
+export const clearRecaptcha = async (): Promise<void> => {
+  if (recaptchaVerifier) {
+    try {
+      await recaptchaVerifier.clear();
+    } catch (error) {
+      console.error("Error clearing reCAPTCHA:", error);
+    } finally {
+      recaptchaVerifier = null;
+    }
+  }
+};

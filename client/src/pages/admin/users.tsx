@@ -146,7 +146,7 @@ export default function AdminUsers() {
         return await res.json();
       } catch (error) {
         console.error("Error deleting user:", error);
-        throw error;
+        throw new Error(error instanceof Error ? error.message : "Failed to delete user");
       }
     },
     onSuccess: () => {
@@ -278,6 +278,7 @@ export default function AdminUsers() {
                   <TableHead className="text-gray-400">Username</TableHead>
                   <TableHead className="text-gray-400">Email</TableHead>
                   <TableHead className="text-gray-400">Phone</TableHead>
+                  <TableHead className="text-gray-400">Verified</TableHead>
                   <TableHead className="text-gray-400">Role</TableHead>
                   <TableHead className="text-gray-400 text-right">Actions</TableHead>
                 </TableRow>
@@ -300,6 +301,17 @@ export default function AdminUsers() {
                     </TableCell>
                     <TableCell className="text-gray-300">{user.email}</TableCell>
                     <TableCell className="text-gray-300">{user.phone || "N/A"}</TableCell>
+                    <TableCell className="text-gray-300">
+                      {user.phoneVerified ? (
+                        <span className="px-2 py-1 bg-green-500/20 text-green-500 rounded-full text-xs">
+                          Verified
+                        </span>
+                      ) : (
+                        <span className="px-2 py-1 bg-red-500/20 text-red-500 rounded-full text-xs">
+                          Unverified
+                        </span>
+                      )}
+                    </TableCell>
                     <TableCell className="text-gray-300">
                       {user.role === "admin" ? (
                         <span className="px-2 py-1 bg-primary/20 text-primary rounded-full text-xs">
@@ -349,7 +361,7 @@ export default function AdminUsers() {
                 ))}
                 {users.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-gray-400">
+                    <TableCell colSpan={6} className="text-center py-8 text-gray-400">
                       No users found. Add new users to populate the system.
                     </TableCell>
                   </TableRow>

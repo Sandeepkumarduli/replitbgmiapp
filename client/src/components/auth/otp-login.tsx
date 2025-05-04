@@ -1,66 +1,64 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { sendOTP, verifyOTP, updateVerifiedPhone } from "@/lib/supabase-auth";
-import { RotateCw, ShieldCheck } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { sendOTP, verifyOTP } from "@/lib/supabase-auth";
+import { RotateCw, ShieldCheck, Phone } from "lucide-react";
+import { useAuth } from "@/lib/auth";
 import { apiRequest } from "@/lib/queryClient";
 
-interface PhoneVerificationProps {
-  phone: string;
-  userId: number;
-  onSuccess?: () => void;
-}
-
-const PhoneVerification: React.FC<PhoneVerificationProps> = ({
-  phone,
-  userId,
-  onSuccess
-}) => {
+const OtpLogin: React.FC = () => {
   const { toast } = useToast();
-  const [step, setStep] = useState<"send" | "verify">("send");
-  const [loading, setLoading] = useState(false);
+  const { refreshUser } = useAuth();
+  const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
+  const [step, setStep] = useState<"phone" | "otp">("phone");
+  const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [formattedPhone, setFormattedPhone] = useState(phone);
   
-  // Initialize phone number format
-  useEffect(() => {
-    let formatted = phone || "";
-    
-    // Add +91 prefix if needed
-    if (!formatted.startsWith("+")) {
-      formatted = `+91${formatted.replace(/^0+/, '')}`;
-    }
-    
-    setFormattedPhone(formatted);
-    console.log("Formatted phone number:", formatted);
-  }, [phone]);
-
-  const handleSendOTP = async () => {
+  const handleSendOtp = async () => {
     setLoading(true);
     setErrorMessage(null);
     
     try {
-      console.log("Attempting to send OTP via Supabase to:", formattedPhone);
+      // Format phone number
+      let formattedPhone = phone;
+      if (!formattedPhone.startsWith("+")) {
+        formattedPhone = `+91${formattedPhone.replace(/^0+/, '')}`;
+      }
       
+      // Send OTP via Supabase
       const result = await sendOTP(formattedPhone);
-      console.log("Supabase sendOTP result:", result);
       
       if (result.success) {
-        setStep("verify");
+        setStep("otp");
         toast({
           title: "Verification code sent",
           description: `We've sent a verification code to ${formattedPhone}`,
         });
       } else {
-        setErrorMessage(result.error || "Failed to send verification code");
-        toast({
-          title: "SMS verification failed",
-          description: result.error || "Failed to send verification code",
-          variant: "destructive",
-        });
+        // Check if it's a development mode message
+        if (result.error?.includes('Development mode')) {
+          toast({
+            title: "Development Mode",
+            description: "OTP functionality is disabled in development mode. Please setup Supabase credentials.",
+            variant: "default",
+          });
+          
+          // For development, allow moving to OTP step without real verification
+          if (import.meta.env.DEV) {
+            console.warn("DEV MODE: Allowing OTP step without real verification");
+            setStep("otp");
+          }
+        } else {
+          setErrorMessage(result.error || "Failed to send verification code");
+          toast({
+            title: "SMS verification failed",
+            description: result.error || "Failed to send verification code",
+            variant: "destructive",
+          });
+        }
       }
     } catch (error) {
       console.error("Error sending OTP:", error);
@@ -76,27 +74,43 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({
       setLoading(false);
     }
   };
-
-  const handleVerifyOTP = async () => {
+  
+  const handleVerifyOtp = async () => {
     setLoading(true);
     setErrorMessage(null);
     
     try {
-      // Real verification with Supabase
+      // Format phone number
+      let formattedPhone = phone;
+      if (!formattedPhone.startsWith("+")) {
+        formattedPhone = `+91${formattedPhone.replace(/^0+/, '')}`;
+      }
+      
+      // Verify OTP via Supabase
       const result = await verifyOTP(formattedPhone, otp);
       
       if (result.success) {
-        // Update the user's phone verification status in the database
-        const updateResult = await updateVerifiedPhone(userId, formattedPhone);
+        // Now login with the phone and OTP
+        const loginResult = await apiRequest("POST", "/api/auth/phone-login", {
+          phone: formattedPhone,
+          otp
+        });
         
-        if (updateResult.success) {
+        if (loginResult.ok) {
+          const userData = await loginResult.json();
           toast({
-            title: "Phone verified",
-            description: "Your phone number has been verified successfully",
+            title: "Login successful",
+            description: `Welcome back, ${userData.username}!`,
           });
-          onSuccess?.();
+          
+          // Refresh the user data in the auth context
+          refreshUser();
+          
+          // Redirect to home page
+          window.location.href = "/";
         } else {
-          throw new Error(updateResult.error || "Failed to update phone verification status");
+          const errorData = await loginResult.json();
+          throw new Error(errorData.message || "Login failed");
         }
       } else {
         setErrorMessage(result.error || "Failed to verify code");
@@ -111,8 +125,8 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({
       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
       setErrorMessage(errorMessage);
       toast({
-        title: "Verification error",
-        description: "There was a problem verifying your phone number. Please try again.",
+        title: "Login failed",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -120,32 +134,32 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({
     }
   };
   
-  const handleResendOTP = async () => {
-    setStep("send");
+  const handleResendOtp = () => {
+    setStep("phone");
     setOtp("");
     setErrorMessage(null);
   };
-
+  
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
         <CardTitle className="flex items-center">
-          <ShieldCheck className="mr-2 h-5 w-5 text-primary" />
-          Phone Verification
+          <Phone className="mr-2 h-5 w-5 text-primary" />
+          Phone Number Login
         </CardTitle>
         <CardDescription>
-          {step === "send" 
-            ? "Enter your phone number to receive verification code" 
+          {step === "phone" 
+            ? "Enter your phone number to receive a login code" 
             : "Enter the verification code sent to your phone"}
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {step === "send" ? (
+        {step === "phone" ? (
           <div className="space-y-4">
             <div className="relative">
               <Input
-                value={formattedPhone}
-                onChange={(e) => setFormattedPhone(e.target.value)}
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
                 placeholder="+91XXXXXXXXXX"
                 disabled={loading}
                 className="pl-12 text-base"
@@ -160,12 +174,18 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({
                 <p>{errorMessage}</p>
               </div>
             )}
+            
+            <div className="bg-blue-50 text-blue-800 p-3 rounded-md flex items-start">
+              <p className="text-sm">
+                <strong>Note:</strong> You must use the same phone number that you registered with.
+              </p>
+            </div>
           </div>
         ) : (
           <div className="space-y-4">
             <div className="border-2 border-primary/20 bg-primary/5 rounded-md p-4 mb-3">
               <p className="text-sm mb-1">Verification code sent to:</p>
-              <p className="font-medium">{formattedPhone}</p>
+              <p className="font-medium">{phone}</p>
             </div>
             
             <Input
@@ -191,10 +211,10 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({
         )}
       </CardContent>
       <CardFooter className="flex flex-col sm:flex-row gap-2 sm:justify-end">
-        {step === "send" ? (
+        {step === "phone" ? (
           <Button 
-            onClick={handleSendOTP}
-            disabled={!formattedPhone || loading}
+            onClick={handleSendOtp}
+            disabled={!phone || loading}
             className="w-full"
           >
             {loading ? <RotateCw className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
@@ -204,7 +224,7 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({
           <div className="flex w-full flex-col sm:flex-row gap-2">
             <Button 
               variant="outline"
-              onClick={handleResendOTP}
+              onClick={handleResendOtp}
               disabled={loading}
               className="w-full"
             >
@@ -212,12 +232,12 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({
               Resend Code
             </Button>
             <Button 
-              onClick={handleVerifyOTP}
+              onClick={handleVerifyOtp}
               disabled={otp.length !== 6 || loading}
               className="w-full"
             >
               {loading ? <RotateCw className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
-              Verify
+              Login
             </Button>
           </div>
         )}
@@ -226,4 +246,4 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({
   );
 };
 
-export default PhoneVerification;
+export default OtpLogin;

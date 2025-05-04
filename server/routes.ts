@@ -1393,20 +1393,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Cannot delete system administrator account" });
       }
 
-      // Delete the user and all associated data
-      await storage.deleteUser(userId);
-      
-      // Log this security-sensitive action
-      console.log('Admin deleted user', { 
-        deletedUserId: userId,
-        deletedUsername: user.username 
-      });
-      
-      res.status(200).json({ 
-        message: "User deleted successfully", 
-        success: true,
-        userId: userId 
-      });
+      try {
+        // First, delete any teams owned by this user
+        const userTeams = await storage.getTeamsByOwnerId(userId);
+        for (const team of userTeams) {
+          // Delete team members first
+          const members = await storage.getTeamMembers(team.id);
+          for (const member of members) {
+            await storage.deleteTeamMember(member.id);
+          }
+          
+          // Then delete the team
+          await storage.deleteTeam(team.id);
+        }
+        
+        // Delete any user-specific notifications or notification_reads
+        await storage.deleteAllUserNotifications(userId);
+        
+        // Finally, delete the user
+        const deleted = await storage.deleteUser(userId);
+        
+        if (!deleted) {
+          return res.status(400).json({ message: "Failed to delete user" });
+        }
+        
+        // Log this security-sensitive action
+        console.log('Admin deleted user', { 
+          deletedUserId: userId,
+          deletedUsername: user.username 
+        });
+        
+        return res.status(200).json({ 
+          message: "User deleted successfully", 
+          success: true,
+          userId: userId 
+        });
+      } catch (deleteError) {
+        console.error('Error deleting user data:', deleteError);
+        throw new Error(`Failed to delete user data: ${deleteError instanceof Error ? deleteError.message : String(deleteError)}`);
+      }
     } catch (error) {
       console.error('Error in user deletion process:', error);
       res.status(500).json({ 

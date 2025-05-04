@@ -45,6 +45,7 @@ interface AuthContextType {
   register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (data: ProfileUpdateData) => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 // Create context
@@ -238,6 +239,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateProfile = async (data: ProfileUpdateData) => {
     await updateProfileMutation.mutateAsync(data);
   };
+  
+  const refreshUser = async () => {
+    const result = await refetch();
+    if (result.data) {
+      setUser(result.data as User);
+    }
+  };
 
   const isAuthenticated = !!user;
   const isAdmin = isAuthenticated && user?.role === "admin";
@@ -253,6 +261,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         register,
         logout,
         updateProfile,
+        refreshUser,
       }}
     >
       {children}

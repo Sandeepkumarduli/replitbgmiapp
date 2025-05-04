@@ -59,6 +59,16 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
+  
+  async getUserByPhone(phone: string): Promise<User | undefined> {
+    try {
+      const [user] = await db.select().from(users).where(eq(users.phone, phone));
+      return user;
+    } catch (error) {
+      console.error(`Error fetching user with phone ${phone}:`, error);
+      throw error;
+    }
+  }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     try {

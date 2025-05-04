@@ -68,7 +68,7 @@ export function TournamentList({
         await refetchTournaments();
       } catch (error) {
         // Silently catch the error to avoid unhandled rejection
-        console.log("Refetch cancelled or failed silently");
+        // This is expected behavior when component unmounts during request
       }
     };
     

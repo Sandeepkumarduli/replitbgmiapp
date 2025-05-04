@@ -35,7 +35,6 @@ export function NotificationDropdown() {
     wsRef.current = socket;
     
     socket.onopen = () => {
-      console.log('WebSocket connected for notifications');
       // Authenticate the WebSocket connection with user ID
       if (user.id) {
         socket.send(JSON.stringify({
@@ -50,8 +49,6 @@ export function NotificationDropdown() {
         const data = JSON.parse(event.data);
         
         if (data.type === 'notification_update') {
-          console.log('Received notification update:', data);
-          
           // If this is a hide action from another device of the same user, save to localStorage
           if (data.isHideAction && user) {
             localStorage.setItem(`notifications_cleared_${user.id}`, 'true');
@@ -59,7 +56,6 @@ export function NotificationDropdown() {
           }
           // If this is a regular notification update with new notifications
           else if (data.count > 0 && user && !data.isHideAction) {
-            console.log(`Received new notifications for user ${user.id}, count: ${data.count}`);
             // Remove the localStorage flag so new notifications can be seen
             localStorage.removeItem(`notifications_cleared_${user.id}`);
             setHiddenNotifications(false);
@@ -70,7 +66,6 @@ export function NotificationDropdown() {
           
           // If we have any notifications, make sure to show them by clearing the hidden state
           if (data.count > 0 && !data.isHideAction) {
-            console.log(`Showing notifications - count ${data.count} (from WebSocket)`);
             localStorage.removeItem(`notifications_cleared_${user.id}`);
             setHiddenNotifications(false);
           }
@@ -89,7 +84,7 @@ export function NotificationDropdown() {
     };
     
     socket.onclose = () => {
-      console.log('WebSocket connection closed');
+      // Connection closed, will reconnect when component remounts
     };
     
     return () => {
@@ -126,16 +121,18 @@ export function NotificationDropdown() {
     enabled: (isOpen || !!user) && !shouldSkipNotifications(),
     staleTime: 60000, // Keep data fresh for 60 seconds
     initialData: [], // Start with empty array
-    onSuccess: (data) => {
-      // If we get notifications and there's a count, make sure hiddenNotifications is false
-      if (data.length > 0 && user) {
-        const wasCleared = localStorage.getItem(`notifications_cleared_${user.id}`) === 'true';
-        if (!wasCleared) {
-          setHiddenNotifications(false);
-        }
+  });
+  
+  // Process notifications data whenever it changes
+  useEffect(() => {
+    // If we get notifications and there's a count, make sure hiddenNotifications is false
+    if (notifications && notifications.length > 0 && user) {
+      const wasCleared = localStorage.getItem(`notifications_cleared_${user.id}`) === 'true';
+      if (!wasCleared) {
+        setHiddenNotifications(false);
       }
     }
-  });
+  }, [notifications, user]);
 
   // Mutation to mark all notifications as read
   const markAllAsRead = useMutation({

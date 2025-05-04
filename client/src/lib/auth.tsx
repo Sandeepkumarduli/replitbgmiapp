@@ -10,6 +10,7 @@ interface User {
   username: string;
   email: string;
   phone: string;
+  phoneVerified?: boolean;
   gameId: string;
   role: string;
 }

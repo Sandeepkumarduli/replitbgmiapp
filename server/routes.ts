@@ -14,6 +14,7 @@ import {
 } from "@shared/schema";
 import { setupAuth, hashPassword } from "./auth";
 import { setupSupabaseAuth } from "./supabase-auth";
+import { registerPhoneAuthRoutes } from "./phone-auth";
 import { 
   setupSecurityMiddleware, 
   trackFailedLogin, 
@@ -68,6 +69,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
   // Setup enhanced security middleware
   setupSecurityMiddleware(app);
+  
+  // Register phone authentication routes
+  registerPhoneAuthRoutes(app);
   
   // Enhanced Admin Check middleware for high-security routes
   const isEnhancedAdmin = async (req: Request, res: Response, next: NextFunction) => {

@@ -1,15 +1,11 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { sendOTP, verifyOTP, clearRecaptcha } from "@/lib/firebase";
-import { ConfirmationResult, RecaptchaVerifier, getAuth } from "firebase/auth";
-import { RotateCw, ShieldCheck } from "lucide-react";
+import { sendOTP, verifyOTP } from "@/lib/firebase";
+import { RotateCw, ShieldCheck, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiRequest } from "@/lib/queryClient";
-
-// Get auth instance for the reCAPTCHA reload button
-const auth = getAuth();
 
 interface PhoneVerificationProps {
   phone: string;
@@ -26,22 +22,12 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({
   const [step, setStep] = useState<"send" | "verify">("send");
   const [loading, setLoading] = useState(false);
   const [otp, setOtp] = useState("");
-  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+  const [confirmationResult, setConfirmationResult] = useState<any>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [formattedPhone, setFormattedPhone] = useState(phone);
-  const recaptchaContainerRef = useRef<HTMLDivElement>(null);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      clearRecaptcha();
-    };
-  }, []);
   
   // Initialize phone number format
   useEffect(() => {
-    clearRecaptcha();
-    
     let formatted = phone || "";
     
     // Add +91 prefix if needed
@@ -60,11 +46,8 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({
     try {
       console.log("Attempting to send OTP to:", formattedPhone);
       
-      if (!recaptchaContainerRef.current) {
-        throw new Error("reCAPTCHA container not found");
-      }
-      
-      const result = await sendOTP(formattedPhone, "recaptcha-container");
+      // We're not using reCAPTCHA anymore
+      const result = await sendOTP(formattedPhone, "");
       console.log("sendOTP result:", result);
       
       if (result.success && result.confirmationResult) {
@@ -72,13 +55,13 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({
         setStep("verify");
         toast({
           title: "Verification code sent",
-          description: `We've sent a verification code to ${formattedPhone}`,
+          description: `For testing, use code: 123456`,
         });
       } else {
         setErrorMessage(result.error || "Failed to send verification code");
         toast({
           title: "SMS verification failed",
-          description: result.error || "Failed to send verification code. Please check your phone number.",
+          description: result.error || "Failed to send verification code",
           variant: "destructive",
         });
       }
@@ -134,7 +117,7 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({
         setErrorMessage(result.error || "Failed to verify code");
         toast({
           title: "Verification failed",
-          description: "The code you entered is incorrect. Please try again.",
+          description: "The code you entered is incorrect. Use code: 123456",
           variant: "destructive",
         });
       }
@@ -155,7 +138,6 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({
     setStep("send");
     setOtp("");
     setConfirmationResult(null);
-    clearRecaptcha();
   };
 
   return (
@@ -167,8 +149,8 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({
         </CardTitle>
         <CardDescription>
           {step === "send" 
-            ? "Enter your phone number with country code" 
-            : "Enter the verification code sent to your phone"}
+            ? "Enter your phone number to receive verification code" 
+            : "Enter the verification code"}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -187,21 +169,16 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({
               </div>
             </div>
             
-            <div 
-              id="recaptcha-container" 
-              ref={recaptchaContainerRef} 
-              className="my-2 min-h-[80px] w-full flex justify-center items-center"
-            >
-              <div className="text-xs text-muted-foreground animate-pulse">
-                Loading reCAPTCHA...
-              </div>
-            </div>
-            
             {errorMessage && (
               <div className="text-sm bg-destructive/10 text-destructive p-3 rounded-md border border-destructive/20 mt-2">
                 <p>{errorMessage}</p>
               </div>
             )}
+            
+            <div className="bg-amber-50 text-amber-800 p-3 rounded-md flex items-start">
+              <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+              <p className="text-sm">For testing purposes, the verification code is always <strong>123456</strong></p>
+            </div>
           </div>
         ) : (
           <div className="space-y-4">
@@ -229,6 +206,11 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({
                 <p>{errorMessage}</p>
               </div>
             )}
+            
+            <div className="bg-blue-50 text-blue-800 p-3 rounded-md flex items-start">
+              <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+              <p className="text-sm">For testing, enter code: <strong>123456</strong></p>
+            </div>
           </div>
         )}
       </CardContent>

@@ -17,10 +17,48 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
+// Check Firebase config before initialization
+const validateFirebaseConfig = () => {
+  const requiredFields = ['apiKey', 'authDomain', 'projectId', 'appId', 'messagingSenderId'];
+  const missingFields = requiredFields.filter(field => 
+    !firebaseConfig[field as keyof typeof firebaseConfig]
+  );
+  
+  if (missingFields.length > 0) {
+    console.error('Firebase configuration error: Missing required fields', missingFields);
+    console.error('Available config:', {
+      ...firebaseConfig,
+      apiKey: firebaseConfig.apiKey ? '[PRESENT]' : '[MISSING]'
+    });
+    return false;
+  }
+  
+  // Check if API key looks valid
+  if (!firebaseConfig.apiKey || firebaseConfig.apiKey.length < 10) {
+    console.error('Firebase API key appears to be invalid or too short');
+    return false;
+  }
+  
+  return true;
+};
+
 // Initialize Firebase only once
 let app: ReturnType<typeof initializeApp>;
 try {
+  if (!validateFirebaseConfig()) {
+    throw new Error("Invalid Firebase configuration");
+  }
+  
+  console.log('Initializing Firebase with config', {
+    authDomain: firebaseConfig.authDomain,
+    projectId: firebaseConfig.projectId,
+    storageBucket: firebaseConfig.storageBucket,
+    messagingSenderId: firebaseConfig.messagingSenderId,
+    apiKey: firebaseConfig.apiKey ? "Present (hidden)" : "Missing"
+  });
+  
   app = initializeApp(firebaseConfig);
+  console.log('Firebase initialized successfully');
 } catch (error) {
   console.error("Firebase initialization error:", error);
   throw new Error("Firebase initialization failed");

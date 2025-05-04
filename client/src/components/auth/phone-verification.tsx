@@ -4,11 +4,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { sendOTP, verifyOTP, clearRecaptcha } from "@/lib/firebase";
-import { ConfirmationResult } from "firebase/auth";
+import { ConfirmationResult, RecaptchaVerifier, getAuth } from "firebase/auth";
 import { RotateCw, ShieldCheck, X } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/lib/auth";
+
+// Get auth instance for the reCAPTCHA reload button
+const auth = getAuth();
 
 interface PhoneVerificationProps {
   phone: string;
@@ -292,6 +295,40 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({
                   <li>Disable any ad blockers temporarily</li>
                   <li>Try refreshing the page</li>
                 </ul>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="text-xs mt-2 h-auto py-1"
+                  onClick={() => {
+                    console.log("Manual reCAPTCHA reload requested");
+                    clearRecaptcha();
+                    setTimeout(() => {
+                      const container = document.getElementById('recaptcha-container');
+                      if (container) {
+                        container.innerHTML = '<div class="text-xs text-muted-foreground animate-pulse">Reloading reCAPTCHA...</div>';
+                      }
+                      
+                      // Create a dummy RecaptchaVerifier as a fallback
+                      try {
+                        new RecaptchaVerifier(auth, 'recaptcha-container', {
+                          size: "normal",
+                          callback: () => console.log("reCAPTCHA callback triggered"),
+                          "expired-callback": () => console.log("reCAPTCHA expired"),
+                          "error-callback": (err: Error) => console.error("reCAPTCHA error:", err)
+                        }).render();
+                        console.log("Manual reCAPTCHA render initiated");
+                      } catch (err: unknown) {
+                        console.error("Failed to manually render reCAPTCHA:", err);
+                        if (container) {
+                          container.innerHTML = '<div class="text-xs text-red-500">Failed to load reCAPTCHA. Please refresh the page.</div>';
+                        }
+                      }
+                    }, 500);
+                  }}
+                >
+                  <RotateCw className="h-3 w-3 mr-1" />
+                  Reload reCAPTCHA
+                </Button>
               </div>
             </div>
             {errorMessage && (

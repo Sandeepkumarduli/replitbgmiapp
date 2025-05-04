@@ -91,23 +91,39 @@ export async function phoneLogin(req: Request, res: Response) {
     }
     
     // Check if dev_mode is enabled and we're in a development environment
-    const isDevMode = dev_mode && process.env.NODE_ENV === 'development';
+    const isDevMode = (dev_mode === true && process.env.NODE_ENV === 'development');
     let verifySuccess = false;
+    
+    console.log(`Phone login attempt: ${phone}, OTP ${otp.substring(0, 1)}*****${otp.substring(5)}${isDevMode ? ' (DEV MODE)' : ''}`);
     
     if (!isDevMode) {
       // Normal path: verify OTP with Supabase
-      const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
-        phone,
-        token: otp,
-        type: 'sms'
-      });
-      
-      if (verifyError) {
-        console.error("Error verifying OTP for phone login:", verifyError);
-        return res.status(401).json({ message: "Invalid or expired OTP" });
+      try {
+        const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
+          phone,
+          token: otp,
+          type: 'sms'
+        });
+        
+        if (verifyError) {
+          console.error("Error verifying OTP for phone login:", verifyError);
+          return res.status(401).json({ message: "Invalid or expired OTP" });
+        }
+        
+        verifySuccess = true;
+      } catch (otpError) {
+        console.error("Exception during OTP verification:", otpError);
+        
+        // Check if we're in development and credentials aren't available
+        // This is a fallback in case the Supabase module throws rather than returning an error object
+        if (process.env.NODE_ENV === 'development' && 
+            (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)) {
+          console.log("DEV MODE FALLBACK: Missing Supabase credentials, allowing verification");
+          verifySuccess = true;
+        } else {
+          return res.status(500).json({ message: "OTP verification service unavailable" });
+        }
       }
-      
-      verifySuccess = true;
     } else {
       // Development mode - bypass OTP verification
       console.log("DEVELOPMENT MODE: Bypassing OTP verification");
@@ -126,6 +142,7 @@ export async function phoneLogin(req: Request, res: Response) {
       await storage.updateUser(users.id, {
         phoneVerified: true
       });
+      console.log(`Updated phone verification status for user ${users.id} (${users.username})`);
     }
     
     // Create a session for the user

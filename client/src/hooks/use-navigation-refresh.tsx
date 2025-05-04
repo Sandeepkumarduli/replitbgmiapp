@@ -34,12 +34,12 @@ export function useNavigationRefresh() {
             queryClient.fetchQuery({ queryKey: ['/api/user'] }),
           ]);
         } catch (fetchError) {
-          console.log('Some fetch queries were rejected, but this is handled');
+          // Some fetch queries may be rejected, but this is handled silently
         }
         
-        console.log('Data refreshed after navigation to:', location);
+        // Data successfully refreshed after navigation
       } catch (error) {
-        console.log('Error during data refresh, but continuing');
+        // Errors during data refresh are caught but we continue execution
       }
     };
     

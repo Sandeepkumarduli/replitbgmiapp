@@ -174,18 +174,35 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({
         {step === "send" ? (
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <Input
-                id="phone"
-                value={formattedPhone}
-                onChange={(e) => setFormattedPhone(e.target.value)}
-                placeholder="+91XXXXXXXXXX"
-                disabled={loading}
-                className="mb-2"
-              />
-              <p className="text-xs text-muted-foreground">
-                Please ensure your phone number is in the correct format with country code
-              </p>
+              <Label htmlFor="phone" className="text-base font-semibold">Phone Number</Label>
+              <div className="bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300 p-3 rounded-md text-sm">
+                <p className="font-medium mb-1">Important:</p>
+                <p>You must enter your phone number with the country code (e.g., +91XXXXXXXXXX) to receive the verification SMS.</p>
+              </div>
+              <div className="relative mt-2">
+                <Input
+                  id="phone"
+                  value={formattedPhone}
+                  onChange={(e) => setFormattedPhone(e.target.value)}
+                  placeholder="+91XXXXXXXXXX"
+                  disabled={loading}
+                  className="pl-12 text-base"
+                />
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                  <span className="font-mono">+91</span>
+                </div>
+              </div>
+              <div className="flex flex-col gap-1.5 mt-2">
+                <p className="text-xs text-muted-foreground">
+                  • Phone number must include country code (e.g., +91 for India)
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  • Do not include spaces or special characters
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  • This number will be used for account security only
+                </p>
+              </div>
             </div>
             <div className="flex flex-col items-center border border-slate-200 dark:border-slate-800 p-4 bg-white dark:bg-slate-950 rounded-md">
               <p className="text-sm font-medium mb-2">Complete the reCAPTCHA challenge below</p>
@@ -210,26 +227,44 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({
               </div>
             </div>
             {errorMessage && (
-              <div className="text-sm text-destructive mt-2">{errorMessage}</div>
+              <div className="text-sm bg-destructive/10 text-destructive p-3 rounded-md border border-destructive/20 mt-2">
+                <p className="font-medium mb-1">Error:</p>
+                <p>{errorMessage}</p>
+              </div>
             )}
           </div>
         ) : (
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="otp">Verification Code</Label>
+              <Label htmlFor="otp" className="text-base font-semibold">Verification Code</Label>
+              <div className="border-2 border-primary/20 bg-primary/5 rounded-md p-4 mb-3">
+                <p className="text-sm mb-2">A 6-digit verification code has been sent to:</p>
+                <p className="font-medium">{formattedPhone}</p>
+              </div>
               <Input
                 id="otp"
                 value={otp}
-                onChange={(e) => setOtp(e.target.value)}
+                onChange={(e) => {
+                  // Only allow numeric input
+                  const value = e.target.value.replace(/[^0-9]/g, '');
+                  setOtp(value);
+                }}
                 placeholder="Enter 6-digit code"
                 maxLength={6}
                 autoComplete="one-time-code"
                 inputMode="numeric"
                 disabled={loading}
+                className="text-lg tracking-widest text-center font-mono"
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Enter the 6-digit code sent to your phone. If you don't receive it within 1 minute, you can request a new code.
+              </p>
             </div>
             {errorMessage && (
-              <div className="text-sm text-destructive mt-2">{errorMessage}</div>
+              <div className="text-sm bg-destructive/10 text-destructive p-3 rounded-md border border-destructive/20 mt-2">
+                <p className="font-medium mb-1">Error:</p>
+                <p>{errorMessage}</p>
+              </div>
             )}
           </div>
         )}

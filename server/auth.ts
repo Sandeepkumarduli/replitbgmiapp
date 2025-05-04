@@ -302,7 +302,30 @@ export function setupAuth(app: Express) {
     });
   });
 
-  // Get current user endpoint
+  // Get current user endpoint for authentication check
+  app.get("/api/auth/me", async (req, res) => {
+    try {
+      // If not authenticated, return 401
+      if (!req.session.userId) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        req.session.destroy(() => {});
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Return user without password
+      const { password, ...userWithoutPassword } = user;
+      return res.status(200).json(userWithoutPassword);
+    } catch (error) {
+      console.error("Get user error:", error);
+      return res.status(500).json({ message: "Server error getting user" });
+    }
+  });
+
+  // Get current user endpoint (keeping for backward compatibility)
   app.get("/api/user", isAuthenticated, async (req, res) => {
     try {
       const user = await storage.getUser(req.session.userId!);

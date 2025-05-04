@@ -219,6 +219,12 @@ export function setupSecurityMiddleware(app: any): void {
   // Apply rate limiting middleware to login route
   app.use('/api/auth/login', loginRateLimiter);
   
+  // Log access to sensitive routes
+  app.use(['/api/auth/me', '/api/auth/logout'], (req: Request, _res: Response, next: NextFunction) => {
+    logSecurityEvent('auth_route_access', req);
+    next();
+  });
+  
   // Log all authentication attempts
   app.use('/api/auth/*', (req: Request, _res: Response, next: NextFunction) => {
     logSecurityEvent('auth_attempt', req);

@@ -35,19 +35,26 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({
 
   // Format phone number to E.164 format if needed
   useEffect(() => {
-    let formatted = phone;
-    
-    // If the phone doesn't start with +, add the country code
-    if (!formatted.startsWith("+")) {
-      formatted = `+91${formatted}`; // Assuming Indian number by default
-    }
-    
-    setFormattedPhone(formatted);
-    
-    // Cleanup recaptcha on unmount
+    // Cleanup recaptcha on component unmount
     return () => {
       clearRecaptcha();
     };
+  }, []);
+  
+  // Initialize phone number format
+  useEffect(() => {
+    let formatted = phone;
+    
+    // Strip any non-digit characters except the + sign
+    formatted = formatted.replace(/[^\d+]/g, '');
+    
+    // If the phone doesn't start with +, add the country code
+    if (!formatted.startsWith("+")) {
+      formatted = `+91${formatted.replace(/^0+/, '')}`; // Assuming Indian number by default, remove leading zeros
+    }
+    
+    setFormattedPhone(formatted);
+    console.log("Formatted phone number:", formatted);
   }, [phone]);
 
   const handleSendOTP = async () => {
@@ -177,7 +184,12 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({
                 Please ensure your phone number is in the correct format with country code
               </p>
             </div>
-            <div id="recaptcha-container" ref={recaptchaContainerRef} className="flex justify-center"></div>
+            <div className="flex flex-col items-center">
+              <div id="recaptcha-container" ref={recaptchaContainerRef} className="my-2"></div>
+              <p className="text-xs text-muted-foreground mt-1 text-center">
+                Please complete the reCAPTCHA above to verify you're not a robot
+              </p>
+            </div>
             {errorMessage && (
               <div className="text-sm text-destructive mt-2">{errorMessage}</div>
             )}

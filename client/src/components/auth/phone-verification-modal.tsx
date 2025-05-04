@@ -45,6 +45,20 @@ const PhoneVerificationModal: React.FC<PhoneVerificationModalProps> = ({
     onClose();
   };
 
+  useEffect(() => {
+    if (user) {
+      console.log("Phone verification modal - User data:", {
+        id: user.id,
+        phone: user.phone,
+        phoneVerified: user.phoneVerified
+      });
+    }
+    
+    if (data) {
+      console.log("Phone verification status from API:", data);
+    }
+  }, [user, data]);
+
   return (
     <Dialog open={shouldShow} onOpenChange={(open) => {
       if (!open) onClose();
@@ -58,11 +72,22 @@ const PhoneVerificationModal: React.FC<PhoneVerificationModalProps> = ({
         </DialogHeader>
         
         {user && (
-          <PhoneVerification
-            phone={user.phone}
-            userId={user.id}
-            onSuccess={handleVerificationSuccess}
-          />
+          <div>
+            <PhoneVerification
+              phone={user.phone || ""}
+              userId={user.id}
+              onSuccess={handleVerificationSuccess}
+              onCancel={onClose}
+            />
+            <div className="mt-4 text-xs text-muted-foreground">
+              Having trouble? Make sure you:
+              <ul className="list-disc pl-5 mt-1">
+                <li>Enter your phone number with country code (e.g., +91XXXXXXXXXX)</li>
+                <li>Have a stable internet connection</li>
+                <li>Complete the reCAPTCHA verification</li>
+              </ul>
+            </div>
+          </div>
         )}
       </DialogContent>
     </Dialog>

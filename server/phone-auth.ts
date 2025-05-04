@@ -9,6 +9,11 @@ import { z } from "zod";
  */
 export async function verifyPhoneHandler(req: Request, res: Response) {
   try {
+    console.log("Received phone verification request:", {
+      body: req.body,
+      sessionUserId: req.session?.userId
+    });
+    
     // Validate request body
     const verifySchema = z.object({
       userId: z.number(),
@@ -19,17 +24,24 @@ export async function verifyPhoneHandler(req: Request, res: Response) {
     const result = verifySchema.safeParse(req.body);
     
     if (!result.success) {
-      return res.status(400).json({ message: "Invalid request data" });
+      console.error("Invalid phone verification request data:", result.error.format());
+      return res.status(400).json({ 
+        message: "Invalid request data", 
+        details: result.error.format() 
+      });
     }
 
     const { userId, firebaseUid, phoneNumber } = result.data;
+    console.log("Parsed verification data:", { userId, firebaseUid, phoneNumber });
 
     // Security check: Only allow users to verify their own phone number
     if (req.session?.userId && req.session.userId !== userId) {
-      logSecurityEvent("unauthorized_phone_verification_attempt", req, { 
+      const securityDetails = { 
         attemptedUserId: userId,
         sessionUserId: req.session.userId
-      });
+      };
+      console.error("Unauthorized phone verification attempt:", securityDetails);
+      logSecurityEvent("unauthorized_phone_verification_attempt", req, securityDetails);
       return res.status(403).json({ message: "Unauthorized action" });
     }
 
@@ -37,36 +49,60 @@ export async function verifyPhoneHandler(req: Request, res: Response) {
     const user = await storage.getUser(userId);
     
     if (!user) {
+      console.error(`User not found for phone verification. User ID: ${userId}`);
       return res.status(404).json({ message: "User not found" });
     }
+    
+    console.log("Retrieved user for verification:", {
+      id: user.id,
+      phone: user.phone,
+      phoneVerified: user.phoneVerified
+    });
 
     // Verify the phone number matches
     if (user.phone !== phoneNumber) {
-      logSecurityEvent("phone_verification_mismatch", req, {
+      const mismatchDetails = {
         userId: userId,
         storedPhone: user.phone,
         attemptedPhone: phoneNumber
+      };
+      console.error("Phone number mismatch during verification:", mismatchDetails);
+      logSecurityEvent("phone_verification_mismatch", req, mismatchDetails);
+      return res.status(400).json({ 
+        message: "Phone number mismatch", 
+        details: mismatchDetails 
       });
-      return res.status(400).json({ message: "Phone number mismatch" });
     }
 
     // Update user with verification status and Firebase UID
+    console.log("Updating user verification status:", { userId, firebaseUid });
     const updatedUser = await storage.updateUser(userId, {
       phoneVerified: true,
       firebaseUid
     });
 
     if (!updatedUser) {
+      console.error(`Failed to update verification status for user ${userId}`);
       return res.status(500).json({ message: "Failed to update verification status" });
     }
+    
+    console.log("User phone verification successful:", { 
+      userId, 
+      phone: phoneNumber,
+      firebaseUid
+    });
 
     // Log successful verification
     logSecurityEvent("phone_verification_success", req, { userId });
 
-    return res.status(200).json({ message: "Phone verification successful" });
+    return res.status(200).json({ 
+      message: "Phone verification successful",
+      phoneVerified: true
+    });
   } catch (error) {
     console.error("Error during phone verification:", error);
-    return res.status(500).json({ message: "Internal server error" });
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    return res.status(500).json({ message: "Internal server error", details: errorMessage });
   }
 }
 

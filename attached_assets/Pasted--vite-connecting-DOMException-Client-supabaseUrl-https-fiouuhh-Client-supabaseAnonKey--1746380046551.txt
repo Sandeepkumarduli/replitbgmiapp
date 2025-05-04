@@ -1,0 +1,29 @@
+[vite] connecting...
+DOMException {}
+
+Client supabaseUrl: https://fiouuhh...
+Client supabaseAnonKey: eyJhbGciOiJIUzI...
+Supabase client initialized successfully
+No user data, setting user to null
+Login attempt for Sandeepkumarduli
+Login error details: 
+Error {}
+
+at t.value (https://1db2e02b-aac0-4476-886a-7b346a8002f1-00-1e17dmgbezu9g.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://1db2e02b-aac0-4476-886a-7b346a8002f1-00-1e17dmgbezu9g.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://1db2e02b-aac0-4476-886a-7b346a8002f1-00-1e17dmgbezu9g.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://1db2e02b-aac0-4476-886a-7b346a8002f1-00-1e17dmgbezu9g.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+Admin login failed with error: 
+Error {}
+
+at t.value (https://1db2e02b-aac0-4476-886a-7b346a8002f1-00-1e17dmgbezu9g.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://1db2e02b-aac0-4476-886a-7b346a8002f1-00-1e17dmgbezu9g.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://1db2e02b-aac0-4476-886a-7b346a8002f1-00-1e17dmgbezu9g.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://1db2e02b-aac0-4476-886a-7b346a8002f1-00-1e17dmgbezu9g.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+Login failed: 
+Error {}
+
+at t.value (https://1db2e02b-aac0-4476-886a-7b346a8002f1-00-1e17dmgbezu9g.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://1db2e02b-aac0-4476-886a-7b346a8002f1-00-1e17dmgbezu9g.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://1db2e02b-aac0-4476-886a-7b346a8002f1-00-1e17dmgbezu9g.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://1db2e02b-aac0-4476-886a-7b346a8002f1-00-1e17dmgbezu9g.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400

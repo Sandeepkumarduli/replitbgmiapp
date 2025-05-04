@@ -72,7 +72,7 @@ export function setupAuth(app: Express) {
   };
 
   // Registration endpoint
-  app.post("/api/register", async (req, res) => {
+  app.post("/api/auth/register", async (req, res) => {
     try {
       const { username, password, email, phone, gameId, role } = req.body;
 
@@ -133,7 +133,7 @@ export function setupAuth(app: Express) {
   });
 
   // Login endpoint
-  app.post("/api/login", async (req, res) => {
+  app.post("/api/auth/login", async (req, res) => {
     try {
       const { username, password } = req.body;
 
@@ -292,7 +292,7 @@ export function setupAuth(app: Express) {
   });
 
   // Logout endpoint
-  app.post("/api/logout", (req, res) => {
+  app.post("/api/auth/logout", (req, res) => {
     req.session.destroy((err) => {
       if (err) {
         return res.status(500).json({ message: "Failed to logout" });

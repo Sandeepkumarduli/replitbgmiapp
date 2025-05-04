@@ -750,7 +750,17 @@ export class DatabaseStorage implements IStorage {
   // Delete all notifications for a specific user
   async deleteAllUserNotifications(userId: number): Promise<number> {
     try {
-      // Delete only user-specific notifications, NOT broadcast notifications
+      // First, delete all notification read entries for this user
+      try {
+        await db.delete(notificationReads)
+          .where(eq(notificationReads.userId, userId));
+        console.log(`Deleted notification reads for user ${userId}`);
+      } catch (readError) {
+        console.error('Error deleting notification reads:', readError);
+        // Continue with the process even if this fails
+      }
+      
+      // Then delete only user-specific notifications, NOT broadcast notifications
       const result = await db.delete(notifications)
         .where(eq(notifications.userId, userId))
         .returning();

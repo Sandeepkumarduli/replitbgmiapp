@@ -102,7 +102,7 @@ export function TournamentForm({ tournament, isEditing = false }: TournamentForm
       const url = isEditing ? `/api/tournaments/${tournament?.id}` : "/api/tournaments";
       const method = isEditing ? "PATCH" : "POST";
       
-      console.log(`Making ${method} request to ${url} with data:`, values);
+      // Prepare data for API request
       
       // Create a type with optional id for our data and a date that can be string
       type DataToSend = Omit<FormValues, 'date'> & { date: string; id?: number };
@@ -153,16 +153,10 @@ export function TournamentForm({ tournament, isEditing = false }: TournamentForm
       }
     }
     
-    // Log the form submission for debugging
-    console.log("Submitting tournament form:", {
-      isEditing,
-      tournamentId: tournament?.id,
-      values,
-    });
-    
+    // Submit the form data to the API
     createMutation.mutateAsync(values)
       .then(() => {
-        console.log("Tournament form submission successful");
+        // Success is handled in onSuccess callback
       })
       .catch((error) => {
         console.error("Tournament form submission failed:", error);

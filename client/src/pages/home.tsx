@@ -25,7 +25,7 @@ export default function Home() {
         queryClient.fetchQuery({ queryKey: ['/api/registrations/counts'] }),
       ]);
     } catch (error) {
-      console.log('Error refreshing tournaments, but continuing');
+      // Silent fail is intentional - we don't want to stop the app if a refresh fails
     } finally {
       setIsRefreshing(false);
     }

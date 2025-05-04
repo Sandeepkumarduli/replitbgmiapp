@@ -1,77 +1,93 @@
-# Supabase Migration: Step-by-Step Guide
+# Step-by-Step Migration Guide for Supabase
 
-## Overview
-
-This guide will walk you through synchronizing your PostgreSQL database with Supabase. We'll be accomplishing two main tasks:
-
-1. Creating all required tables in Supabase (deleting existing ones first)
-2. Importing your existing data (admin user, tournament, notifications)
+This guide will walk you through executing the SQL migration script in Supabase to create all required tables and import the existing data.
 
 ## Prerequisites
+- Access to your Supabase dashboard
+- The complete_supabase_migration.sql file in this directory
 
-- Access to your Supabase project dashboard
-- Admin privileges in Supabase
+## Steps to Create All Tables in Supabase
 
-## Step 1: Access Supabase SQL Editor
+### 1. Log in to Supabase Dashboard
+- Go to https://app.supabase.com/
+- Sign in with your credentials
+- Select your project: **fiouuhhbascmlbrncqcp**
 
-1. Log in to your Supabase dashboard at https://app.supabase.com
-2. Select your project
-3. Navigate to the "SQL Editor" section in the left sidebar
+### 2. Navigate to SQL Editor
+- In the left sidebar, click on **SQL Editor**
 
-## Step 2: Run the Migration Script
+### 3. Create a New Query
+- Click on the **+ New Query** button
 
-1. In the SQL Editor, create a new query by clicking the "New Query" button
-2. Copy the **ENTIRE** contents of the `complete_supabase_migration.sql` file
-3. Paste it into the SQL Editor
-4. Click the "Run" button to execute the script
+### 4. Paste the Migration Script
+- Open the `complete_supabase_migration.sql` file from this directory
+- Copy the **entire contents** of the file
+- Paste it into the SQL Editor in Supabase
 
-This script will:
-- Delete existing tables in Supabase (profiles, tournaments, registrations)
-- Create all required tables with the correct schema
-- Import your existing data (1 admin user, 1 tournament, 6 notifications)
-- Set up Row Level Security policies for basic protection
+### 5. Run the Migration Script
+- Click the **Run** button (or press Ctrl+Enter)
+- This will execute the SQL script which will:
+  - Drop existing tables (if any)
+  - Create all necessary tables with proper structure
+  - Import essential data (admin user, tournament, notifications)
+  - Set up Row Level Security policies
 
-## Step 3: Verify the Migration
+### 6. Verify the Results
+- Once the script execution completes, you should see a success message
+- In the left sidebar, click on **Table Editor**
+- You should see the following tables:
+  - profiles (users table)
+  - teams
+  - team_members
+  - tournaments
+  - registrations
+  - notifications
+  - notification_reads
 
-After running the script:
-
-1. Go to the "Table Editor" in Supabase
-2. You should see the following tables:
-   - profiles (with 1 admin user)
-   - tournaments (with 1 tournament)
-   - teams (empty)
-   - team_members (empty)
-   - registrations (empty)
-   - notifications (with 6 notifications)
-   - notification_reads (empty)
-
-3. Click on each table to verify the data was imported correctly
-
-## Step 4: Test Your Application
-
-1. Navigate back to your application in development mode
-2. Verify that you can log in with the admin account
-3. Check that the tournament data appears correctly
-4. Confirm that notifications are working properly
+### 7. Verify the Data
+- Click on the **profiles** table, and you should see 1 admin user named "Sandeepkumarduli"
+- Click on the **tournaments** table, and you should see 1 tournament "Erangel - Solo"
+- Click on the **notifications** table, and you should see 6 broadcast notifications
 
 ## Troubleshooting
 
-If you encounter any issues during migration:
+### If you encounter SQL errors:
+1. Make sure you're running the entire script at once
+2. Check for any error messages in the Supabase SQL Editor
+3. If specific tables are causing issues, you can try running parts of the script incrementally
 
-- **Error with foreign key constraints**: Ensure you run the script in the exact order provided. Tables are created in a specific sequence to respect dependencies.
+### If tables are created but data import fails:
+1. You can manually insert the data using the Table Editor interface
+2. For the admin user, make sure to use the exact same values as in the SQL script, especially for the password hash
 
-- **Duplicate key errors**: The script includes `ON CONFLICT (id) DO NOTHING` clauses to prevent duplicate key errors. If you still encounter issues, you might need to manually delete conflicting records first.
+### If you need to verify database connectivity from the application:
+1. Use the diagnostic endpoint at `/api/admin/db-status` to check connectivity
+2. Make sure the NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY environment variables are correctly set
+3. Restart the application server after updating environment variables
 
-- **RLS policy errors**: If you get errors about Row Level Security policies, it might be because you have existing conflicting policies. You can remove the RLS section of the script and set up policies manually later.
+## Post-Migration Steps
 
-## Next Steps
+After successfully running the migration:
 
-Once migration is complete:
+1. **Test Authentication**: Try logging in with the admin account (Sandeepkumarduli)
+2. **Verify Phone OTP Verification**: Test the phone verification workflow
+3. **Check Tournament Display**: Verify that the Erangel-Solo tournament appears correctly
+4. **Check Notifications**: Verify that broadcast notifications are displayed
 
-1. Set up proper Row Level Security (RLS) policies in Supabase to secure your data
-2. Configure authentication settings in Supabase to work with your application
-3. Update your application's environment variables if needed
+## Rollback Instructions (If Needed)
 
-## Important Note
+If you need to revert the migration:
 
-This script will delete existing tables and data in Supabase. Make sure you have backups if there's any important data in the existing Supabase tables before running the script.
+1. Use the SQL Editor in Supabase
+2. Drop all tables with the following command:
+```sql
+DROP TABLE IF EXISTS "notification_reads" CASCADE;
+DROP TABLE IF EXISTS "notifications" CASCADE;
+DROP TABLE IF EXISTS "registrations" CASCADE;
+DROP TABLE IF EXISTS "team_members" CASCADE;
+DROP TABLE IF EXISTS "teams" CASCADE;
+DROP TABLE IF EXISTS "tournaments" CASCADE;
+DROP TABLE IF EXISTS "profiles" CASCADE;
+```
+
+3. Then re-run the migration script to start fresh

@@ -5,6 +5,11 @@
 import { useEffect, useState } from 'react';
 
 export function DebugEnvironment() {
+  // Completely disabled for all environments
+  return null;
+  
+  // This code is kept but never executed (for reference only)
+  /*
   const [envVars, setEnvVars] = useState<Record<string, string>>({});
   
   useEffect(() => {
@@ -54,4 +59,5 @@ export function DebugEnvironment() {
       </ul>
     </div>
   );
+  */
 }

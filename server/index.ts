@@ -10,6 +10,9 @@ import dotenv from "dotenv";
 // Load environment variables
 dotenv.config();
 
+// Check environment variables (debug info)
+import './env-check';
+
 // Initialize deployment safety measures (only takes effect in production)
 initializeDeploymentSafety();
 

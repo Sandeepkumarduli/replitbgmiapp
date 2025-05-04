@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "./lib/auth";
 import Navbar from "./components/navigation/navbar";
 import Footer from "./components/navigation/footer";
 import { Loader2 } from "lucide-react";
+import { DebugEnvironment } from "./debug-env";
 
 // Pages
 import Home from "@/pages/home";
@@ -127,6 +128,9 @@ function Router() {
     <div className="min-h-screen bg-dark font-poppins flex flex-col">
       {/* Add auto-refresh on navigation */}
       <NavigationRefresh />
+      
+      {/* Debug environment variables in development */}
+      <DebugEnvironment />
       
       {showNavbar && <Navbar />}
       

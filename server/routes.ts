@@ -14,7 +14,7 @@ import {
 } from "@shared/schema";
 import { setupAuth, hashPassword } from "./auth";
 import { setupSupabaseAuth } from "./supabase-auth";
-import { registerPhoneAuthRoutes } from "./phone-auth";
+import { registerSupabasePhoneAuthRoutes } from "./supabase-phone-auth";
 import { 
   setupSecurityMiddleware, 
   trackFailedLogin, 
@@ -60,7 +60,8 @@ async function generate6DigitCode(storage: any): Promise<string> {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Choose which authentication system to use
-  const useSupabase = process.env.USE_SUPABASE === 'true';
+  // Default to Supabase auth
+  const useSupabase = process.env.USE_SUPABASE !== 'false';
   
   // Setup authentication with middleware
   const { isAuthenticated, isAdmin } = useSupabase 
@@ -70,8 +71,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup enhanced security middleware
   setupSecurityMiddleware(app);
   
-  // Register phone authentication routes
-  registerPhoneAuthRoutes(app);
+  // Register Supabase phone authentication routes
+  registerSupabasePhoneAuthRoutes(app);
   
   // Enhanced Admin Check middleware for high-security routes
   const isEnhancedAdmin = async (req: Request, res: Response, next: NextFunction) => {

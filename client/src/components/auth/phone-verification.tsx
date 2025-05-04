@@ -14,14 +14,12 @@ interface PhoneVerificationProps {
   phone: string;
   userId: number;
   onSuccess?: () => void;
-  onCancel?: () => void;
 }
 
 const PhoneVerification: React.FC<PhoneVerificationProps> = ({
   phone,
   userId,
   onSuccess,
-  onCancel,
 }) => {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -41,15 +39,20 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({
     };
   }, []);
   
-  // Initialize phone number format
+  // Initialize phone number format and clear any existing recaptcha
   useEffect(() => {
-    let formatted = phone;
+    // Always clear recaptcha when the component mounts or phone changes
+    clearRecaptcha();
+    
+    let formatted = phone || "";
     
     // Strip any non-digit characters except the + sign
     formatted = formatted.replace(/[^\d+]/g, '');
     
     // If the phone doesn't start with +, add the country code
-    if (!formatted.startsWith("+")) {
+    if (!formatted && formatted !== "") {
+      formatted = "+91"; // Default empty field to +91 prefix
+    } else if (!formatted.startsWith("+")) {
       formatted = `+91${formatted.replace(/^0+/, '')}`; // Assuming Indian number by default, remove leading zeros
     }
     
@@ -184,10 +187,11 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({
                 Please ensure your phone number is in the correct format with country code
               </p>
             </div>
-            <div className="flex flex-col items-center">
-              <div id="recaptcha-container" ref={recaptchaContainerRef} className="my-2"></div>
+            <div className="flex flex-col items-center border border-slate-200 dark:border-slate-800 p-4 bg-white dark:bg-slate-950 rounded-md">
+              <p className="text-sm font-medium mb-2">Complete the reCAPTCHA to continue</p>
+              <div id="recaptcha-container" ref={recaptchaContainerRef} className="my-2 min-h-[80px] w-full flex justify-center"></div>
               <p className="text-xs text-muted-foreground mt-1 text-center">
-                Please complete the reCAPTCHA above to verify you're not a robot
+                If you don't see the reCAPTCHA, please refresh the page
               </p>
             </div>
             {errorMessage && (
@@ -215,29 +219,18 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({
           </div>
         )}
       </CardContent>
-      <CardFooter className="flex flex-col sm:flex-row gap-2 justify-between">
+      <CardFooter className="flex flex-col sm:flex-row gap-2 sm:justify-end">
         {step === "send" ? (
-          <>
-            <Button 
-              variant="outline"
-              onClick={onCancel}
-              disabled={loading}
-              className="w-full sm:w-auto"
-            >
-              <X className="mr-2 h-4 w-4" />
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleSendOTP}
-              disabled={!formattedPhone || loading}
-              className="w-full sm:w-auto"
-            >
-              {loading ? <RotateCw className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
-              Send Verification Code
-            </Button>
-          </>
+          <Button 
+            onClick={handleSendOTP}
+            disabled={!formattedPhone || loading}
+            className="w-full sm:w-auto"
+          >
+            {loading ? <RotateCw className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
+            Send Verification Code
+          </Button>
         ) : (
-          <>
+          <div className="flex w-full sm:w-auto flex-col sm:flex-row gap-2">
             <Button 
               variant="outline"
               onClick={handleResendOTP}
@@ -255,7 +248,7 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({
               {loading ? <RotateCw className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
               Verify
             </Button>
-          </>
+          </div>
         )}
       </CardFooter>
     </Card>

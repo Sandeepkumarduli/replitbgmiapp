@@ -72,15 +72,18 @@ export const sendOTP = async (
     // Make sure container is empty
     containerElement.innerHTML = '';
     
-    // Create new reCAPTCHA verifier
+    // Create new reCAPTCHA verifier with more detailed settings
     recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
       size: "normal",
-      callback: () => {
-        console.log("reCAPTCHA solved successfully");
+      callback: (response: string) => {
+        console.log("reCAPTCHA solved successfully, response token:", response ? "present" : "missing");
       },
       "expired-callback": () => {
-        console.log("reCAPTCHA expired");
+        console.log("reCAPTCHA expired, needs to be solved again");
       },
+      "error-callback": (error: Error) => {
+        console.error("reCAPTCHA error:", error);
+      }
     });
 
     // Render the reCAPTCHA

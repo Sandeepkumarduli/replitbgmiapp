@@ -61,9 +61,15 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // Add a special route for the API prefix that will handle 404s properly
-  app.use('/api/*', (req, res) => {
-    res.status(404).json({ message: 'API endpoint not found' });
+  // Create a fallback API handler for missing API endpoints
+  // This needs to be very specific to avoid catching legitimate endpoints
+  app.use('/api/:path(*)', (req, res, next) => {
+    // Check if this is actually a 404 and not a request that was already handled
+    if (!res.headersSent) {
+      res.status(404).json({ message: 'API endpoint not found' });
+    } else {
+      next();
+    }
   });
 
   // Importantly only setup vite in development and after

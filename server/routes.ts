@@ -100,6 +100,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Add session diagnostic endpoint to debug authentication issues
+  app.get('/api/diagnostic/session', async (req, res) => {
+    try {
+      res.json({
+        sessionExists: req.session ? true : false,
+        sessionId: req.session?.id || 'none',
+        userId: req.session?.userId || 'none',
+        role: req.session?.role || 'none',
+        username: req.session?.username || 'none',
+        authenticated: req.session && req.session.userId ? true : false,
+        cookies: req.headers.cookie || 'none'
+      });
+    } catch (error) {
+      console.error('Error in session diagnostic route:', error);
+      res.status(500).json({
+        error: 'Session diagnostic check failed',
+        message: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
   // Development-only route to create a test user if database is empty
   if (process.env.NODE_ENV === 'development') {
     app.post('/api/diagnostic/create-test-user', async (req, res) => {
@@ -158,14 +179,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Enhanced Admin Check middleware for high-security routes
   const isEnhancedAdmin = async (req: Request, res: Response, next: NextFunction) => {
-    // First check if user is an admin
-    if (!req.session || !req.session.userId || req.session.role !== 'admin') {
-      logSecurityEvent('Unauthorized admin access attempt', req);
-      return res.status(403).json({ message: "Unauthorized access attempt logged" });
+    // Log the access attempt for diagnostics
+    console.log('Admin route accessed with session:', 
+      req.session ? 
+      { id: req.session.id, userId: req.session.userId, role: req.session.role } : 
+      'No session'
+    );
+    
+    // First check if user is an admin (initial check)
+    if (!req.session || !req.session.userId) {
+      logSecurityEvent('Unauthorized admin access attempt (not authenticated)', req);
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    // For development environment, provide looser security for the master admin account
+    if (process.env.NODE_ENV === 'development' && req.session.userId === 1) {
+      console.log('Development mode: Bypassing enhanced security for master admin (id=1)');
+      req.session.role = 'admin'; // Ensure the role is set correctly
+      return next();
+    }
+    
+    // Check specifically if the role is not admin
+    if (req.session.role !== 'admin') {
+      logSecurityEvent('Unauthorized admin access attempt (not admin role)', req);
+      return res.status(403).json({ message: "Not authorized - admin role required" });
     }
     
     // Apply enhanced security checks for admin
-    await enhancedAdminCheck(req, res, next);
+    try {
+      await enhancedAdminCheck(req, res, next);
+    } catch (error) {
+      console.error('Error in enhanced admin check:', error);
+      return res.status(500).json({ message: "Security check failed" });
+    }
   };
 
   // Auth routes

@@ -290,8 +290,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const user = await storage.getUserByUsername(username);
       
-      // Check if user exists and password matches
-      if (!user || user.password !== password) {
+      // Check if user exists
+      if (!user) {
+        // Track failed login attempt for rate limiting
+        trackFailedLogin(req);
+        return res.status(401).json({ message: "Invalid username or password" });
+      }
+      
+      // Special case for hardcoded admin in development or for backwards compatibility
+      const isDevModeAdmin = process.env.NODE_ENV === "development" && 
+                            user.role === "admin" && 
+                            validateHardcodedAdmin(username, password);
+                            
+      // Check if password matches (either direct match for hardcoded admin or via secure comparison)
+      const isDirectMatch = user.password === password;
+      let isHashMatch = false;
+      
+      // Only try hash comparison if the password has the hash format (contains a dot)
+      if (user.password.includes('.') && !isDirectMatch && !isDevModeAdmin) {
+        try {
+          // Import the function dynamically to avoid circular dependencies
+          const { comparePasswords } = await import('./auth');
+          isHashMatch = await comparePasswords(password, user.password);
+        } catch (error) {
+          console.error('Error comparing passwords:', error);
+        }
+      }
+      
+      if (!isDirectMatch && !isHashMatch && !isDevModeAdmin) {
         // Track failed login attempt for rate limiting
         trackFailedLogin(req);
         return res.status(401).json({ message: "Invalid username or password" });

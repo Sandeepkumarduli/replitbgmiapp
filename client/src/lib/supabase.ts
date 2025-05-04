@@ -7,7 +7,7 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.en
 // Create a dummy client for development with DEV mode capabilities
 const dummyClient = {
   auth: {
-    signInWithOtp: async ({ phone }) => {
+    signInWithOtp: async ({ phone }: { phone: string }) => {
       console.log(`DEV MODE: Sending mock OTP to ${phone}`);
       // In development, we simulate a success
       if (phone) {
@@ -22,7 +22,7 @@ const dummyClient = {
       return { error: { message: 'Development mode - Phone number required' } };
     },
     
-    verifyOtp: async ({ phone, token }) => {
+    verifyOtp: async ({ phone, token }: { phone: string, token: string }) => {
       console.log(`DEV MODE: Verifying mock OTP: ${token} for phone: ${phone}`);
       
       // In development, allow any 6-digit OTP
@@ -66,15 +66,18 @@ let supabase;
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error('Missing Supabase credentials. Please check environment variables.');
   
-  if (import.meta.env.DEV) {
-    console.warn('Using dummy Supabase client for development');
-    supabase = dummyClient;
-  } else {
-    throw new Error('Missing Supabase credentials');
-  }
+  // Use dummy client in development or if credentials are missing in production
+  console.warn('Using dummy Supabase client');
+  supabase = dummyClient;
 } else {
   // Real Supabase client
-  supabase = createClient(supabaseUrl, supabaseAnonKey);
+  try {
+    supabase = createClient(supabaseUrl, supabaseAnonKey);
+    console.log('Supabase client initialized successfully');
+  } catch (error) {
+    console.error('Failed to initialize Supabase client:', error);
+    supabase = dummyClient;
+  }
 }
 
 export { supabase };

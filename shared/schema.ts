@@ -10,6 +10,7 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   phone: text("phone").notNull().unique(),
   phoneVerified: boolean("phone_verified").notNull().default(false),
+  phoneVerificationBypassed: boolean("phone_verification_bypassed").notNull().default(false),
   firebaseUid: text("firebase_uid"), // Optional field to store Firebase UID if needed
   gameId: text("game_id").notNull(),
   role: text("role").notNull().default("user"),

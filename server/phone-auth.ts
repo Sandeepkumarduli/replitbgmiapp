@@ -122,14 +122,85 @@ export async function checkPhoneVerificationStatus(req: Request, res: Response) 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
+    
+    console.log("Checking phone verification status for user:", {
+      id: user.id,
+      phoneVerified: user.phoneVerified,
+      phoneVerificationBypassed: user.phoneVerificationBypassed
+    });
 
+    // Consider a user verified if they have either:
+    // 1. Successfully verified their phone (phoneVerified = true)
+    // 2. Bypassed verification (phoneVerificationBypassed = true)
+    const isEffectivelyVerified = user.phoneVerified === true || user.phoneVerificationBypassed === true;
+    
     // Return verification status
     return res.status(200).json({ 
-      phoneVerified: user.phoneVerified === true,
+      phoneVerified: isEffectivelyVerified,
+      actuallyVerified: user.phoneVerified === true,
+      bypassed: user.phoneVerificationBypassed === true,
       phone: user.phone
     });
   } catch (error) {
     console.error("Error checking phone verification status:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+/**
+ * Handle bypass of phone verification temporarily
+ */
+export async function bypassPhoneVerificationHandler(req: Request, res: Response) {
+  try {
+    // Only allow authenticated users
+    if (!req.session?.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    // Validate request body
+    const bypassSchema = z.object({
+      userId: z.number(),
+      reason: z.string()
+    });
+
+    const result = bypassSchema.safeParse(req.body);
+    
+    if (!result.success) {
+      return res.status(400).json({ message: "Invalid request data" });
+    }
+
+    const { userId, reason } = result.data;
+
+    // Security check: Only allow users to bypass their own verification
+    if (req.session.userId !== userId) {
+      logSecurityEvent("unauthorized_bypass_attempt", req, { 
+        attemptedUserId: userId,
+        sessionUserId: req.session.userId
+      });
+      return res.status(403).json({ message: "Unauthorized action" });
+    }
+
+    // Log the bypass request
+    console.log(`Phone verification bypass requested by user ${userId}. Reason: ${reason}`);
+    logSecurityEvent("phone_verification_bypass", req, { userId, reason });
+
+    // For now, we'll simply mark them as verified to solve the immediate problem
+    const updatedUser = await storage.updateUser(userId, {
+      // Instead of setting phoneVerified to true, we set a bypass flag
+      // This way we can still prompt them to verify in the future
+      phoneVerificationBypassed: true
+    });
+
+    if (!updatedUser) {
+      return res.status(500).json({ message: "Failed to process bypass request" });
+    }
+
+    return res.status(200).json({ 
+      message: "Verification bypassed temporarily",
+      phoneVerificationBypassed: true
+    });
+  } catch (error) {
+    console.error("Error bypassing phone verification:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 }
@@ -143,4 +214,7 @@ export function registerPhoneAuthRoutes(app: any) {
   
   // Route to check phone verification status
   app.get("/api/auth/phone-verification-status", checkPhoneVerificationStatus);
+  
+  // Route to bypass phone verification temporarily
+  app.post("/api/auth/bypass-phone-verification", bypassPhoneVerificationHandler);
 }

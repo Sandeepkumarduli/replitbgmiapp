@@ -157,6 +157,7 @@ function Router() {
           </Route>
           
           {/* Admin Routes - protected and admin only */}
+          <ProtectedRoute path="/admin" component={AdminDashboard} adminOnly={true}/>
           <ProtectedRoute path="/admin/dashboard" component={AdminDashboard} adminOnly={true}/>
           <ProtectedRoute path="/admin/tournaments" component={AdminTournaments} adminOnly={true}/>
           <ProtectedRoute path="/admin/tournaments/create" component={CreateTournament} adminOnly={true}/>

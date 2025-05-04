@@ -138,8 +138,33 @@ export default function AdminTeams() {
 
   const deleteTeamMutation = useMutation({
     mutationFn: async (teamId: number) => {
-      const res = await apiRequest("DELETE", `/api/admin/teams/${teamId}`, {});
-      return res.json();
+      try {
+        const res = await apiRequest("DELETE", `/api/admin/teams/${teamId}`, {});
+        
+        // Check if the response is ok before trying to parse JSON
+        if (!res.ok) {
+          const errorText = await res.text();
+          try {
+            // Try to parse the error as JSON
+            const errorJson = JSON.parse(errorText);
+            throw new Error(errorJson.message || 'Failed to delete team');
+          } catch (parseError) {
+            // If parsing fails, use the raw text
+            throw new Error(errorText || 'Failed to delete team');
+          }
+        }
+        
+        // If we reach here, the response was successful
+        // Sometimes delete operations don't return content, so handle that case
+        if (res.headers.get('content-length') === '0') {
+          return { success: true };
+        }
+        
+        return await res.json();
+      } catch (error) {
+        console.error("Error deleting team:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/teams"] });
@@ -148,10 +173,10 @@ export default function AdminTeams() {
         description: "The team has been deleted successfully",
       });
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
       toast({
         title: "Failed to delete team",
-        description: error.message,
+        description: error.message || "Unknown error occurred",
         variant: "destructive",
       });
     },

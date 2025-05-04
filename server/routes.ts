@@ -1401,10 +1401,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         deletedUsername: user.username 
       });
       
-      return res.json({ message: "User deleted successfully", success: true });
+      res.status(200).json({ 
+        message: "User deleted successfully", 
+        success: true,
+        userId: userId 
+      });
     } catch (error) {
       console.error('Error in user deletion process:', error);
-      return res.status(500).json({ 
+      res.status(500).json({ 
         message: "Failed to delete user", 
         error: error instanceof Error ? error.message : String(error)
       });
@@ -1624,13 +1628,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Team ${teamId} deleted successfully`);
       
-      return res.json({ 
+      res.status(200).json({ 
         message: "Team deleted successfully",
-        success: true
+        success: true,
+        teamId: teamId
       });
     } catch (error) {
       console.error("Admin delete team error:", error);
-      return res.status(500).json({ 
+      res.status(500).json({ 
         message: "Failed to delete team", 
         error: error instanceof Error ? error.message : String(error)
       });

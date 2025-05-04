@@ -121,8 +121,33 @@ export default function AdminUsers() {
 
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: number) => {
-      const res = await apiRequest("DELETE", `/api/admin/users/${userId}`, {});
-      return res.json();
+      try {
+        const res = await apiRequest("DELETE", `/api/admin/users/${userId}`, {});
+        
+        // Check if the response is ok before trying to parse JSON
+        if (!res.ok) {
+          const errorText = await res.text();
+          try {
+            // Try to parse the error as JSON
+            const errorJson = JSON.parse(errorText);
+            throw new Error(errorJson.message || 'Failed to delete user');
+          } catch (parseError) {
+            // If parsing fails, use the raw text
+            throw new Error(errorText || 'Failed to delete user');
+          }
+        }
+        
+        // If we reach here, the response was successful
+        // Sometimes delete operations don't return content, so handle that case
+        if (res.headers.get('content-length') === '0') {
+          return { success: true };
+        }
+        
+        return await res.json();
+      } catch (error) {
+        console.error("Error deleting user:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
@@ -131,10 +156,10 @@ export default function AdminUsers() {
         description: "The user has been deleted successfully",
       });
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
       toast({
         title: "Failed to delete user",
-        description: error.message,
+        description: error.message || "Unknown error occurred",
         variant: "destructive",
       });
     },

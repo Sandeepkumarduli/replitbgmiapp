@@ -65,30 +65,69 @@ app.use((req, res, next) => {
   // 1. Check for missing API endpoints
   // 2. Prevent HTML responses for API routes
   app.use((req, res, next) => {
-    // Only proceed for API requests that haven't sent headers yet
-    if (req.path.startsWith('/api/') && !res.headersSent) {
-      // Store the original send method
+    // Only proceed for API requests
+    if (req.path.startsWith('/api/')) {
+      // Store the original methods
       const originalSend = res.send;
+      const originalEnd = res.end;
+      const originalJson = res.json;
       
       // Override send to check for HTML responses in API routes
       res.send = function(body) {
         // Check if the response is HTML (common error case)
         if (typeof body === 'string' && 
-            (body.startsWith('<!DOCTYPE') || body.startsWith('<html'))) {
+            (body.includes('<!DOCTYPE') || body.includes('<html'))) {
           
           // Log the issue for debugging
           console.error(`HTML response detected for API route: ${req.path}`);
           
-          // Replace HTML response with proper JSON error
-          return res.status(500).json({
-            error: 'API endpoint error',
-            message: 'Server returned HTML instead of JSON',
-            path: req.path
-          });
+          // Reset headers if possible to avoid "headers already sent" errors
+          if (!res.headersSent) {
+            res.setHeader('Content-Type', 'application/json');
+            
+            // Replace HTML response with proper JSON error
+            return originalJson.call(res, {
+              error: 'API endpoint error',
+              message: 'Server returned HTML instead of JSON',
+              path: req.path
+            });
+          } else {
+            console.error('Headers already sent, cannot convert HTML response to JSON');
+          }
         }
         
         // Otherwise, proceed normally
         return originalSend.call(res, body);
+      };
+      
+      // Override end to catch HTML strings
+      // This needs to handle different function signatures
+      const originalEndFunction = res.end;
+      res.end = function(...args: any[]) {
+        const chunk = args[0];
+        
+        if (chunk && typeof chunk === 'string' && 
+            (chunk.includes('<!DOCTYPE') || chunk.includes('<html'))) {
+          
+          // Log the issue for debugging
+          console.error(`HTML response detected in res.end for: ${req.path}`);
+          
+          // Try to replace with JSON if headers not sent
+          if (!res.headersSent) {
+            res.setHeader('Content-Type', 'application/json');
+            const jsonResponse = JSON.stringify({
+              error: 'API endpoint error',
+              message: 'Server returned HTML instead of JSON',
+              path: req.path
+            });
+            
+            // Call the original end with the new JSON response
+            return originalEndFunction.call(res, jsonResponse);
+          }
+        }
+        
+        // Call the original end with all original arguments
+        return originalEndFunction.apply(res, args);
       };
       
       // Continue processing the request

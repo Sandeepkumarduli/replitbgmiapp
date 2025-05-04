@@ -9,10 +9,14 @@ async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     let errorMessage = res.statusText;
     try {
-      const textData = await res.text();
+      // Clone the response before trying to read it as text
+      const resClone = res.clone();
+      const textData = await resClone.text();
+      
       if (textData) {
         // Skip parse if it looks like HTML (contains <!DOCTYPE or <html)
         if (textData.includes('<!DOCTYPE') || textData.includes('<html')) {
+          console.error("HTML response detected in API call:", res.url);
           errorMessage = 'Server returned an HTML response instead of JSON. Please try again.';
         } else {
           try {
@@ -21,21 +25,34 @@ async function throwIfResNotOk(res: Response) {
               errorMessage = typeof jsonData.message === 'string' 
                 ? jsonData.message 
                 : JSON.stringify(jsonData.message);
+            } else if (jsonData.error) {
+              errorMessage = typeof jsonData.error === 'string'
+                ? jsonData.error
+                : JSON.stringify(jsonData.error);
             }
           } catch (parseError) {
             // If JSON parsing fails, use the text data as the error message
-            errorMessage = textData;
+            // but only if it's not too long (might be HTML)
+            if (textData.length < 100) {
+              errorMessage = textData;
+            } else {
+              console.error("Response parsing failed:", parseError);
+              errorMessage = "Failed to parse server response. Please try again.";
+            }
           }
         }
       }
     } catch (e) {
       // If any error happens during text extraction, use the status text
-      errorMessage = res.statusText;
+      console.error("Error handling response:", e);
+      errorMessage = res.statusText || "Unknown server error";
     }
     
     // Create and throw the error (but don't display it yet - that will be handled by React Query's onError)
     try {
       const error = new Error(errorMessage || "An unknown error occurred");
+      // Add status code to the error for better debugging
+      (error as any).statusCode = res.status;
       throw error;
     } catch (e) {
       // If there's an issue creating the error object, throw a generic error

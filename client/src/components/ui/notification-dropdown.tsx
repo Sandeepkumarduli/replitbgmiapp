@@ -129,7 +129,6 @@ export function NotificationDropdown() {
     onSuccess: (data) => {
       // If we get notifications and there's a count, make sure hiddenNotifications is false
       if (data.length > 0 && user) {
-        console.log(`Found ${data.length} notifications for user ${user.id} from query`);
         const wasCleared = localStorage.getItem(`notifications_cleared_${user.id}`) === 'true';
         if (!wasCleared) {
           setHiddenNotifications(false);
@@ -166,12 +165,10 @@ export function NotificationDropdown() {
     const wasCleared = localStorage.getItem(`notifications_cleared_${user.id}`) === 'true';
     
     if (wasCleared) {
-      console.log(`User ${user.id} has previously cleared notifications`);
       // If notifications were cleared by this user before, hide them but DON'T set count to 0
       // This allows new notifications to show up even if old ones were cleared
       setHiddenNotifications(true);
     } else {
-      console.log(`User ${user.id} has NOT cleared notifications`);
       // If not cleared, make sure they're shown
       setHiddenNotifications(false);
     }

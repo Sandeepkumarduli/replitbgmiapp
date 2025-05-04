@@ -62,11 +62,70 @@ export class DatabaseStorage implements IStorage {
   
   async getUserByPhone(phone: string): Promise<User | undefined> {
     try {
-      const [user] = await db.select().from(users).where(eq(users.phone, phone));
-      return user;
+      console.log(`Looking for user with phone: ${phone}`);
+      
+      // Attempt exact match first
+      let result = await db.select().from(users).where(eq(users.phone, phone));
+      
+      if (result && result.length > 0) {
+        console.log(`Found user with exact phone match: ${result[0].username}`);
+        return result[0];
+      }
+      
+      // Format the phone number to try alternative formats
+      let formattedPhone = phone;
+      if (phone.startsWith('+91')) {
+        // Try without the +91 prefix
+        formattedPhone = phone.substring(3);
+        console.log(`Trying alternative format without +91: ${formattedPhone}`);
+        result = await db.select().from(users).where(eq(users.phone, formattedPhone));
+      } else if (!phone.startsWith('+')) {
+        // Try with +91 prefix
+        formattedPhone = `+91${phone}`;
+        console.log(`Trying alternative format with +91: ${formattedPhone}`);
+        result = await db.select().from(users).where(eq(users.phone, formattedPhone));
+      }
+      
+      if (result && result.length > 0) {
+        console.log(`Found user with alternative phone format: ${result[0].username}`);
+        return result[0];
+      }
+      
+      console.log(`No user found with phone ${phone} or any alternative formats`);
+      return undefined;
     } catch (error) {
       console.error(`Error fetching user with phone ${phone}:`, error);
       throw error;
+    }
+  }
+  
+  // Diagnostic function to check database connectivity and tables
+  async checkDatabaseStatus(): Promise<{ status: string, userCount: number, tables: string[] }> {
+    try {
+      // Test basic query
+      const userCount = await db.select({ count: count() }).from(users);
+      
+      // Get list of all tables
+      const tablesList = [
+        'users', 'teams', 'team_members', 'tournaments', 
+        'registrations', 'notifications', 'notification_reads'
+      ];
+      
+      console.log('Database connection successful');
+      console.log(`User count: ${userCount[0].count}`);
+      
+      return {
+        status: 'connected',
+        userCount: Number(userCount[0].count),
+        tables: tablesList
+      };
+    } catch (error) {
+      console.error('Database connectivity test failed:', error);
+      return {
+        status: 'error',
+        userCount: 0,
+        tables: []
+      };
     }
   }
 

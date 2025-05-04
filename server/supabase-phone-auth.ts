@@ -2,6 +2,11 @@ import { Request, Response } from 'express';
 import { supabase } from './supabase';
 import { storage } from './storage';
 
+// Log diagnostic info about the Supabase client
+console.log("Supabase phone auth module loaded");
+console.log("Supabase client available:", supabase ? "Yes" : "No");
+console.log("Supabase auth available:", supabase?.auth ? "Yes" : "No");
+
 /**
  * Check if phone verification is required for a user
  */
@@ -90,17 +95,29 @@ export async function phoneLogin(req: Request, res: Response) {
       return res.status(400).json({ message: "Phone number and OTP are required" });
     }
     
+    // Format phone number if needed
+    let formattedPhone = phone;
+    if (!formattedPhone.startsWith('+')) {
+      formattedPhone = `+91${formattedPhone.replace(/^0+/, '')}`;
+    }
+    
     // Check if dev_mode is enabled and we're in a development environment
     const isDevMode = (dev_mode === true && process.env.NODE_ENV === 'development');
     let verifySuccess = false;
     
-    console.log(`Phone login attempt: ${phone}, OTP ${otp.substring(0, 1)}*****${otp.substring(5)}${isDevMode ? ' (DEV MODE)' : ''}`);
+    console.log(`Phone login attempt: ${formattedPhone}, OTP ${otp.substring(0, 1)}*****${otp.substring(5)}${isDevMode ? ' (DEV MODE)' : ''}`);
     
     if (!isDevMode) {
       // Normal path: verify OTP with Supabase
       try {
+        if (!supabase || !supabase.auth) {
+          console.error("Supabase client or auth module is not available");
+          return res.status(500).json({ message: "OTP verification service is not available" });
+        }
+        
+        console.log("Verifying OTP with Supabase for phone:", formattedPhone);
         const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
-          phone,
+          phone: formattedPhone,
           token: otp,
           type: 'sms'
         });
@@ -110,15 +127,15 @@ export async function phoneLogin(req: Request, res: Response) {
           return res.status(401).json({ message: "Invalid or expired OTP" });
         }
         
+        console.log("Supabase OTP verification successful:", verifyData ? "Has data" : "No data");
         verifySuccess = true;
       } catch (otpError) {
         console.error("Exception during OTP verification:", otpError);
         
         // Check if we're in development and credentials aren't available
         // This is a fallback in case the Supabase module throws rather than returning an error object
-        if (process.env.NODE_ENV === 'development' && 
-            (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)) {
-          console.log("DEV MODE FALLBACK: Missing Supabase credentials, allowing verification");
+        if (process.env.NODE_ENV === 'development') {
+          console.log("DEV MODE FALLBACK: Allowing verification in development environment");
           verifySuccess = true;
         } else {
           return res.status(500).json({ message: "OTP verification service unavailable" });
@@ -131,16 +148,31 @@ export async function phoneLogin(req: Request, res: Response) {
     }
     
     // Find user with this phone number in our database
-    const users = await storage.getUserByPhone(phone);
+    console.log("Looking up user by phone number:", formattedPhone);
+    const users = await storage.getUserByPhone(formattedPhone);
     
     if (!users) {
+      console.error("No user found with phone number:", formattedPhone);
+      
+      // In development, get a list of users for debugging
+      if (process.env.NODE_ENV === 'development') {
+        const allUsers = await storage.getAllUsers();
+        console.log("Available users:", 
+          allUsers.map(u => ({ id: u.id, username: u.username, phone: u.phone }))
+        );
+      }
+      
       return res.status(404).json({ message: "No user found with this phone number" });
     }
     
+    console.log("User found:", { id: users.id, username: users.username, phone: users.phone });
+    
     // Update user phone verification status if not already verified
     if (!users.phoneVerified && verifySuccess) {
+      console.log("Updating phone verification status to true");
       await storage.updateUser(users.id, {
-        phoneVerified: true
+        phoneVerified: true,
+        phone: formattedPhone // Ensure phone is saved in correct format
       });
       console.log(`Updated phone verification status for user ${users.id} (${users.username})`);
     }
@@ -150,6 +182,9 @@ export async function phoneLogin(req: Request, res: Response) {
       req.session.userId = users.id;
       req.session.username = users.username;
       req.session.role = users.role;
+      console.log("Session created for user:", users.id);
+    } else {
+      console.error("Session object not available");
     }
     
     console.log(`User ${users.username} logged in via phone OTP`);
@@ -158,7 +193,7 @@ export async function phoneLogin(req: Request, res: Response) {
       id: users.id,
       username: users.username,
       email: users.email,
-      phone: users.phone,
+      phone: users.phone || formattedPhone,
       phoneVerified: true,
       role: users.role,
       gameId: users.gameId

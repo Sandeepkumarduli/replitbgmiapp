@@ -62,11 +62,12 @@ app.use((req, res, next) => {
   });
 
   // Create a fallback API handler for missing API endpoints
-  // This needs to be very specific to avoid catching legitimate endpoints
-  app.use('/api/:path(*)', (req, res, next) => {
-    // Check if this is actually a 404 and not a request that was already handled
-    if (!res.headersSent) {
-      res.status(404).json({ message: 'API endpoint not found' });
+  // We'll change our approach to only handle paths that don't exist
+  app.use((req, res, next) => {
+    // Only care about API requests
+    if (req.path.startsWith('/api/') && !res.headersSent) {
+      // Let the regular 404 handler take care of this later
+      next();
     } else {
       next();
     }

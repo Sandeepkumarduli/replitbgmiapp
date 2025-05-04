@@ -8,11 +8,13 @@
  */
 
 // Import necessary modules
-const { Pool } = require('pg');
-const { drizzle } = require('drizzle-orm/node-postgres');
-const { migrate } = require('drizzle-orm/node-postgres/migrator');
-const { sql } = require('drizzle-orm');
-require('dotenv').config();
+import { Pool } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-serverless';
+import { sql } from 'drizzle-orm';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import { spawn } from 'child_process';
+import ws from 'ws';
 
 // Check database connection string
 const dbUrl = process.env.DATABASE_URL;
@@ -67,7 +69,6 @@ async function setupDatabase() {
       console.log('Creating missing tables using drizzle push...');
       
       // Use npm run db:push to create tables
-      const { spawn } = require('child_process');
       const pushProcess = spawn('npm', ['run', 'db:push'], {
         stdio: 'inherit',
         shell: true

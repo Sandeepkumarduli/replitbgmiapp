@@ -58,15 +58,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
 
   // Check user session
-  const { isLoading, refetch, data } = useQuery({
-    queryKey: ["/api/user"],
+  const { isLoading, refetch, data } = useQuery<User | null>({
+    queryKey: ["/api/auth/me"],
     retry: false,
+    refetchInterval: 60000, // Refresh session every minute
+    refetchOnWindowFocus: true
   });
   
   useEffect(() => {
     if (data) {
-      setUser(data as User);
+      console.log("Setting user data from API response:", data);
+      // The data should already be properly typed as User | null from useQuery
+      setUser(data);
     } else {
+      console.log("No user data, setting user to null");
       setUser(null);
     }
   }, [data]);
@@ -81,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         
         // Make the login request
-        const res = await apiRequest("POST", "/api/login", credentials);
+        const res = await apiRequest("POST", "/api/auth/login", credentials);
         
         // Check if the response is valid
         if (!res.ok) {
@@ -144,7 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const registerMutation = useMutation({
     mutationFn: async (data: RegisterData) => {
       try {
-        const res = await apiRequest("POST", "/api/register", data);
+        const res = await apiRequest("POST", "/api/auth/register", data);
         return res.json();
       } catch (error) {
         // Handle specific error cases more gracefully
@@ -192,7 +197,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Logout mutation
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/logout", {});
+      const res = await apiRequest("POST", "/api/auth/logout", {});
       return res.json();
     },
     onSuccess: () => {
@@ -276,7 +281,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshUser = async () => {
     const result = await refetch();
     if (result.data) {
-      setUser(result.data as User);
+      setUser(result.data);
     }
   };
 

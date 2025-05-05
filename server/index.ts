@@ -6,12 +6,30 @@ import { scheduleTournamentStatusUpdates } from "./tournament-manager";
 import { scheduleNotificationCleanup } from "./notification-manager";
 import { initializeDeploymentSafety } from "./deployment-fix";
 import dotenv from "dotenv";
+import { checkSupabaseTables } from "./supabase-diagnostics";
+import { runMigrations } from "./supabase-migration";
 
 // Load environment variables
 dotenv.config();
 
 // Check environment variables (debug info)
 import './env-check';
+
+// Run database diagnostics and migrations
+if (process.env.NODE_ENV === 'development') {
+  // Only run these in development to avoid performance impact in production
+  setTimeout(async () => {
+    try {
+      // Run Supabase migrations to ensure tables exist
+      await runMigrations();
+      
+      // Run diagnostics to verify database state
+      await checkSupabaseTables();
+    } catch (error) {
+      console.error('Error in database setup:', error);
+    }
+  }, 2000); // Delay to ensure server is started
+}
 
 // Initialize deployment safety measures (only takes effect in production)
 initializeDeploymentSafety();

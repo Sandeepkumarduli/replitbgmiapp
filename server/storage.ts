@@ -595,25 +595,20 @@ import { SupabaseStorage } from './supabase-storage';
 import { DatabaseStorage } from './database-storage';
 
 // Choose which storage implementation to use
-// Production: PostgreSQL database (default)
-// Supabase: When USE_SUPABASE is set to 'true'
-// In-memory: When USE_MEMORY_STORAGE is set to 'true' (for development)
-const useSupabase = process.env.USE_SUPABASE === 'true';
-const useMemoryStorage = process.env.USE_MEMORY_STORAGE === 'true';
+// Hardcoded to use Supabase as per user request
+// This overrides environment variables
+process.env.USE_SUPABASE = 'true';
+process.env.USE_MEMORY_STORAGE = 'false';
+
+const useSupabase = true; // Force Supabase
+const useMemoryStorage = false; // Disable memory storage
 
 // Select the appropriate storage implementation based on environment variables
 let selectedStorage: IStorage;
 
-if (useMemoryStorage) {
-  console.log('Using in-memory storage (for development only)');
-  selectedStorage = new MemStorage();
-} else if (useSupabase) {
-  console.log('Using Supabase storage');
-  selectedStorage = new SupabaseStorage();
-} else {
-  console.log('Using PostgreSQL database storage (production)');
-  selectedStorage = new DatabaseStorage();
-}
+// Always use Supabase storage as requested
+console.log('Using Supabase storage (forced)');
+selectedStorage = new SupabaseStorage();
 
 // Export the selected storage implementation
 export const storage = selectedStorage;

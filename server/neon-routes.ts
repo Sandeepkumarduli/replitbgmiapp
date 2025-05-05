@@ -808,6 +808,239 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Make notification functions available globally
   (global as any).wss = { notifyUser, broadcast };
+
+  // =========== ADMIN ROUTES ===========
+  
+  // GET /api/admin/users - Get all users (for admin)
+  app.get("/api/admin/users", isAdmin, async (req, res) => {
+    try {
+      // Get all users
+      const users = await storage.getAllUsers();
+      
+      if (!users || users.length === 0) {
+        console.log('No users found in database!');
+      } else {
+        console.log(`Found ${users.length} users in database`);
+      }
+      
+      // Filter out sensitive information
+      const filteredUsers = users.map(user => ({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        phone: user.phone,
+        gameId: user.gameId,
+        role: user.role,
+        createdAt: user.createdAt
+      }));
+      
+      res.json(filteredUsers);
+    } catch (error) {
+      console.error('Error fetching admin users:', error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  // POST /api/admin/users - Create a new user (admin only)
+  app.post("/api/admin/users", isAdmin, async (req, res) => {
+    try {      
+      const { username, email, password, phone, gameId, role = "user" } = req.body;
+      
+      // Validate required fields
+      if (!username || !password || !email || !phone) {
+        return res.status(400).json({ message: "Username, password, email and phone are required" });
+      }
+      
+      // Prevent creating an account with hardcoded admin username
+      if (username === "Sandeepkumarduli") {
+        return res.status(400).json({ message: "This username is reserved" });
+      }
+      
+      // Check if user already exists
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(400).json({ message: "Username already taken" });
+      }
+      
+      // Check if email already exists
+      const userWithEmail = await storage.getUserByEmail(email);
+      if (userWithEmail) {
+        return res.status(400).json({ message: "Email already in use" });
+      }
+      
+      // Check if phone already exists
+      const userWithPhone = await storage.getUserByPhone(phone);
+      if (userWithPhone) {
+        return res.status(400).json({ message: "Phone number already in use" });
+      }
+      
+      // Hash password
+      const hashedPassword = await hashPassword(password);
+      
+      // Create user
+      const user = await storage.createUser({
+        username,
+        password: hashedPassword,
+        email,
+        phone,
+        gameId: gameId || '',
+        role,
+        phoneVerified: true,
+        phoneVerificationBypassed: true
+      });
+      
+      // Return user without password
+      const { password: _, ...userWithoutPassword } = user;
+      res.status(201).json(userWithoutPassword);
+    } catch (error) {
+      console.error('Error creating user:', error);
+      res.status(500).json({ message: "Failed to create user" });
+    }
+  });
+
+  // GET /api/admin/teams - Get all teams (for admin)
+  app.get("/api/admin/teams", isAdmin, async (req, res) => {
+    try {
+      const teams = await storage.getAllTeams();
+      res.json(teams);
+    } catch (error) {
+      console.error('Error fetching teams:', error);
+      res.status(500).json({ message: "Failed to fetch teams" });
+    }
+  });
+
+  // DELETE /api/admin/users/:id - Delete a user (admin only)
+  app.delete("/api/admin/users/:id", isAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      
+      // Prevent deleting system admin
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      if (user.username === "Sandeepkumarduli") {
+        return res.status(400).json({ message: "Cannot delete system administrator" });
+      }
+      
+      // Delete user
+      await storage.deleteUser(userId);
+      res.status(200).json({ message: "User deleted successfully" });
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      res.status(500).json({ message: "Failed to delete user" });
+    }
+  });
+
+  // PATCH /api/admin/users/:id/role - Update a user's role (admin only)
+  app.patch("/api/admin/users/:id/role", isAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const { role } = req.body;
+      
+      if (!role || (role !== "admin" && role !== "user")) {
+        return res.status(400).json({ message: "Valid role required (admin or user)" });
+      }
+      
+      // Get user
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Update role
+      const updatedUser = await storage.updateUser(userId, { role });
+      res.json(updatedUser);
+    } catch (error) {
+      console.error('Error updating user role:', error);
+      res.status(500).json({ message: "Failed to update user role" });
+    }
+  });
+
+  // GET /api/admin/administrators - Get all admin users
+  app.get("/api/admin/administrators", isAdmin, async (req, res) => {
+    try {
+      // Get all admins from the admins table
+      const admins = await storage.getAllAdmins();
+      res.json(admins);
+    } catch (error) {
+      console.error('Error fetching administrators:', error);
+      res.status(500).json({ message: "Failed to fetch administrators" });
+    }
+  });
+
+  // GET /api/admin/users/:id - Get user details (admin only)
+  app.get("/api/admin/users/:id", isAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Return user without password
+      const { password, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error('Error fetching user details:', error);
+      res.status(500).json({ message: "Failed to fetch user details" });
+    }
+  });
+  
+  // GET /api/admin/users/:id/teams - Get teams owned by a user (admin only)
+  app.get("/api/admin/users/:id/teams", isAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const teams = await storage.getTeamsByOwner(userId);
+      res.json(teams);
+    } catch (error) {
+      console.error('Error fetching user teams:', error);
+      res.status(500).json({ message: "Failed to fetch user teams" });
+    }
+  });
+  
+  // GET /api/admin/users/:id/registrations - Get registrations for a user (admin only)
+  app.get("/api/admin/users/:id/registrations", isAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const registrations = await storage.getRegistrationsByUser(userId);
+      res.json(registrations);
+    } catch (error) {
+      console.error('Error fetching user registrations:', error);
+      res.status(500).json({ message: "Failed to fetch user registrations" });
+    }
+  });
+  
+  // GET /api/admin/teams/:id - Get team details (admin only)
+  app.get("/api/admin/teams/:id", isAdmin, async (req, res) => {
+    try {
+      const teamId = parseInt(req.params.id);
+      const team = await storage.getTeam(teamId);
+      
+      if (!team) {
+        return res.status(404).json({ message: "Team not found" });
+      }
+      
+      res.json(team);
+    } catch (error) {
+      console.error('Error fetching team details:', error);
+      res.status(500).json({ message: "Failed to fetch team details" });
+    }
+  });
+  
+  // GET /api/admin/teams/:id/members - Get team members (admin only)
+  app.get("/api/admin/teams/:id/members", isAdmin, async (req, res) => {
+    try {
+      const teamId = parseInt(req.params.id);
+      const members = await storage.getTeamMembers(teamId);
+      res.json(members);
+    } catch (error) {
+      console.error('Error fetching team members:', error);
+      res.status(500).json({ message: "Failed to fetch team members" });
+    }
+  });
   
   // Return the HTTP server
   return httpServer;

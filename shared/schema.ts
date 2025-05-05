@@ -65,6 +65,8 @@ export const registrations = pgTable("registrations", {
   teamId: integer("team_id").notNull().references(() => teams.id),
   userId: integer("user_id").notNull().references(() => users.id),
   slot: integer("slot"),
+  status: text("status").notNull().default("pending"), // pending, approved, rejected
+  paymentStatus: text("payment_status").notNull().default("pending"), // pending, paid, failed, refunded
   registeredAt: timestamp("registered_at").defaultNow(),
 });
 
@@ -159,7 +161,9 @@ export const updateTournamentSchema = z.object({
 export const insertRegistrationSchema = createInsertSchema(registrations).omit({
   id: true,
   registeredAt: true,
-  slot: true
+  slot: true,
+  status: true,
+  paymentStatus: true
 });
 
 export const insertNotificationSchema = createInsertSchema(notifications).omit({

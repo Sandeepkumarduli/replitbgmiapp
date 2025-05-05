@@ -383,6 +383,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: 'Failed to fetch teams' });
     }
   });
+  
+  // Get user's teams (both owned and as a member)
+  app.get('/api/teams/my', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId as number;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      // Get teams owned by user
+      const ownedTeams = await storage.getTeamsByOwnerId(userId);
+      
+      // Get all teams
+      const allTeams = await storage.getAllTeams();
+      
+      // Get all team members to find teams where user is a member
+      const memberTeams: any[] = [];
+      
+      for (const team of allTeams) {
+        // Skip teams the user already owns
+        if (ownedTeams.some(ownedTeam => ownedTeam.id === team.id)) {
+          continue;
+        }
+        
+        // Check if user is a member of this team
+        const members = await storage.getTeamMembers(team.id);
+        
+        // Check if any member matches the current user
+        const isMember = members.some(member => member.userId === userId);
+        
+        if (isMember) {
+          memberTeams.push(team);
+        }
+      }
+      
+      // Combine owned teams and member teams
+      const combinedTeams = [...ownedTeams, ...memberTeams];
+      
+      res.json(combinedTeams);
+    } catch (error) {
+      console.error('Error fetching user teams:', error);
+      res.status(500).json({ error: 'Failed to fetch team' });
+    }
+  });
 
   app.get('/api/teams/owned', isAuthenticated, async (req, res) => {
     try {
@@ -993,7 +1039,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/admin/users/:id/teams", isAdmin, async (req, res) => {
     try {
       const userId = parseInt(req.params.id);
-      const teams = await storage.getTeamsByOwner(userId);
+      const teams = await storage.getTeamsByOwnerId(userId);
       res.json(teams);
     } catch (error) {
       console.error('Error fetching user teams:', error);

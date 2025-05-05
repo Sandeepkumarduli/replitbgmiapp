@@ -92,12 +92,24 @@ export default function UserProfile() {
   const onSubmit = async (data: ProfileFormValues) => {
     try {
       // Extract only the fields we want to update
-      const updateData: any = {
-        username: data.username !== user?.username ? data.username : undefined,
-        email: data.email !== user?.email ? data.email : undefined,
-        phone: data.phone !== user?.phone ? data.phone : undefined,
-        gameId: data.gameId !== user?.gameId ? data.gameId : undefined,
-      };
+      const updateData: any = {};
+      
+      // Only include fields that have actually changed
+      if (data.username && data.username !== user?.username) updateData.username = data.username;
+      if (data.email && data.email !== user?.email) updateData.email = data.email;
+      if (data.phone && data.phone !== user?.phone) updateData.phone = data.phone;
+      if (data.gameId && data.gameId !== user?.gameId) updateData.gameId = data.gameId;
+      
+      console.log("Current field values:", {
+        username: data.username,
+        userUsername: user?.username,
+        email: data.email, 
+        userEmail: user?.email,
+        phone: data.phone,
+        userPhone: user?.phone,
+        gameId: data.gameId,
+        userGameId: user?.gameId
+      });
       
       // Handle password change
       if (data.newPassword) {
@@ -115,34 +127,47 @@ export default function UserProfile() {
         updateData.currentPassword = data.currentPassword;
       }
       
-      // Remove any undefined values
-      const cleanedData = Object.fromEntries(
-        Object.entries(updateData).filter(([_, v]) => v !== undefined)
-      );
-      
       // Only proceed if there are changes to make
-      if (Object.keys(cleanedData).length > 0) {
-        console.log("Updating profile with changes:", Object.keys(cleanedData));
+      if (Object.keys(updateData).length > 0) {
+        console.log("Updating profile with changes:", Object.keys(updateData));
         
-        // Use the updateProfile method from auth context
-        const response = await updateProfile(cleanedData);
-        
-        // Reset password fields
-        form.setValue("currentPassword", "");
-        form.setValue("newPassword", "");
-        form.setValue("confirmPassword", "");
-        
-        // If password was changed, logout and redirect to login page
-        if (response && response.passwordChanged) {
-          toast({
-            title: "Password Changed",
-            description: "Your password has been updated. Please log in again with your new password.",
-          });
+        try {
+          // Use the updateProfile method from auth context
+          const response = await updateProfile(updateData);
+          console.log("Profile update response:", response);
           
-          // Set a small timeout to allow the toast to be seen
-          setTimeout(() => {
-            logout();
-          }, 1500);
+          // Reset password fields
+          form.setValue("currentPassword", "");
+          form.setValue("newPassword", "");
+          form.setValue("confirmPassword", "");
+          
+          // Show success message
+          if (!data.newPassword) {
+            toast({
+              title: "Profile Updated",
+              description: "Your profile has been successfully updated.",
+            });
+          }
+          
+          // If password was changed, logout and redirect to login page
+          if (response && response.passwordChanged) {
+            toast({
+              title: "Password Changed",
+              description: "Your password has been updated. Please log in again with your new password.",
+            });
+            
+            // Set a small timeout to allow the toast to be seen
+            setTimeout(() => {
+              logout();
+            }, 1500);
+          }
+        } catch (updateError) {
+          console.error("Failed to update profile:", updateError);
+          toast({
+            title: "Update Failed",
+            description: updateError instanceof Error ? updateError.message : "An error occurred updating your profile.",
+            variant: "destructive",
+          });
         }
       } else {
         toast({
@@ -151,8 +176,12 @@ export default function UserProfile() {
         });
       }
     } catch (error) {
-      console.error("Error updating profile:", error);
-      // Error handling is done in the updateProfile method
+      console.error("Error in profile form submission:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "An unexpected error occurred",
+        variant: "destructive",
+      });
     }
   };
 

@@ -143,10 +143,24 @@ export default function UserTeam() {
   // Delete team mutation
   const deleteTeamMutation = useMutation({
     mutationFn: async (teamId: number) => {
-      const res = await apiRequest("DELETE", `/api/teams/${teamId}`, undefined);
-      return res.json();
+      console.log(`Attempting to delete team with ID: ${teamId}`);
+      try {
+        const res = await apiRequest("DELETE", `/api/teams/${teamId}`, undefined);
+        
+        if (!res.ok) {
+          // Try to get error message from server
+          const errorData = await res.json().catch(() => ({ error: `Server error: ${res.status}` }));
+          throw new Error(errorData.error || `Failed to delete team. Server responded with status: ${res.status}`);
+        }
+        
+        return await res.json();
+      } catch (error) {
+        console.error("Error in delete team mutation:", error);
+        throw error;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Team deleted successfully:", data);
       queryClient.invalidateQueries({ queryKey: ["/api/teams/my"] });
       toast({
         title: "Team deleted",
@@ -154,11 +168,13 @@ export default function UserTeam() {
       });
       setDeleteTeamDialogOpen(false);
       setTeamToDelete(null);
+      setTeamToDeleteName("");
     },
     onError: (error: Error) => {
+      console.error("Failed to delete team:", error);
       toast({
         title: "Failed to delete team",
-        description: error.message,
+        description: error.message || "An unexpected error occurred",
         variant: "destructive",
       });
     },

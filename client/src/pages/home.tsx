@@ -42,7 +42,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
-              <span className="text-primary">RD TOURNAMENTS</span> HUB
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">RD TOURNAMENTS HUB</span>
             </h1>
             <p className="text-xl md:text-2xl text-gray-300 mb-4 max-w-3xl mx-auto">
               An Ultimate Gaming Hub
@@ -137,7 +137,9 @@ export default function Home() {
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-dark">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-white mb-4">How It Works</h2>
+            <h2 className="text-3xl font-bold mb-4">
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">How It Works</span>
+            </h2>
             <p className="text-xl text-gray-400 max-w-3xl mx-auto">
               Join our platform, compete in tournaments, and win exclusive prizes
             </p>
@@ -274,7 +276,9 @@ export default function Home() {
       {/* CTA Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-primary/20 to-secondary/20">
         <div className="max-w-5xl mx-auto text-center">
-          <h2 className="text-4xl font-bold text-white mb-6">Ready to Join RD TOURNAMENTS HUB?</h2>
+          <h2 className="text-4xl font-bold mb-6">
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">Ready to Join RD TOURNAMENTS HUB?</span>
+          </h2>
           <p className="text-xl text-gray-300 mb-10 max-w-3xl mx-auto">
             Create an account, build your team, and start competing in exciting gaming tournaments across multiple games today
           </p>

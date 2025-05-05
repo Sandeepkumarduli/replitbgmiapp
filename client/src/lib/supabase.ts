@@ -1,56 +1,8 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+// This is a stub replacement for the Supabase client
+// We've migrated from Supabase to direct Neon DB usage on the backend
 
-// Variables to store Supabase credentials
-let supabaseUrl: string | undefined = import.meta.env.NEXT_PUBLIC_SUPABASE_URL;
-let supabaseAnonKey: string | undefined = import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-// Check if we need to fetch from server due to missing Vite env vars
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('Supabase credentials not found in environment variables, will fetch from server');
-}
-
-// Log the state of credentials
-console.log('Client supabaseUrl:', supabaseUrl ? supabaseUrl.substring(0, 15) + '...' : 'Missing');
-console.log('Client supabaseAnonKey:', supabaseAnonKey ? supabaseAnonKey.substring(0, 15) + '...' : 'Missing');
-
-// Fetch Supabase credentials from the server
-async function fetchSupabaseCredentials() {
-  try {
-    const response = await fetch('/api/config/supabase');
-    if (!response.ok) {
-      throw new Error(`Failed to fetch Supabase credentials: ${response.status}`);
-    }
-    
-    const credentials = await response.json();
-    if (credentials.url && credentials.anonKey) {
-      supabaseUrl = credentials.url;
-      supabaseAnonKey = credentials.anonKey;
-      console.log('Supabase credentials loaded from server');
-      return true;
-    }
-    return false;
-  } catch (error) {
-    console.error('Error fetching Supabase credentials:', error);
-    return false;
-  }
-}
-
-// Try to fetch credentials if they're not already available
-if (!supabaseUrl || !supabaseAnonKey) {
-  fetchSupabaseCredentials()
-    .then(success => {
-      if (success) {
-        // Reinitialize the Supabase client with the fetched credentials
-        initializeSupabaseClient();
-      }
-    })
-    .catch(err => {
-      console.error('Failed to load Supabase credentials:', err);
-    });
-}
-
-// Interface for our mock Supabase client
-interface MockSupabaseClient {
+// Interface for our mock client to maintain compatibility with existing code
+interface MockClient {
   auth: {
     signInWithOtp: (params: { phone: string }) => Promise<{
       data: any;
@@ -73,8 +25,10 @@ interface MockSupabaseClient {
   };
 }
 
-// Create a dummy client for development with DEV mode capabilities
-const dummyClient: MockSupabaseClient = {
+console.log('Using Neon DB backend - Supabase client is just a stub');
+
+// Create a dummy client that just logs operations
+const dummyClient: MockClient = {
   auth: {
     signInWithOtp: async ({ phone }: { phone: string }) => {
       console.log(`DEV MODE: Sending mock OTP to ${phone}`);
@@ -117,45 +71,36 @@ const dummyClient: MockSupabaseClient = {
       };
     },
   },
-  from: () => ({
-    select: () => ({
-      eq: () => ({
-        single: () => Promise.resolve({ data: null, error: null }),
-      }),
-    }),
-    update: () => ({
-      eq: () => Promise.resolve({ error: null }),
-    }),
-  }),
+  from: (table) => {
+    console.log(`Stub Supabase: Attempted to access table: ${table}`);
+    return {
+      select: (columns) => {
+        console.log(`Stub Supabase: Attempted to select columns: ${columns}`);
+        return {
+          eq: (column, value) => {
+            console.log(`Stub Supabase: Attempted to filter ${column} = ${value}`);
+            return {
+              single: () => Promise.resolve({ data: null, error: null }),
+            };
+          },
+        };
+      },
+      update: (data) => {
+        console.log(`Stub Supabase: Attempted to update with data:`, data);
+        return {
+          eq: (column, value) => {
+            console.log(`Stub Supabase: Attempted to filter for update ${column} = ${value}`);
+            return Promise.resolve({ error: null });
+          },
+        };
+      },
+    };
+  },
 };
 
-// Export the appropriate client
-let supabase: SupabaseClient | MockSupabaseClient;
-
-// Function to initialize the Supabase client with current credentials
-function initializeSupabaseClient() {
-  if (!supabaseUrl || !supabaseAnonKey) {
-    console.error('Missing Supabase credentials. Please check environment variables.');
-    
-    // Use dummy client in development or if credentials are missing in production
-    console.warn('Using dummy Supabase client');
-    supabase = dummyClient;
-    return false;
-  } else {
-    // Real Supabase client
-    try {
-      supabase = createClient(supabaseUrl, supabaseAnonKey);
-      console.log('Supabase client initialized successfully');
-      return true;
-    } catch (error) {
-      console.error('Failed to initialize Supabase client:', error);
-      supabase = dummyClient;
-      return false;
-    }
-  }
+// Export the dummy client as supabase
+export const supabase = dummyClient;
+export function initializeSupabaseClient() {
+  console.log('Supabase client initialization requested, but we are using Neon DB backend');
+  return false;
 }
-
-// Initial initialization
-initializeSupabaseClient();
-
-export { supabase, initializeSupabaseClient };

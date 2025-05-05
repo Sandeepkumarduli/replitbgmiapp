@@ -65,11 +65,12 @@ export default function UserDashboard() {
   }, [queryClient, isAuthenticated]);
 
   // Fetch user teams
-  const { data: teams, isLoading: isLoadingTeams, refetch: refetchTeams } = useQuery<any[]>({
+  const { data: teams = [], isLoading: isLoadingTeams, refetch: refetchTeams } = useQuery<any[]>({
     queryKey: ["/api/teams/my"],
     enabled: isAuthenticated,
     refetchOnWindowFocus: true,
     staleTime: 10000, // 10 seconds before considering data stale
+    select: (data) => Array.isArray(data) ? data : []
   });
 
   // Fetch user registrations

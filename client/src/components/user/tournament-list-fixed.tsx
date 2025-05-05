@@ -92,16 +92,19 @@ export function TournamentList({
     refetchOnMount: true,
     refetchOnWindowFocus: true,
     retry: 2,
+    select: (data) => Array.isArray(data) ? data : []
   });
   
   // Fetch user's teams
-  const { data: teams } = useQuery<Team[]>({
+  const { data: teams = [] } = useQuery<Team[]>({
     queryKey: ["/api/teams/my"],
+    select: (data) => Array.isArray(data) ? data : []
   });
 
   // Fetch user's registrations
-  const { data: registrations } = useQuery<any[]>({
+  const { data: registrations = [] } = useQuery<any[]>({
     queryKey: ["/api/registrations/user"],
+    select: (data) => Array.isArray(data) ? data : []
   });
   
   // Fetch registration counts for all tournaments

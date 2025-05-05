@@ -1,162 +1,112 @@
-# Supabase Setup Guide for RD Tournaments Hub
+# Supabase Database Setup Guide
 
-This document provides step-by-step instructions for setting up your Supabase database for the RD Tournaments Hub application.
+This guide will help you properly set up your Supabase database for the BGMI Tournaments application.
 
-## Background
+## Prerequisites
 
-The RD Tournaments Hub application requires a properly configured Supabase database to function correctly. The JavaScript client alone cannot create the necessary database tables, so we need to set them up manually through the Supabase SQL Editor.
+1. A Supabase project with the following environment variables set:
+   - `NEXT_PUBLIC_SUPABASE_URL` - Your Supabase project URL
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Your Supabase anonymous key
 
-> **CRITICAL ISSUE:** Supabase does not allow direct execution of SQL from their JavaScript client by default. A special stored procedure needs to be created to enable this functionality, and this is included in our setup scripts.
+## Step 1: Create the required SQL function in Supabase
 
-## Required SQL Functions
+Before running any setup scripts, you must first create a special SQL function in your Supabase database. This function allows our application to execute SQL commands securely.
 
-Before any other steps, you **MUST** create the following SQL functions in your Supabase project using the SQL Editor:
+1. Log in to your [Supabase dashboard](https://app.supabase.com)
+2. Select your project
+3. Go to the "SQL Editor" tab
+4. Create a new query and paste the following SQL:
 
 ```sql
--- Function to execute arbitrary SQL (required for diagnostics and schema management)
+-- First, drop the existing function if it exists
+DROP FUNCTION IF EXISTS public.run_sql(text);
+
+-- Create the run_sql function with JSONB return type for better compatibility
 CREATE OR REPLACE FUNCTION public.run_sql(sql_query TEXT) 
-RETURNS SETOF json AS $$
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  result JSONB;
 BEGIN
-    RETURN QUERY EXECUTE sql_query;
+  EXECUTE 'SELECT jsonb_agg(row_to_json(t)) FROM (' || sql_query || ') AS t' INTO result;
+  RETURN COALESCE(result, '[]'::JSONB);
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Alternative function name for compatibility
-CREATE OR REPLACE FUNCTION public.execute_sql(query TEXT) 
-RETURNS SETOF json AS $$
-BEGIN
-    RETURN QUERY EXECUTE query;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Function to list all tables in the public schema
-CREATE OR REPLACE FUNCTION public.list_tables()
-RETURNS TABLE(table_name text) AS $$
-BEGIN
-    RETURN QUERY 
-    SELECT t.table_name::text
-    FROM information_schema.tables t
-    WHERE t.table_schema = 'public'
-    AND t.table_type = 'BASE TABLE';
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 ```
 
-These functions are **essential** for the application to communicate with the database properly. Without them, many features will not work correctly.
+5. Click "Run" to execute the SQL and create the function
 
-## Instructions
+## Step 2: Run the secure setup script
 
-### 1. Generate the SQL Setup Scripts
-
-Run the following command in the terminal to generate the SQL scripts:
+Once the SQL function is created, you can run the secure setup script to create all the necessary tables and an admin user:
 
 ```bash
-node scripts/supabase-sql-setup.js
+# Make sure you're in the project root directory
+node scripts/secure-setup.js
 ```
 
-This will create two files:
-- `supabase-setup.sql` - The main script to create the tables and functions
-- `supabase-rls.sql` - (Optional) Script for Row Level Security policies
+This script will:
 
-### 2. Access the Supabase Dashboard
+1. Test if the `run_sql` function exists in your Supabase database
+2. Create all necessary database tables if they don't already exist
+3. Create an admin user with the following credentials:
+   - Username: `admin`
+   - Password: `admin123`
+4. Verify that all tables are working properly
 
-1. Go to [https://app.supabase.io/](https://app.supabase.io/)
-2. Log in to your Supabase account
-3. Select your project
+### Security Note
 
-### 3. Create the Tables Using the SQL Editor
+The script uses the default admin password (`admin123`) for initial setup. **You should change this password immediately after logging in for the first time!**
 
-1. In the Supabase dashboard, navigate to the **SQL Editor** section
-2. Create a new query
-3. Copy and paste the contents of `supabase-setup.sql` into the editor
-4. Click "Run" to execute the SQL commands
+## Step 3: Alternative Setup Methods
 
-This will:
-- Create all the required tables for the application
-- Set up the necessary stored procedures
-- Insert a default admin user with username `Sandeepkumarduli` and password `Sandy@1234`
+If you prefer not to use the script directly, here are alternative ways to set up your database:
 
-### 4. (Optional) Set Up Row Level Security
+### Option 1: Using the server-side setup utility
 
-If you want to enable Row Level Security (recommended for production):
+You can use the integrated server-side utility to create the admin user:
 
-1. In the SQL Editor, create a new query
-2. Copy and paste the contents of `supabase-rls.sql` into the editor
-3. Click "Run" to execute the SQL commands
-
-### 5. Verify the Setup
-
-After running the SQL scripts, you can verify that everything is set up correctly:
-
-1. In the Supabase dashboard, navigate to the **Table Editor** section
-2. You should see all the required tables listed:
-   - users
-   - teams
-   - team_members
-   - tournaments
-   - registrations
-   - notifications
-   - notification_reads
-   - admins
-
-3. Check the "users" table to confirm that the admin user was created
-
-### 6. Configure Environment Variables
-
-Make sure the following environment variables are set in your application:
-
-```
-NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+```bash
+# Run the server-side admin setup utility
+node server/setup-admin.js
 ```
 
-These values can be found in the Supabase dashboard under **Settings > API**.
+### Option 2: Using the Supabase Setup page
+
+For a more visual approach, you can use the Supabase Setup page in the application:
+
+1. Start the application (`npm run dev`)
+2. Navigate to `/supabase-setup` in your browser
+3. Click "Create All Missing Tables" to create the necessary tables
+4. Click "Create Admin User" to create the admin user
 
 ## Troubleshooting
 
-### Table Creation Errors
+### Error: "function run_sql(text) does not exist"
 
-If you encounter errors during table creation:
+This means you need to create the `run_sql` function in your Supabase database. Follow Step 1 of this guide.
 
-1. Check that you have administrator privileges in your Supabase project
-2. Verify that you're using the SQL Editor, not the JavaScript client, to create tables
-3. Make sure all SQL statements are executed in the correct order (tables with foreign keys need their referenced tables to exist first)
+### Error: "relation does not exist"
 
-### SQL Function Errors (PGRST202)
+This means the tables don't exist yet. Run the setup script or use the Supabase Setup page to create them.
 
-If you see errors like `PGRST202: Could not find the function public.run_sql`:
+### Tables not showing in Supabase dashboard
 
-1. Ensure you've run the main setup SQL script which contains the `run_sql` function definition
-2. If needed, manually create the function in the SQL Editor:
-   ```sql
-   CREATE OR REPLACE FUNCTION public.run_sql(sql_query TEXT) 
-   RETURNS SETOF json AS $$
-   BEGIN
-       RETURN QUERY EXECUTE sql_query;
-   END;
-   $$ LANGUAGE plpgsql SECURITY DEFINER;
-   ```
-3. Make sure your application is calling this function correctly:
-   ```javascript
-   const { data, error } = await supabase.rpc('run_sql', { sql_query: 'SELECT * FROM users' });
-   ```
+Tables created using the `run_sql` function will appear in the "Table Editor" section of your Supabase dashboard. If they don't appear immediately, try refreshing the page.
 
-### Connection Issues
+## Full Database Schema
 
-If the application fails to connect to Supabase:
+The setup creates the following tables:
 
-1. Verify that your environment variables are correctly set
-2. Check the Supabase dashboard to ensure your project is active
-3. Test the connection using the Supabase dashboard's API panel
+1. `users` - User accounts
+2. `admins` - Admin accounts
+3. `teams` - Teams for tournaments
+4. `team_members` - Members of teams
+5. `tournaments` - Tournament details
+6. `registrations` - Tournament registrations
+7. `notifications` - User notifications
+8. `notification_reads` - Tracks which notifications have been read
 
-### Access Permission Issues
-
-If you encounter permission errors when accessing tables:
-
-1. Check the Row Level Security (RLS) policies in the Supabase dashboard
-2. Make sure your application is correctly authenticating with Supabase
-3. Review the permission settings for each table in the Supabase dashboard
-
-## Support
-
-If you continue to experience issues, please contact the development team for additional support.
+For details on each table's structure, check the SQL in the `scripts/secure-setup.js` file.

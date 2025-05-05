@@ -74,11 +74,12 @@ export default function UserDashboard() {
   });
 
   // Fetch user registrations
-  const { data: registrations, isLoading: isLoadingRegistrations, refetch: refetchRegistrations } = useQuery<any[]>({
+  const { data: registrations = [], isLoading: isLoadingRegistrations, refetch: refetchRegistrations } = useQuery<any[]>({
     queryKey: ["/api/registrations/user"],
     enabled: isAuthenticated,
     refetchOnWindowFocus: true,
     staleTime: 10000, // 10 seconds before considering data stale
+    select: (data) => Array.isArray(data) ? data : []
   });
   
   // Handle refresh data
@@ -130,8 +131,7 @@ export default function UserDashboard() {
 
   return (
     <div className="min-h-screen bg-dark pt-20 pb-10 px-4 sm:px-6 lg:px-8">
-      {/* Include phone verification modal */}
-      <PhoneVerificationCheck />
+      {/* Phone verification removed as requested */}
       
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6">

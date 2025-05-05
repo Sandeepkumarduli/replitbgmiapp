@@ -18,20 +18,14 @@ export function PhoneVerificationCheck() {
   });
   
   useEffect(() => {
-    // If user exists and has a phone, but it's not verified, show the modal
-    if (user && !data?.phoneVerified) {
-      setIsOpen(true);
-    } else {
-      setIsOpen(false);
-    }
+    // Phone verification is disabled as requested
+    setIsOpen(false);
   }, [user, data]);
   
-  // Close handler (we might not actually close if verification is required)
+  // Close handler (always allows closing since verification is disabled)
   const handleClose = () => {
-    // Only allow closing if already verified
-    if (data?.phoneVerified) {
-      setIsOpen(false);
-    }
+    // Always allow closing since verification is disabled
+    setIsOpen(false);
   };
   
   return <PhoneVerificationModal open={isOpen} onClose={handleClose} />;

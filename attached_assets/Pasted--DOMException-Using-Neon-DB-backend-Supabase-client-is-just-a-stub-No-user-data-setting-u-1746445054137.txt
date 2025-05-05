@@ -1,0 +1,26 @@
+
+DOMException {}
+
+Using Neon DB backend - Supabase client is just a stub
+No user data, setting user to null
+Setting user data from API response: 
+Object {id: 2, username: "Sandeepkumarduli", email: "admin@example.com", phone: "1234567890", displayName: "Sandeep Kumar Duli", …}
+Cannot read properties of undefined (reading 'length')
+Cannot read properties of undefined (reading 'length')
+The above error occurred in the <SupabaseSetupPage> component:
+
+    at SupabaseSetupPage (https://1db2e02b-aac0-4476-886a-7b346a8002f1-00-1e17dmgbezu9g.picard.replit.dev/src/pages/supabase-setup.tsx:28:21)
+    at Route (https://1db2e02b-aac0-4476-886a-7b346a8002f1-00-1e17dmgbezu9g.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=34d84e16:323:16)
+    at Switch (https://1db2e02b-aac0-4476-886a-7b346a8002f1-00-1e17dmgbezu9g.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=34d84e16:379:17)
+    at div
+    at div
+    at Router (https://1db2e02b-aac0-4476-886a-7b346a8002f1-00-1e17dmgbezu9g.picard.replit.dev/src/App.tsx?v=p2_0ii0jx4VXJVK3ouy1B:169:22)
+    at Provider (https://1db2e02b-aac0-4476-886a-7b346a8002f1-00-1e17dmgbezu9g.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-NNZVJN4K.js?v=34d84e16:38:15)
+    at TooltipProvider (https://1db2e02b-aac0-4476-886a-7b346a8002f1-00-1e17dmgbezu9g.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=34d84e16:61:5)
+    at AuthProvider (https://1db2e02b-aac0-4476-886a-7b346a8002f1-00-1e17dmgbezu9g.picard.replit.dev/src/lib/auth.tsx:24:32)
+    at QueryClientProvider (https://1db2e02b-aac0-4476-886a-7b346a8002f1-00-1e17dmgbezu9g.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=34d84e16:2805:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+Cannot read properties of undefined (reading 'length')

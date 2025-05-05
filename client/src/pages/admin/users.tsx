@@ -75,6 +75,7 @@ export default function AdminUsers() {
 
   const { data: users = [], isLoading: isUsersLoading, refetch } = useQuery<any[]>({
     queryKey: ["/api/admin/users"],
+    select: (data) => Array.isArray(data) ? data : []
   });
 
   const refreshUsers = async () => {

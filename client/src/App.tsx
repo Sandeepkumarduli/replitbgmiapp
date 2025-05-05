@@ -40,7 +40,7 @@ import AuthPage from "@/pages/auth-page";
 import AboutPage from "@/pages/about";
 import ContactPage from "@/pages/contact";
 import GamesPage from "@/pages/games";
-import SupabaseSetupPage from "@/pages/supabase-setup";
+
 
 // Protected Routes Components
 function ProtectedRoute({ component: Component, adminOnly = false, ...rest }: { 
@@ -188,7 +188,7 @@ function Router() {
           <Route path="/about" component={AboutPage}/>
           <Route path="/contact" component={ContactPage}/>
           <Route path="/games" component={GamesPage}/>
-          <Route path="/supabase-setup" component={SupabaseSetupPage}/>
+
           <Route component={NotFound} />
         </Switch>
       </div>

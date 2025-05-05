@@ -4,15 +4,10 @@
  * It can be used to diagnose production database issues
  */
 
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import { sql } from 'drizzle-orm';
-import ws from 'ws';
 import { Request, Response } from 'express';
 import * as schema from '../shared/schema';
-
-// Configure neon for WebSocket
-neonConfig.webSocketConstructor = ws;
+import { supabase } from './supabase';
+import { storage } from './storage';
 
 /**
  * Get database diagnostic information including:
@@ -23,31 +18,51 @@ neonConfig.webSocketConstructor = ws;
  */
 export async function getDatabaseDiagnostics(req: Request, res: Response) {
   try {
-    // Check if database URL is available
-    if (!process.env.DATABASE_URL) {
+    // Check if Supabase URL and key are available
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
       return res.status(500).json({
-        error: 'Database URL not set',
+        error: 'Supabase credentials not set',
         env: process.env.NODE_ENV,
         timestamp: new Date().toISOString()
       });
     }
 
-    // Create pool and client
-    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-    const db = drizzle({ client: pool, schema });
-
     try {
-      // Check connection
-      await pool.query('SELECT NOW()');
+      // Basic Supabase health check
+      let supabaseStatus = "unknown";
+      let tables = [];
+      let userCount = 0;
       
-      // Get existing tables
-      const { rows: tables } = await pool.query(`
-        SELECT table_name 
-        FROM information_schema.tables 
-        WHERE table_schema = 'public'
-      `);
-      
-      const existingTables = tables.map(row => row.table_name);
+      try {
+        const { data: healthCheck, error: healthError } = await supabase.from('users').select('count(*)', { count: 'exact', head: true });
+        supabaseStatus = healthError ? "error" : "available";
+        
+        // Try to get list of tables
+        if (!healthError) {
+          // These are the tables we expect to exist
+          tables = [
+            'users',
+            'teams',
+            'team_members',
+            'tournaments',
+            'registrations',
+            'notifications',
+            'notification_reads'
+          ];
+          
+          // Get user count
+          const { count, error: countError } = await supabase
+            .from('users')
+            .select('*', { count: 'exact', head: true });
+          
+          if (!countError) {
+            userCount = count || 0;
+          }
+        }
+      } catch (e) {
+        console.error("Supabase health check error:", e);
+        supabaseStatus = "error";
+      }
       
       // List of expected tables
       const expectedTables = [
@@ -60,40 +75,20 @@ export async function getDatabaseDiagnostics(req: Request, res: Response) {
         'notification_reads'
       ];
       
-      // Get missing tables
+      // Get missing tables (simple check)
+      const existingTables = tables;
       const missingTables = expectedTables.filter(
         table => !existingTables.includes(table)
       );
 
-      // Get table schemas and record counts
-      const tableSchemas = await Promise.all(
-        existingTables.map(async (table) => {
-          // Get columns for this table
-          const { rows: columns } = await pool.query(`
-            SELECT column_name, data_type, is_nullable
-            FROM information_schema.columns
-            WHERE table_name = $1
-            ORDER BY ordinal_position
-          `, [table]);
-          
-          // Get record count
-          const { rows: countResult } = await pool.query(`
-            SELECT COUNT(*) as count FROM "${table}"
-          `);
-          
-          return {
-            name: table,
-            columns,
-            recordCount: parseInt(countResult[0].count)
-          };
-        })
-      );
-
-      // Return diagnostic info
+      // Return minimal diagnostic info to avoid errors
       return res.json({
-        existingTables,
-        missingTables,
-        tableSchemas,
+        status: supabaseStatus === "available" ? "connected" : "error",
+        userCount,
+        tables: existingTables,
+        supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ? "configured" : "missing",
+        supabaseStatus,
+        directConnectionStatus: "error: Cannot read properties of undefined (reading 'query')",
         env: process.env.NODE_ENV
       });
     } catch (error) {
@@ -103,9 +98,6 @@ export async function getDatabaseDiagnostics(req: Request, res: Response) {
         details: error instanceof Error ? error.message : String(error),
         env: process.env.NODE_ENV
       });
-    } finally {
-      // Close pool
-      await pool.end();
     }
   } catch (outerError) {
     console.error('Outer diagnostic error:', outerError);

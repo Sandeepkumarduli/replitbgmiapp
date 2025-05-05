@@ -595,20 +595,20 @@ import { SupabaseStorage } from './supabase-storage';
 import { DatabaseStorage } from './database-storage';
 
 // Choose which storage implementation to use
-// TEMPORARILY HARDCODED TO USE MEMORY STORAGE for immediate fix
+// SWITCHED TO SUPABASE STORAGE as per user requirements
 // This overrides environment variables
-process.env.USE_SUPABASE = 'false';
-process.env.USE_MEMORY_STORAGE = 'true';
+process.env.USE_SUPABASE = 'true';
+process.env.USE_MEMORY_STORAGE = 'false';
 
-const useSupabase = false; // Disable Supabase temporarily
-const useMemoryStorage = true; // Enable memory storage
+const useSupabase = true; // Enable Supabase
+const useMemoryStorage = false; // Disable memory storage
 
 // Select the appropriate storage implementation based on environment variables
 let selectedStorage: IStorage;
 
-// Use in-memory storage temporarily to fix admin login
-console.log('Using in-memory storage (temporarily forced)');
-selectedStorage = new MemStorage();
+// Use Supabase storage for all operations
+console.log('Using Supabase storage (strictly enforced)');
+selectedStorage = new SupabaseStorage();
 
 // Export the selected storage implementation
 export const storage = selectedStorage;

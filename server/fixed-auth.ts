@@ -168,51 +168,47 @@ export function setupFixedAuth(app: Express) {
         // Check if admin exists in database
         let adminUser = await storage.getUserByUsername(username);
         
-        if (!adminUser) {
-          // Create admin user if not found
-          console.log("Admin user not found, creating admin account");
+        if (adminUser) {
+          console.log("Found existing admin user in database");
+        } else {
+          // DEVELOPMENT MODE WORKAROUND: Use mock admin in memory
+          // This allows admin login without requiring database writes
+          console.log("DEVELOPMENT MODE: Using in-memory admin session");
+          adminUser = {
+            id: 999999, // Use a large number to avoid conflicts
+            username: username,
+            password: await hashPassword(password), // Never expose real password
+            email: "admin@bgmi-tournaments.com",
+            phone: "1234567890",
+            gameId: "admin",
+            role: "admin",
+            phoneVerified: true,
+            phoneVerificationBypassed: true,
+            firebaseUid: null,
+            createdAt: new Date()
+          } as User;
           
-          const hashedPassword = await hashPassword(password);
-          try {
-            adminUser = await storage.createUser({
-              username,
-              password: hashedPassword,
-              email: "admin@bgmi-tournaments.com",
-              phone: "1234567890",
-              gameId: "admin",
-              role: "admin",
-              phoneVerified: true,
-              phoneVerificationBypassed: true,
-              firebaseUid: null
-            } as InsertUser);
-            
-            console.log("Admin user created successfully");
-          } catch (createError) {
-            console.error("Failed to create admin user:", createError);
-          }
+          console.log("Using mock admin user for development");
+          
+          // We're not actually creating this in the database
+          // This is just for development/testing purposes
         }
         
-        if (adminUser) {
-          // Set admin session
-          if (req.session) {
-            req.session.userId = adminUser.id;
-            req.session.username = adminUser.username;
-            req.session.role = "admin"; // Force admin role
-            
-            // Reset login attempts for admin
-            resetLoginAttempts(req);
-            
-            // Remove password from response
-            const { password: _, ...adminData } = adminUser;
-            return res.status(200).json(adminData);
-          } else {
-            console.error("Session object not available for admin login");
-            return res.status(500).json({ message: "Session not available" });
-          }
+        // Set admin session regardless
+        if (req.session) {
+          req.session.userId = adminUser.id;
+          req.session.username = adminUser.username;
+          req.session.role = "admin"; // Force admin role
+          
+          // Reset login attempts for admin
+          resetLoginAttempts(req);
+          
+          // Remove password from response
+          const { password: _, ...adminData } = adminUser;
+          return res.status(200).json(adminData);
         } else {
-          // This should not happen, but just in case
-          console.error("Admin user creation failed - could not retrieve user");
-          return res.status(500).json({ message: "Failed to create admin account" });
+          console.error("Session object not available for admin login");
+          return res.status(500).json({ message: "Session not available" });
         }
       }
       
@@ -271,6 +267,23 @@ export function setupFixedAuth(app: Express) {
     try {
       if (!req.session || !req.session.userId) {
         return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      // Special case for our mock admin user in dev mode
+      if (req.session.userId === 999999 && req.session.role === 'admin') {
+        console.log("Using mock admin data for /api/auth/me");
+        return res.json({
+          id: 999999,
+          username: req.session.username,
+          email: "admin@bgmi-tournaments.com",
+          phone: "1234567890",
+          gameId: "admin",
+          role: "admin",
+          phoneVerified: true,
+          phoneVerificationBypassed: true,
+          firebaseUid: null,
+          createdAt: new Date()
+        });
       }
       
       const user = await storage.getUser(req.session.userId as number);

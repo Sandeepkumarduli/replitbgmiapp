@@ -59,9 +59,24 @@ async function generate6DigitCode(storage: any): Promise<string> {
   return `${Date.now().toString().slice(-6)}`;
 }
 
+import session from 'express-session';
+import { storage } from './storage';
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Use fixed Supabase auth implementation to avoid conflicting endpoints
   console.log("Using Supabase storage (strictly enforced)");
+  
+  // Set up session middleware with proper configuration
+  app.use(session({
+    secret: 'bgmi-tournaments-secret',
+    resave: false,
+    saveUninitialized: false,
+    store: storage.sessionStore,
+    cookie: { 
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
+  }));
   
   // Import the fixed auth implementation
   const { setupFixedAuth } = await import('./fixed-auth');

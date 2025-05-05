@@ -9,6 +9,22 @@ import { hashPassword, comparePasswords } from "./auth";
 import { User, InsertUser, insertUserSchema } from "@shared/schema";
 import { logSecurityEvent } from "./auth-security";
 
+// Basic security tracking
+const loginAttempts = new Map<string, number>();
+
+// Track failed login for an IP
+function trackFailedLogin(req: Request): void {
+  const ip = req.ip || 'unknown';
+  const currentAttempts = loginAttempts.get(ip) || 0;
+  loginAttempts.set(ip, currentAttempts + 1);
+}
+
+// Reset login attempts after successful login
+function resetLoginAttempts(req: Request): void {
+  const ip = req.ip || 'unknown';
+  loginAttempts.delete(ip);
+}
+
 export function setupFixedAuth(app: Express) {
   // Middleware to check if user is authenticated
   const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
@@ -216,10 +232,7 @@ export function setupFixedAuth(app: Express) {
         return res.status(401).json({ message: "Invalid username or password" });
       }
       
-      // Reset login attempts on successful login
-      resetLoginAttempts(req);
-      
-      // Set session data
+          // Set session data
       if (req.session) {
         req.session.userId = user.id;
         req.session.username = user.username;
@@ -256,7 +269,11 @@ export function setupFixedAuth(app: Express) {
   // Get current user info
   app.get("/api/auth/me", isAuthenticated, async (req, res) => {
     try {
-      const user = await storage.getUser(req.session.userId);
+      if (!req.session || !req.session.userId) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const user = await storage.getUser(req.session.userId as number);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }

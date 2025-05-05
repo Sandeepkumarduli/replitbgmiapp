@@ -5,6 +5,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import ws from 'ws';
 
 // Get Supabase credentials from environment variables or use the ones provided by user
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://fiouuhhbascmlbrncqcp.supabase.co';

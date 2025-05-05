@@ -76,6 +76,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerSupabasePhoneAuthRoutes(app);
   
   // Add diagnostic routes for debugging
+  app.get('/api/check-supabase', async (req, res) => {
+    try {
+      console.log("Testing Supabase connection...");
+      
+      // Test direct Supabase connection
+      console.log("Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
+      console.log("Supabase Anon Key available:", !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+      
+      // Test direct Supabase API
+      const { data: tableData, error: tableError } = await supabase
+        .from('users')
+        .select('*')
+        .limit(5);
+      
+      console.log("Supabase query result:", { 
+        error: tableError ? tableError.message : null,
+        data: tableData || [],
+        count: tableData?.length || 0
+      });
+        
+      res.json({
+        status: "Connection test complete",
+        supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 15) + "...",
+        supabaseConnection: !tableError ? "Success" : "Failed",
+        tableQueryResult: tableError ? tableError.message : `Retrieved ${tableData?.length || 0} users`,
+        records: tableData || []
+      });
+    } catch (error) {
+      console.error("Supabase diagnostic error:", error);
+      res.status(500).json({
+        status: "Error",
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : null
+      });
+    }
+  });
+  
   app.get('/api/diagnostic/database', async (req, res) => {
     try {
       // @ts-ignore - checkDatabaseStatus may not be in IStorage interface

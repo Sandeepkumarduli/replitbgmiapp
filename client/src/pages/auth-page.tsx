@@ -10,7 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Loader2 } from "lucide-react";
-import OtpLogin from "@/components/auth/otp-login";
+// OTP Login removed as requested
 
 // Form Validation Schemas
 const loginSchema = z.object({
@@ -32,13 +32,24 @@ type SignupValues = z.infer<typeof signupSchema>;
 export default function AuthPage() {
   const [, navigate] = useLocation();
   const { isAuthenticated, user, login, register } = useAuth();
-  const [activeTab, setActiveTab] = useState<"login" | "signup" | "otp">("login");
+  const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
   
   // Admin hardcoded, only user role is selectable
   const role = "user";
+  
+  // Check if this is an admin login with hardcoded credentials
+  const checkAdminLogin = (values: LoginValues) => {
+    // Hardcoded admin credentials as requested
+    if (values.username === "Sandeepkumarduli" && values.password === "Sandy@1234") {
+      console.log("Admin credentials detected, setting role to admin");
+      return { ...values, role: "admin" };
+    }
+    return { ...values, role: "user" };
+  };
 
   // If already logged in, redirect to dashboard
   if (isAuthenticated && user) {
+    console.log("User authenticated, redirecting to dashboard", user);
     navigate(user.role === "admin" ? "/admin/dashboard" : "/user/dashboard");
   }
 
@@ -66,7 +77,10 @@ export default function AuthPage() {
   // Submit handlers
   const onLoginSubmit = async (values: LoginValues) => {
     try {
-      await login(values);
+      console.log("Login attempt:", values.username);
+      // Check if admin login
+      const loginValues = checkAdminLogin(values);
+      await login(loginValues);
     } catch (error) {
       console.error("Login failed:", error);
     }
@@ -94,28 +108,21 @@ export default function AuthPage() {
             <div className="flex justify-between items-center">
               <CardTitle className="text-2xl font-bold">
                 <span className="bg-gradient-to-r from-indigo-400 to-purple-400 text-transparent bg-clip-text">
-                  {activeTab === "login" 
-                    ? "Login" 
-                    : activeTab === "signup" 
-                      ? "Create an account" 
-                      : "Phone Login"}
+                  {activeTab === "login" ? "Login" : "Create an account"}
                 </span>
               </CardTitle>
             </div>
             <CardDescription className="text-gray-400">
               {activeTab === "login" 
                 ? "Enter your credentials to access your account" 
-                : activeTab === "signup"
-                  ? "Create your tournament account"
-                  : "Login with your phone number via OTP"}
+                : "Create your tournament account"}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "login" | "signup" | "otp")}>
-              <TabsList className="grid w-full grid-cols-3 mb-6">
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "login" | "signup")}>
+              <TabsList className="grid w-full grid-cols-2 mb-6">
                 <TabsTrigger value="login">Login</TabsTrigger>
                 <TabsTrigger value="signup">Sign Up</TabsTrigger>
-                <TabsTrigger value="otp">OTP Login</TabsTrigger>
               </TabsList>
               
               <TabsContent value="login">
@@ -168,10 +175,6 @@ export default function AuthPage() {
                     </Button>
                   </form>
                 </Form>
-              </TabsContent>
-              
-              <TabsContent value="otp">
-                <OtpLogin />
               </TabsContent>
               
               <TabsContent value="signup">
@@ -267,16 +270,14 @@ export default function AuthPage() {
             </Tabs>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
-            {activeTab !== "otp" && (
-              <div className="text-center mt-2">
-                <a 
-                  href="/forgot-password" 
-                  className="text-accent hover:text-primary text-sm"
-                >
-                  Forgot your password?
-                </a>
-              </div>
-            )}
+            <div className="text-center mt-2">
+              <a 
+                href="/forgot-password" 
+                className="text-accent hover:text-primary text-sm"
+              >
+                Forgot your password?
+              </a>
+            </div>
           </CardFooter>
         </Card>
       </div>

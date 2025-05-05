@@ -2,7 +2,6 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import session from 'express-session';
 import { storage } from "./storage";
-import { supabase } from "./supabase";
 import { 
   Team,
   User,
@@ -15,15 +14,7 @@ import {
   insertNotificationSchema
 } from "@shared/schema";
 import { setupAuth, hashPassword } from "./auth";
-import { setupSupabaseAuth } from "./supabase-auth";
-import { registerSupabasePhoneAuthRoutes } from "./supabase-phone-auth";
-import { 
-  checkDatabaseConnection, 
-  generateCreateTableSQL, 
-  getDirectDatabaseStatus, 
-  testRunSqlFunction,
-  generateExecuteSqlFunction
-} from "./db-check";
+import { testDatabaseConnection } from "./neon-db";
 import { 
   createSupabaseTables, 
   createTestAdmin 
@@ -96,8 +87,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup enhanced security middleware
   setupSecurityMiddleware(app);
   
-  // Register Supabase phone authentication routes
-  registerSupabasePhoneAuthRoutes(app);
+  // No phone auth routes needed with Neon DB
   
   // Add diagnostic routes for debugging
   app.get('/api/check-supabase', async (req, res) => {

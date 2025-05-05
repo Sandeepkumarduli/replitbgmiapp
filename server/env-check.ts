@@ -12,9 +12,7 @@ export function checkEnvironmentVariables() {
   
   // Check for critical environment variables
   const criticalVars = [
-    'DATABASE_URL', 
-    'NEXT_PUBLIC_SUPABASE_URL',
-    'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+    'DATABASE_URL',
     'VITE_FIREBASE_API_KEY',
     'VITE_FIREBASE_PROJECT_ID',
     'VITE_FIREBASE_APP_ID'

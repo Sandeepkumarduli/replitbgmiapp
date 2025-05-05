@@ -1,13 +1,12 @@
 import express, { type Request, Response, NextFunction } from "express";
-import { registerRoutes } from "./routes";
+import { registerRoutes } from "./neon-routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { scheduleBackups, initializeBackup } from "./backup";
 import { scheduleTournamentStatusUpdates } from "./tournament-manager";
 import { scheduleNotificationCleanup } from "./notification-manager";
 import { initializeDeploymentSafety } from "./deployment-fix";
 import dotenv from "dotenv";
-import { checkSupabaseTables } from "./supabase-diagnostics";
-import { runMigrations } from "./supabase-migration";
+import { testDatabaseConnection } from "./neon-db";
 
 // Load environment variables
 dotenv.config();
@@ -15,16 +14,14 @@ dotenv.config();
 // Check environment variables (debug info)
 import './env-check';
 
-// Run database diagnostics and migrations
+// Run database diagnostics
 if (process.env.NODE_ENV === 'development') {
   // Only run these in development to avoid performance impact in production
   setTimeout(async () => {
     try {
-      // Run Supabase migrations to ensure tables exist
-      await runMigrations();
-      
-      // Run diagnostics to verify database state
-      await checkSupabaseTables();
+      // Test database connection
+      const connected = await testDatabaseConnection();
+      console.log(`Database connection test: ${connected ? 'SUCCESS' : 'FAILED'}`);
     } catch (error) {
       console.error('Error in database setup:', error);
     }

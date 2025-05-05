@@ -321,6 +321,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Direct diagnostic route for admin account (does not require login)
+  app.get('/api/diagnostic/check-admin', async (req, res) => {
+    try {
+      const adminUsername = "Sandeepkumarduli";
+      
+      // Check if admin exists
+      const adminUser = await storage.getUserByUsername(adminUsername);
+      
+      if (adminUser) {
+        res.json({
+          status: "success",
+          message: "Admin account exists",
+          admin: {
+            id: adminUser.id,
+            username: adminUser.username,
+            role: adminUser.role,
+            email: adminUser.email
+          }
+        });
+      } else {
+        // Try creating admin directly for testing
+        try {
+          const { hashPassword } = await import('./auth');
+          const hashedPassword = await hashPassword("Sandy@1234");
+          
+          console.log("Attempting to create admin account in diagnostic mode");
+          
+          const newAdmin = await storage.createUser({
+            username: adminUsername,
+            password: hashedPassword,
+            email: "admin@bgmi-tournaments.com",
+            phone: "1234567890",
+            gameId: "admin",
+            role: "admin",
+            phoneVerified: true,
+            phoneVerificationBypassed: true,
+            firebaseUid: null
+          });
+          
+          res.json({
+            status: "success",
+            message: "Admin account created",
+            admin: {
+              id: newAdmin.id,
+              username: newAdmin.username,
+              role: newAdmin.role,
+              email: newAdmin.email
+            }
+          });
+        } catch (createError) {
+          console.error("Diagnostic admin creation failed:", createError);
+          res.status(500).json({
+            status: "error",
+            message: "Failed to create admin account",
+            error: createError instanceof Error ? createError.message : String(createError)
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Admin check diagnostic error:", error);
+      res.status(500).json({
+        status: "error",
+        message: "Admin check failed",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
   // Special admin account repair route
   app.post('/api/diagnostic/repair-admin', async (req, res) => {
     try {

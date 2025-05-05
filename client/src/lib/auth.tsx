@@ -45,7 +45,7 @@ interface AuthContextType {
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
-  updateProfile: (data: ProfileUpdateData) => Promise<void>;
+  updateProfile: (data: ProfileUpdateData) => Promise<any>;
   refreshUser: () => Promise<void>;
 }
 
@@ -348,7 +348,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
   
   const updateProfile = async (data: ProfileUpdateData) => {
-    await updateProfileMutation.mutateAsync(data);
+    const response = await updateProfileMutation.mutateAsync(data);
+    return response;
   };
   
   const refreshUser = async () => {

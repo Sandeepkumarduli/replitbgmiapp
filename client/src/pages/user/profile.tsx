@@ -48,7 +48,7 @@ const profileFormSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 export default function UserProfile() {
-  const { isAuthenticated, isAdmin, isLoading, user, updateProfile } = useAuth();
+  const { isAuthenticated, isAdmin, isLoading, user, updateProfile, logout } = useAuth();
   const [, navigate] = useLocation();
   const { toast } = useToast();
 

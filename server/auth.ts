@@ -346,16 +346,27 @@ export function setupAuth(app: Express) {
   // Update user profile endpoint
   app.patch("/api/user", isAuthenticated, async (req, res) => {
     try {
-      const { email, phone, gameId, password, currentPassword } = req.body;
+      const { email, phone, gameId, username, password, currentPassword } = req.body;
       const userId = req.session.userId!;
+
+      console.log(`Processing profile update for user ID: ${userId}`);
+      console.log("Update fields:", { 
+        hasEmail: !!email, 
+        hasPhone: !!phone,
+        hasGameId: !!gameId,
+        hasUsername: !!username,
+        hasPassword: !!password
+      });
 
       // Get current user
       const user = await storage.getUser(userId);
       if (!user) {
+        console.error(`User with ID ${userId} not found for profile update`);
         return res.status(404).json({ message: "User not found" });
       }
 
       // If updating password, verify current password
+      let passwordChanged = false;
       if (password) {
         if (!currentPassword) {
           return res.status(400).json({ message: "Current password is required to update password" });
@@ -365,6 +376,9 @@ export function setupAuth(app: Express) {
         if (!isPasswordValid) {
           return res.status(400).json({ message: "Current password is incorrect" });
         }
+        
+        // Mark that password was changed - will require re-login
+        passwordChanged = true;
       }
 
       // Prepare update data
@@ -373,17 +387,58 @@ export function setupAuth(app: Express) {
       if (email) updateData.email = email;
       if (phone) updateData.phone = phone;
       if (gameId) updateData.gameId = gameId;
+      if (username && username !== user.username) {
+        // Check if username is already taken
+        const existingUser = await storage.getUserByUsername(username);
+        if (existingUser && existingUser.id !== userId) {
+          return res.status(400).json({ message: "Username is already taken" });
+        }
+        updateData.username = username;
+      }
       if (password) updateData.password = await hashPassword(password);
+
+      console.log("Updating user profile with data:", Object.keys(updateData));
+      
+      // Only update if there are changes
+      if (Object.keys(updateData).length === 0) {
+        console.log("No profile changes detected");
+        const { password: _, ...userWithoutPassword } = user;
+        return res.status(200).json({
+          ...userWithoutPassword,
+          message: "No changes were made"
+        });
+      }
 
       // Update user
       const updatedUser = await storage.updateUser(userId, updateData);
       if (!updatedUser) {
+        console.error(`Failed to update user ${userId} in database`);
         return res.status(404).json({ message: "Failed to update user" });
+      }
+
+      // Update the session username if it was changed
+      if (updateData.username && req.session.username !== updateData.username) {
+        req.session.username = updateData.username;
       }
 
       // Return updated user without password
       const { password: _, ...userWithoutPassword } = updatedUser;
-      return res.status(200).json(userWithoutPassword);
+      
+      // If password was changed, require re-login by destroying the session
+      if (passwordChanged) {
+        console.log("Password changed, user will be logged out");
+        return res.status(200).json({
+          ...userWithoutPassword,
+          passwordChanged: true,
+          message: "Profile updated. Please log in again with your new password."
+        });
+      } else {
+        console.log("Profile updated successfully");
+        return res.status(200).json({
+          ...userWithoutPassword,
+          message: "Profile updated successfully"
+        });
+      }
     } catch (error) {
       console.error("Update user error:", error);
       return res.status(500).json({ message: "Server error updating user" });

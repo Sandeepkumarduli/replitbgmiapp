@@ -29,8 +29,10 @@ interface RegisterData {
 }
 
 interface ProfileUpdateData {
+  username?: string;
   email?: string;
   password?: string;
+  currentPassword?: string;
   phone?: string;
   gameId?: string;
 }

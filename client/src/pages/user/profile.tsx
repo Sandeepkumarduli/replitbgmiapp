@@ -93,6 +93,7 @@ export default function UserProfile() {
     try {
       // Extract only the fields we want to update
       const updateData: any = {
+        username: data.username !== user?.username ? data.username : undefined,
         email: data.email !== user?.email ? data.email : undefined,
         phone: data.phone !== user?.phone ? data.phone : undefined,
         gameId: data.gameId !== user?.gameId ? data.gameId : undefined,
@@ -121,13 +122,28 @@ export default function UserProfile() {
       
       // Only proceed if there are changes to make
       if (Object.keys(cleanedData).length > 0) {
+        console.log("Updating profile with changes:", Object.keys(cleanedData));
+        
         // Use the updateProfile method from auth context
-        await updateProfile(cleanedData);
+        const response = await updateProfile(cleanedData);
         
         // Reset password fields
         form.setValue("currentPassword", "");
         form.setValue("newPassword", "");
         form.setValue("confirmPassword", "");
+        
+        // If password was changed, logout and redirect to login page
+        if (response && response.passwordChanged) {
+          toast({
+            title: "Password Changed",
+            description: "Your password has been updated. Please log in again with your new password.",
+          });
+          
+          // Set a small timeout to allow the toast to be seen
+          setTimeout(() => {
+            logout();
+          }, 1500);
+        }
       } else {
         toast({
           title: "No changes",

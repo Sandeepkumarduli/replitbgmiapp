@@ -443,17 +443,31 @@ export class SupabaseStorage implements IStorage {
   }
 
   async createAdmin(insertAdmin: InsertAdmin): Promise<Admin> {
-    const { data, error } = await supabase
-      .from('admins')
-      .insert(insertAdmin)
-      .select()
-      .single();
-    
-    if (error || !data) {
-      throw new Error(error?.message || 'Failed to create admin');
+    try {
+      console.log('Creating admin with data:', JSON.stringify(insertAdmin, null, 2));
+      
+      const { data, error } = await supabase
+        .from('admins')
+        .insert(insertAdmin)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Supabase error creating admin:', error.message, error.details, error.hint);
+        throw new Error(error.message || 'Failed to create admin');
+      }
+      
+      if (!data) {
+        console.error('No data returned when creating admin');
+        throw new Error('No data returned when creating admin');
+      }
+      
+      console.log('Admin created successfully:', data);
+      return data as Admin;
+    } catch (err) {
+      console.error('Exception in createAdmin:', err);
+      throw err;
     }
-    
-    return data as Admin;
   }
 
   async updateAdmin(id: number, adminUpdate: Partial<Admin>): Promise<Admin | undefined> {

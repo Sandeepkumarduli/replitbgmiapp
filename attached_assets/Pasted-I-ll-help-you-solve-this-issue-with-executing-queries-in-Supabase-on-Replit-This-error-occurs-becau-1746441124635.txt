@@ -1,0 +1,53 @@
+I'll help you solve this issue with executing queries in Supabase on Replit. This error occurs because your setup is missing the required PostgreSQL function that Supabase uses to run SQL queries directly.supabase replit run_sql function error PGRST20210 resultspostgresql - PGRST202 Error when calling RPC with passed in parameter - Stack Overflowstackoverflow.comError while calling a SQL function using supabase-js · Issue #829 · supabase/supabase-jsgithub.comUsing Supabase in Replitsupabase.comCustom Action Calling a Supabase Function - Fails with a Postgres Exception PGRST202flutterflow.ioErrors — PostgREST 12.2 documentationpostgrest.orgError Codes | Supabase Docssupabase.compostgresql - "PGRST202" error in weweb - UPDATE function in Supabase - Stack Overflowstackoverflow.comRow Level Security | Supabase Docssupabase.comErrors — PostgREST 11.2 documentationpostgrest.orgCould not find the function in the schema cache ( RPC ...stackoverflow.comBased on the search results, I can see what's happening with your Supabase setup in Replit. The error PGRST202 is related to a schema cache issue where PostgreSQL can't find the function you're trying to use.supabase replit setup run_sql function10 resultsUsing Supabase in Replitsupabase.comReplit — Making a Real-Time Chat App with Supabase on Replitreplit.comHow to use Supabase in Replit with node.js - DEV Communitydev.toSupabase-py (Database) - Replitreplit.comSupabase.js (Database) - Replitreplit.comDatabase Functions | Supabase Docssupabase.comSupabase.js (Database) Template - Online Compiler - Replit - Replitreplit.comBlog | Replitsupabase.comExecute SQL in Supabase API · supabase · Discussion #3419github.comsupabase-test - Replitreplit.comBased on my research, I understand the issue you're facing. The error PGRST202 occurs because Supabase cannot find the public.run_sql function in its schema cache. This function is needed to execute direct SQL queries through the Supabase client.
+Here's how to fix this issue:
+Solution
+Supabase does not allow direct execution of SQL from their APIs by default. GitHub To enable this functionality in your Replit project, you need to create a custom PostgreSQL function that will let you run SQL queries.
+Step 1: Create the run_sql function
+
+Go to your Supabase dashboard
+Navigate to the SQL Editor
+Click on "New Query"
+Add the following SQL code to create the run_sql function:
+
+sqlCREATE OR REPLACE FUNCTION public.run_sql(sql_query TEXT) 
+RETURNS SETOF json AS $$
+BEGIN
+    RETURN QUERY EXECUTE sql_query;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+Click "Run" to execute this query
+
+Step 2: Update your connection in Replit
+Make sure your Replit code is properly connecting to Supabase:
+javascript// Example connection code
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = 'YOUR_SUPABASE_URL'
+const supabaseKey = 'YOUR_SUPABASE_ANON_KEY'
+const supabase = createClient(supabaseUrl, supabaseKey)
+Step 3: Call the function properly
+Now you can execute SQL queries using the RPC method:
+javascript// Example of using the run_sql function
+async function executeQuery(query) {
+  const { data, error } = await supabase.rpc('run_sql', { 
+    sql_query: query 
+  })
+  
+  if (error) {
+    console.error('Error executing query:', error)
+    return null
+  }
+  
+  return data
+}
+
+// Example usage
+executeQuery('SELECT * FROM users LIMIT 10')
+  .then(result => console.log(result))
+  .catch(err => console.error(err))
+Important Security Considerations
+
+This approach needs to be implemented carefully as it can create security vulnerabilities if not properly secured. GitHub
+The SECURITY DEFINER in the function means it runs with the permissions of the function creator, which can help with permission issues.
+For more complex functions, consider using proper error handling in your PostgreSQL functions. Supabase

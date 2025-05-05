@@ -168,6 +168,38 @@ CREATE TABLE IF NOT EXISTS admins (
   return sql;
 }
 
+// Function to test the run_sql function
+export async function testRunSqlFunction() {
+  try {
+    console.log('Testing run_sql function in Supabase...');
+    
+    // Try to use the run_sql function
+    const { data, error } = await supabase.rpc('run_sql', { 
+      sql_query: 'SELECT COUNT(*) FROM users' 
+    });
+    
+    if (error) {
+      console.error('Error using run_sql function:', error);
+      console.log('You need to create the run_sql function in Supabase SQL Editor:');
+      console.log(`
+CREATE OR REPLACE FUNCTION public.run_sql(sql_query TEXT) 
+RETURNS SETOF json AS $$
+BEGIN
+    RETURN QUERY EXECUTE sql_query;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+      `);
+      return { success: false, error };
+    }
+    
+    console.log('run_sql function test successful! Result:', data);
+    return { success: true, data };
+  } catch (err) {
+    console.error('Exception testing run_sql function:', err);
+    return { success: false, error: err };
+  }
+}
+
 // Add a direct check function that can be exposed via API
 export async function getDirectDatabaseStatus() {
   try {
@@ -197,10 +229,14 @@ export async function getDirectDatabaseStatus() {
       }
     }
     
+    // Also test the run_sql function
+    const runSqlTest = await testRunSqlFunction();
+    
     return {
       status: 'checked',
       connection: 'connected',
       tables: tableStatuses,
+      runSqlFunction: runSqlTest.success ? 'working' : 'not working',
       supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ? '(set but masked)' : 'not set',
       sqlScript: 'Available on server console',
       message: 'Database tables need to be created manually in the Supabase dashboard'

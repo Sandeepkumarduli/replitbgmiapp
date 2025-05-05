@@ -28,6 +28,7 @@ import {
 import { WebSocketServer, WebSocket } from 'ws';
 import { z } from "zod";
 import crypto from "crypto";
+import { checkDatabaseConnection, generateCreateTableSQL, getDirectDatabaseStatus } from './db-check';
 
 // Function to generate a unique 6-digit team invite code
 async function generate6DigitCode(storage: any): Promise<string> {
@@ -329,6 +330,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Error running deployment check:', error);
       res.status(500).json({
         error: "Failed to run deployment check",
+        message: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // Direct database check endpoint
+  app.get('/api/diagnostic/db-check', async (req, res) => {
+    try {
+      // First call our checkDatabaseConnection function to log diagnostics
+      await checkDatabaseConnection();
+      
+      // Then get direct database status for the response
+      const status = await getDirectDatabaseStatus();
+      
+      // Generate the SQL for creating tables
+      const sql = generateCreateTableSQL();
+      
+      res.json({
+        ...status,
+        sqlScript: 'SQL script generated in server console',
+        message: 'Tables must be created manually in Supabase dashboard using SQL Editor'
+      });
+    } catch (error) {
+      console.error('Error checking database:', error);
+      res.status(500).json({
+        error: 'Database check failed',
         message: error instanceof Error ? error.message : String(error)
       });
     }

@@ -341,28 +341,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         });
       } else {
-        // Try creating admin directly for testing
+        // Try creating admin directly for testing with direct Supabase access
         try {
           const { hashPassword } = await import('./auth');
           const hashedPassword = await hashPassword("Sandy@1234");
           
           console.log("Attempting to create admin account in diagnostic mode");
           
-          const newAdmin = await storage.createUser({
-            username: adminUsername,
-            password: hashedPassword,
-            email: "admin@bgmi-tournaments.com",
-            phone: "1234567890",
-            gameId: "admin",
-            role: "admin",
-            phoneVerified: true,
-            phoneVerificationBypassed: true,
-            firebaseUid: null
-          });
+          // Try direct Supabase insert first
+          const { data: newAdmin, error: insertError } = await supabase
+            .from('users')
+            .insert({
+              username: adminUsername,
+              password: hashedPassword,
+              email: "admin@bgmi-tournaments.com",
+              phone: "1234567890",
+              gameId: "admin",
+              role: "admin",
+              phoneVerified: true,
+              phoneVerificationBypassed: true,
+              firebaseUid: null,
+              createdAt: new Date()
+            })
+            .select()
+            .single();
+            
+          if (insertError) {
+            console.error("Direct insert error:", insertError);
+            throw new Error(insertError.message);
+          }
+          
+          if (!newAdmin) {
+            throw new Error("No admin account returned after insert");
+          }
           
           res.json({
             status: "success",
-            message: "Admin account created",
+            message: "Admin account created directly via Supabase",
             admin: {
               id: newAdmin.id,
               username: newAdmin.username,

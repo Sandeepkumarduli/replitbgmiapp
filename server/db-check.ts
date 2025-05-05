@@ -189,7 +189,23 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
       `);
-      return { success: false, error };
+      return { 
+        success: false, 
+        error,
+        function_definition: `
+-- Run this in the Supabase SQL Editor to create the necessary function
+CREATE OR REPLACE FUNCTION public.run_sql(sql_query TEXT) 
+RETURNS SETOF json AS $$
+BEGIN
+    RETURN QUERY EXECUTE sql_query;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- This function must be executed as a database administrator
+-- It allows your application to execute arbitrary SQL through the API
+-- It is required for many of the diagnostic functions to work properly
+`
+      };
     }
     
     console.log('run_sql function test successful! Result:', data);
@@ -198,6 +214,63 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
     console.error('Exception testing run_sql function:', err);
     return { success: false, error: err };
   }
+}
+
+// Generate the SQL needed to create the execute_sql function
+export function generateExecuteSqlFunction() {
+  return `
+-- Run this in the Supabase SQL Editor to create the necessary functions
+-- These functions are required for the application to work properly
+
+-- Function to execute arbitrary SQL (required for diagnostics and schema management)
+CREATE OR REPLACE FUNCTION public.run_sql(sql_query TEXT) 
+RETURNS SETOF json AS $$
+BEGIN
+    RETURN QUERY EXECUTE sql_query;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Alternative function name for compatibility
+CREATE OR REPLACE FUNCTION public.execute_sql(query TEXT) 
+RETURNS SETOF json AS $$
+BEGIN
+    RETURN QUERY EXECUTE query;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Function to list all tables in the public schema
+CREATE OR REPLACE FUNCTION public.list_tables()
+RETURNS TABLE(table_name text) AS $$
+BEGIN
+    RETURN QUERY 
+    SELECT t.table_name::text
+    FROM information_schema.tables t
+    WHERE t.table_schema = 'public'
+    AND t.table_type = 'BASE TABLE';
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Function to create a test table (for diagnostics)
+CREATE OR REPLACE FUNCTION public.create_test_table()
+RETURNS text AS $$
+BEGIN
+    EXECUTE 'CREATE TABLE IF NOT EXISTS test_table (id serial primary key, name text, created_at timestamp default now())';
+    RETURN 'Test table created';
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Function to drop the test table
+CREATE OR REPLACE FUNCTION public.drop_test_table()
+RETURNS text AS $$
+BEGIN
+    EXECUTE 'DROP TABLE IF EXISTS test_table';
+    RETURN 'Test table dropped';
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Make sure to run these SQL statements in the Supabase SQL Editor
+-- They cannot be run from the JavaScript client directly
+`;
 }
 
 // Add a direct check function that can be exposed via API

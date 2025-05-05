@@ -17,6 +17,7 @@ import {
 import { setupAuth, hashPassword } from "./auth";
 import { setupSupabaseAuth } from "./supabase-auth";
 import { registerSupabasePhoneAuthRoutes } from "./supabase-phone-auth";
+import { checkDatabaseConnection, generateCreateTableSQL, getDirectDatabaseStatus, testRunSqlFunction } from "./db-check";
 import { 
   setupSecurityMiddleware, 
   trackFailedLogin, 
@@ -28,7 +29,6 @@ import {
 import { WebSocketServer, WebSocket } from 'ws';
 import { z } from "zod";
 import crypto from "crypto";
-import { checkDatabaseConnection, generateCreateTableSQL, getDirectDatabaseStatus } from './db-check';
 
 // Function to generate a unique 6-digit team invite code
 async function generate6DigitCode(storage: any): Promise<string> {
@@ -356,6 +356,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Error checking database:', error);
       res.status(500).json({
         error: 'Database check failed',
+        message: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // Test the Supabase run_sql function
+  app.get('/api/diagnostic/test-run-sql', async (_req, res) => {
+    try {
+      const result = await testRunSqlFunction();
+      res.json(result);
+    } catch (error) {
+      console.error('Error testing run_sql function:', error);
+      res.status(500).json({ 
+        error: 'Failed to test run_sql function',
+        message: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // Get SQL for create functions needed in Supabase
+  app.get('/api/diagnostic/sql-functions', async (_req, res) => {
+    try {
+      const sqlScript = generateExecuteSqlFunction();
+      res.json({
+        message: "These SQL functions need to be created in the Supabase SQL Editor",
+        sqlScript
+      });
+    } catch (error) {
+      console.error('Error generating SQL function script:', error);
+      res.status(500).json({ 
+        error: 'Failed to generate SQL function script',
         message: error instanceof Error ? error.message : String(error)
       });
     }

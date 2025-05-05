@@ -132,8 +132,7 @@ export function setupFixedAuth(app: Express) {
           gameId,
           role: "user", // Always force regular user role for security
           phoneVerified: false,
-          phoneVerificationBypassed: true, // Skip verification as requested
-          firebaseUid: null
+          phoneVerificationBypassed: true // Skip verification as requested
         } as InsertUser);
 
         // Set session data
@@ -413,7 +412,6 @@ export function setupFixedAuth(app: Express) {
           role: "admin",
           phoneVerified: true,
           phoneVerificationBypassed: true,
-          firebaseUid: null,
           createdAt: new Date()
         });
       }

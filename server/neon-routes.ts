@@ -258,8 +258,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         gameId,
         role: 'user',
         phoneVerified: false,
-        phoneVerificationBypassed: true,
-        firebaseUid: null
+        phoneVerificationBypassed: true
       });
 
       // Set the session for the new user

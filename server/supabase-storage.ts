@@ -8,7 +8,7 @@ import {
   type Notification, type InsertNotification
 } from "@shared/schema";
 import { IStorage } from "./storage";
-import { supabase } from "./db";
+import { supabase } from "./supabase";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 

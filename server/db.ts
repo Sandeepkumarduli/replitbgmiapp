@@ -8,9 +8,14 @@ import { createClient } from '@supabase/supabase-js';
 import ws from 'ws';
 import fetch from 'node-fetch';
 
-// Get Supabase credentials from environment variables or use the ones provided by user
-const supabaseUrl = 'https://fiouuhhbascmlbrncqcp.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpb3V1aGhiYXNjbWxicm5jcWNwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYwMjg3NDksImV4cCI6MjA2MTYwNDc0OX0.3Y3PlXsP6SjEPSrgR9zYNwhMSHsFBsiFCPoj8NVWzWs';
+// Get Supabase credentials from environment variables
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+
+// Validate credentials
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error("ERROR: Missing Supabase credentials in environment variables");
+}
 
 // Simple Supabase client without extra options to avoid type conflicts
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);

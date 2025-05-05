@@ -105,6 +105,7 @@ export class MemStorage implements IStorage {
   private tournaments: Map<number, Tournament>;
   private registrations: Map<number, Registration>;
   private notifications: Map<number, Notification>;
+  private admins: Map<number, Admin>;
   
   private userId: number;
   private teamId: number;
@@ -112,6 +113,7 @@ export class MemStorage implements IStorage {
   private tournamentId: number;
   private registrationId: number;
   private notificationId: number;
+  private adminId: number;
 
   // Session store for express-session
   sessionStore: session.Store;
@@ -123,6 +125,7 @@ export class MemStorage implements IStorage {
     this.tournaments = new Map();
     this.registrations = new Map();
     this.notifications = new Map();
+    this.admins = new Map();
     
     this.userId = 1;
     this.teamId = 1;
@@ -130,13 +133,14 @@ export class MemStorage implements IStorage {
     this.tournamentId = 1;
     this.registrationId = 1;
     this.notificationId = 1;
+    this.adminId = 1;
     
     // Initialize session store
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000, // 24 hours
     });
     
-    // Add a default admin user
+    // Add a default admin user (legacy approach)
     this.createUser({
       username: "admin",
       password: "admin123",
@@ -144,6 +148,16 @@ export class MemStorage implements IStorage {
       phone: "1234567890",
       gameId: "ADMIN001",
       role: "admin"
+    });
+    
+    // Add a default admin in the admins table (new approach)
+    this.createAdmin({
+      username: "Sandeepkumarduli",
+      password: "Sandy@1234", // This will be hashed in fixed-auth.ts when used
+      email: "admin@bgmi-tournaments.com",
+      phone: "1234567890",
+      displayName: "Sandeep Kumar Duli",
+      accessLevel: "owner"
     });
   }
 
@@ -198,6 +212,55 @@ export class MemStorage implements IStorage {
   
   async getAllUsers(): Promise<User[]> {
     return Array.from(this.users.values());
+  }
+  
+  // Admin operations
+  async getAdmin(id: number): Promise<Admin | undefined> {
+    return this.admins.get(id);
+  }
+
+  async getAdminByUsername(username: string): Promise<Admin | undefined> {
+    return Array.from(this.admins.values()).find(
+      (admin) => admin.username.toLowerCase() === username.toLowerCase(),
+    );
+  }
+
+  async getAdminByEmail(email: string): Promise<Admin | undefined> {
+    return Array.from(this.admins.values()).find(
+      (admin) => admin.email.toLowerCase() === email.toLowerCase(),
+    );
+  }
+
+  async createAdmin(insertAdmin: InsertAdmin): Promise<Admin> {
+    const id = this.adminId++;
+    const createdAt = new Date();
+    const admin: Admin = { 
+      ...insertAdmin, 
+      id, 
+      createdAt,
+      isActive: true,
+      lastLogin: null,
+      accessLevel: insertAdmin.accessLevel || "standard"
+    };
+    this.admins.set(id, admin);
+    return admin;
+  }
+  
+  async updateAdmin(id: number, adminUpdate: Partial<Admin>): Promise<Admin | undefined> {
+    const admin = this.admins.get(id);
+    if (!admin) return undefined;
+    
+    const updatedAdmin = { ...admin, ...adminUpdate };
+    this.admins.set(id, updatedAdmin);
+    return updatedAdmin;
+  }
+  
+  async deleteAdmin(id: number): Promise<boolean> {
+    return this.admins.delete(id);
+  }
+  
+  async getAllAdmins(): Promise<Admin[]> {
+    return Array.from(this.admins.values());
   }
 
   // Team operations

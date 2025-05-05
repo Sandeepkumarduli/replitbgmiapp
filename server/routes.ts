@@ -25,6 +25,10 @@ import {
   generateExecuteSqlFunction
 } from "./db-check";
 import { 
+  createSupabaseTables, 
+  createTestAdmin 
+} from "./supabase-tables";
+import { 
   setupSecurityMiddleware, 
   trackFailedLogin, 
   resetLoginAttempts, 
@@ -337,6 +341,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({
         error: "Failed to run deployment check",
         message: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // ===== TABLE CREATION ENDPOINTS =====
+  // Endpoint to create all database tables in Supabase
+  app.post('/api/supabase/create-tables', async (_req, res) => {
+    try {
+      const result = await createSupabaseTables();
+      res.json(result);
+    } catch (error) {
+      console.error('Error creating tables:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // Endpoint to create a test admin user
+  app.post('/api/supabase/create-admin', async (_req, res) => {
+    try {
+      const result = await createTestAdmin();
+      res.json(result);
+    } catch (error) {
+      console.error('Error creating admin:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : String(error)
       });
     }
   });

@@ -1,335 +1,579 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Loader2, AlertCircle, CheckCircle, Copy, Download, Database, FunctionSquare } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { AlertCircle, CheckCircle, Database, Loader2, RefreshCw, Shield, XCircle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 
-const SuperbaseSetupPage = () => {
-  const [sqlFunctions, setSqlFunctions] = useState<{ message: string; sqlScript: string } | null>(null);
-  const [functionsLoading, setFunctionsLoading] = useState(false);
-  const [testResult, setTestResult] = useState<any>(null);
-  const [testLoading, setTestLoading] = useState(false);
-  const [dbStatus, setDbStatus] = useState<any>(null);
-  const [dbStatusLoading, setDbStatusLoading] = useState(false);
+interface DatabaseStatus {
+  status?: string;
+  message?: string;
+  error?: string;
+  directConnectionStatus?: string;
+  supabaseUrl?: string;
+  supabaseStatus?: string;
+  sqlScript?: string;
+}
+
+interface SqlFunctionData {
+  message: string;
+  sqlScript: string;
+  error?: string;
+}
+
+interface TableTestResult {
+  name: string;
+  exists: boolean;
+  count?: number;
+  error?: string | null;
+}
+
+interface SchemaData {
+  existingTables: string[];
+  missingTables: string[];
+  tableSchemas: {
+    name: string;
+    recordCount: number;
+    columns: any[];
+  }[];
+  error?: string;
+}
+
+interface TableCreationResult {
+  success: boolean;
+  message?: string;
+  error?: string;
+}
+
+const SupabaseSetupPage = () => {
   const { toast } = useToast();
+  const [dbStatus, setDbStatus] = useState<DatabaseStatus | null>(null);
+  const [sqlFunctions, setSqlFunctions] = useState<SqlFunctionData | null>(null);
+  const [sqlTestResult, setSqlTestResult] = useState<any | null>(null);
+  const [tables, setTables] = useState<{ message?: string; tables?: TableTestResult[], error?: string } | null>(null);
+  const [schema, setSchema] = useState<SchemaData | null>(null);
+  
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isCreatingTables, setIsCreatingTables] = useState<boolean>(false);
+  const [isCreatingAdmin, setIsCreatingAdmin] = useState<boolean>(false);
+  const [tableCreationResult, setTableCreationResult] = useState<TableCreationResult | null>(null);
+  const [adminCreationResult, setAdminCreationResult] = useState<any | null>(null);
 
   useEffect(() => {
-    // Load database status on component mount
-    fetchDatabaseStatus();
+    checkDbStatus();
+    getSqlFunctions();
+    testSqlFunction();
+    checkTables();
+    checkSchema();
   }, []);
 
-  const fetchSqlFunctions = async () => {
-    setFunctionsLoading(true);
+  const checkDbStatus = async () => {
     try {
-      const response = await fetch('/api/diagnostic/sql-functions');
-      const data = await response.json();
-      setSqlFunctions(data);
-    } catch (error) {
-      console.error('Error fetching SQL functions:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch SQL functions. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setFunctionsLoading(false);
-    }
-  };
-
-  const testRunSql = async () => {
-    setTestLoading(true);
-    try {
-      const response = await fetch('/api/diagnostic/test-run-sql');
-      const data = await response.json();
-      setTestResult(data);
-    } catch (error) {
-      console.error('Error testing run_sql function:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to test run_sql function. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setTestLoading(false);
-    }
-  };
-
-  const fetchDatabaseStatus = async () => {
-    setDbStatusLoading(true);
-    try {
-      const response = await fetch('/api/diagnostic/db-check');
-      const data = await response.json();
+      const result = await apiRequest('GET', '/api/diagnostic/db-check');
+      const data = await result.json();
       setDbStatus(data);
     } catch (error) {
-      console.error('Error fetching database status:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch database status. Please try again.',
-        variant: 'destructive',
+      console.error('Error checking database status:', error);
+      setDbStatus({ 
+        status: 'error', 
+        error: error instanceof Error ? error.message : String(error)
       });
-    } finally {
-      setDbStatusLoading(false);
     }
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text).then(
-      () => {
+  const getSqlFunctions = async () => {
+    try {
+      const result = await apiRequest('GET', '/api/diagnostic/sql-functions');
+      const data = await result.json();
+      setSqlFunctions(data);
+    } catch (error) {
+      console.error('Error getting SQL functions:', error);
+      setSqlFunctions({ 
+        message: 'Error getting SQL functions', 
+        sqlScript: '',
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  };
+
+  const testSqlFunction = async () => {
+    try {
+      const result = await apiRequest('GET', '/api/diagnostic/test-run-sql');
+      const data = await result.json();
+      setSqlTestResult(data);
+    } catch (error) {
+      console.error('Error testing SQL function:', error);
+      setSqlTestResult({ 
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  };
+
+  const checkTables = async () => {
+    try {
+      const result = await apiRequest('GET', '/api/diagnostic/supabase-tables');
+      const data = await result.json();
+      setTables(data);
+    } catch (error) {
+      console.error('Error checking tables:', error);
+      setTables({ 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  };
+
+  const checkSchema = async () => {
+    try {
+      const result = await apiRequest('GET', '/api/diagnostic/schema');
+      const data = await result.json();
+      setSchema(data);
+    } catch (error) {
+      console.error('Error checking schema:', error);
+      setSchema({ 
+        existingTables: [],
+        missingTables: [],
+        tableSchemas: [],
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  };
+
+  const refreshAll = async () => {
+    setIsLoading(true);
+    try {
+      await Promise.all([
+        checkDbStatus(),
+        getSqlFunctions(),
+        testSqlFunction(),
+        checkTables(),
+        checkSchema()
+      ]);
+      toast({
+        title: 'Refreshed',
+        description: 'All diagnostics have been refreshed',
+      });
+    } catch (error) {
+      console.error('Error refreshing diagnostics:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to refresh diagnostics',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const createAllTables = async () => {
+    setIsCreatingTables(true);
+    setTableCreationResult(null);
+    try {
+      const result = await apiRequest('POST', '/api/supabase/create-tables');
+      const data = await result.json();
+      setTableCreationResult(data);
+      
+      if (data.success) {
         toast({
-          title: 'Copied!',
-          description: 'SQL script copied to clipboard',
+          title: 'Success',
+          description: 'Tables were created successfully',
+          variant: 'default',
         });
-      },
-      () => {
+      } else {
         toast({
-          title: 'Failed to copy',
-          description: 'Please try selecting and copying the text manually',
+          title: 'Error',
+          description: data.error || 'Failed to create tables',
           variant: 'destructive',
         });
       }
-    );
+      
+      // Refresh data after creating tables
+      setTimeout(() => {
+        checkTables();
+        checkSchema();
+        testSqlFunction();
+      }, 1000);
+      
+    } catch (error) {
+      console.error('Error creating tables:', error);
+      setTableCreationResult({
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      toast({
+        title: 'Error',
+        description: 'Failed to create tables',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsCreatingTables(false);
+    }
   };
 
-  const downloadSqlScript = (text: string) => {
-    const element = document.createElement('a');
-    const file = new Blob([text], { type: 'text/plain' });
-    element.href = URL.createObjectURL(file);
-    element.download = 'supabase_functions.sql';
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
+  const createAdminUser = async () => {
+    setIsCreatingAdmin(true);
+    setAdminCreationResult(null);
+    try {
+      const result = await apiRequest('POST', '/api/supabase/create-admin');
+      const data = await result.json();
+      setAdminCreationResult(data);
+      
+      if (data.success) {
+        toast({
+          title: 'Success',
+          description: 'Admin user was created successfully',
+          variant: 'default',
+        });
+      } else {
+        toast({
+          title: 'Error',
+          description: data.error || 'Failed to create admin user',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Error creating admin user:', error);
+      setAdminCreationResult({
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      toast({
+        title: 'Error',
+        description: 'Failed to create admin user',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsCreatingAdmin(false);
+    }
   };
 
   return (
-    <div className="container max-w-4xl py-10">
-      <h1 className="text-3xl font-bold mb-6">Supabase Setup Diagnostic</h1>
-      
-      <Alert className="mb-6 bg-yellow-50 border-yellow-600">
-        <AlertCircle className="h-4 w-4 text-yellow-600" />
-        <AlertTitle className="text-yellow-800">Important: SQL Functions Required</AlertTitle>
-        <AlertDescription className="text-yellow-700">
-          Before proceeding with any database operations, you must create the required SQL functions in your Supabase project. 
-          Use the SQL script below in the Supabase SQL Editor.
-        </AlertDescription>
-      </Alert>
+    <div className="container mx-auto py-8 space-y-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Supabase Setup</h1>
+          <p className="text-muted-foreground mt-2">
+            Configure and verify your Supabase integration
+          </p>
+        </div>
+        <Button onClick={refreshAll} disabled={isLoading} variant="outline">
+          {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+          Refresh All
+        </Button>
+      </div>
 
-      <Tabs defaultValue="functions">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="functions">
-            <FunctionSquare className="mr-2 h-4 w-4" /> SQL Functions
-          </TabsTrigger>
-          <TabsTrigger value="test">
-            <CheckCircle className="mr-2 h-4 w-4" /> Test Functions
-          </TabsTrigger>
-          <TabsTrigger value="status">
-            <Database className="mr-2 h-4 w-4" /> Database Status
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="functions" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Required SQL Functions</CardTitle>
-              <CardDescription>
-                These functions must be created in the Supabase SQL Editor for the application to work properly
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {!sqlFunctions && !functionsLoading ? (
-                <Button onClick={fetchSqlFunctions}>Load SQL Functions</Button>
-              ) : functionsLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  <span>Loading SQL functions...</span>
-                </div>
-              ) : (
-                <>
-                  <p className="mb-4">{sqlFunctions?.message}</p>
-                  <div className="relative">
-                    <pre className="p-4 bg-gray-800 text-gray-100 rounded-md overflow-x-auto">
-                      <code>{sqlFunctions?.sqlScript}</code>
-                    </pre>
-                    <div className="absolute top-2 right-2 space-x-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => copyToClipboard(sqlFunctions?.sqlScript || '')}
-                        className="bg-gray-700 hover:bg-gray-600 text-white"
-                      >
-                        <Copy className="h-4 w-4 mr-2" /> Copy
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => downloadSqlScript(sqlFunctions?.sqlScript || '')}
-                        className="bg-gray-700 hover:bg-gray-600 text-white"
-                      >
-                        <Download className="h-4 w-4 mr-2" /> Download
-                      </Button>
-                    </div>
-                  </div>
-                </>
-              )}
-            </CardContent>
-            <CardFooter className="bg-gray-50 p-4 rounded-b-lg">
-              <div className="text-sm text-gray-600">
-                After copying this SQL, paste it into the SQL Editor in your Supabase dashboard and run it.
-              </div>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="test">
-          <Card>
-            <CardHeader>
-              <CardTitle>Test SQL Functions</CardTitle>
-              <CardDescription>
-                Check if the required SQL functions are properly set up in your Supabase project
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {!testResult && !testLoading ? (
-                <Button onClick={testRunSql}>Test SQL Functions</Button>
-              ) : testLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  <span>Testing SQL functions...</span>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <span className="font-semibold">Status:</span>
-                    <Badge variant={testResult?.success ? "default" : "destructive"}>
-                      {testResult?.success ? "Working" : "Not Working"}
-                    </Badge>
-                  </div>
-                  
-                  {!testResult?.success && testResult?.function_definition && (
-                    <Alert className="bg-blue-50 border-blue-500">
-                      <AlertTitle className="text-blue-700">SQL Function Needed</AlertTitle>
-                      <AlertDescription className="text-blue-600">
-                        <p className="mb-2">Create this function in the Supabase SQL Editor:</p>
-                        <pre className="p-3 bg-gray-800 text-gray-100 rounded-md overflow-x-auto text-sm">
-                          <code>{testResult.function_definition}</code>
-                        </pre>
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                  
-                  {testResult?.error && (
-                    <div className="mt-4">
-                      <h4 className="font-semibold mb-1">Error Details:</h4>
-                      <pre className="p-3 bg-red-50 text-red-800 border border-red-200 rounded-md text-sm">
-                        {JSON.stringify(testResult.error, null, 2)}
-                      </pre>
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="status">
-          <Card>
-            <CardHeader>
-              <CardTitle>Database Status</CardTitle>
-              <CardDescription>
-                Check the overall status of your Supabase database
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {!dbStatus && !dbStatusLoading ? (
-                <Button onClick={fetchDatabaseStatus}>Check Database Status</Button>
-              ) : dbStatusLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  <span>Checking database status...</span>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <h4 className="font-semibold mb-1">Connection Status:</h4>
-                      <Badge variant={dbStatus?.connection === 'connected' ? "default" : "destructive"}>
-                        {dbStatus?.connection || 'Unknown'}
-                      </Badge>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold mb-1">run_sql Function:</h4>
-                      <Badge variant={dbStatus?.runSqlFunction === 'working' ? "default" : "destructive"}>
-                        {dbStatus?.runSqlFunction || 'Unknown'}
-                      </Badge>
-                    </div>
-                  </div>
-                  
-                  <Separator />
-                  
-                  <div>
-                    <h4 className="font-semibold mb-2">Table Status:</h4>
-                    {dbStatus?.tables && dbStatus.tables.length > 0 ? (
-                      <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200 text-sm">
-                          <thead>
-                            <tr>
-                              <th className="px-4 py-2 text-left">Table</th>
-                              <th className="px-4 py-2 text-left">Status</th>
-                              <th className="px-4 py-2 text-right">Count</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {dbStatus.tables.map((table: any, index: number) => (
-                              <tr key={index} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
-                                <td className="px-4 py-2 font-medium">{table.table}</td>
-                                <td className="px-4 py-2">
-                                  <Badge variant={table.exists ? "default" : "destructive"}>
-                                    {table.exists ? "Exists" : "Missing"}
-                                  </Badge>
-                                </td>
-                                <td className="px-4 py-2 text-right">{table.count || 0}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        {/* Database Status Card */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center">
+              <Database className="mr-2 h-5 w-5" />
+              Database Connection
+            </CardTitle>
+            <CardDescription>
+              Status of your Supabase database connection
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {dbStatus ? (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span>Connection Status:</span>
+                  <span className={`flex items-center ${
+                    dbStatus.directConnectionStatus?.includes('error') ? 'text-red-500' : 'text-green-500'
+                  }`}>
+                    {dbStatus.directConnectionStatus?.includes('error') ? (
+                      <>
+                        <XCircle className="mr-1 h-4 w-4" />
+                        Error
+                      </>
                     ) : (
-                      <div className="py-4 text-center text-gray-500">
-                        No table information available.
-                      </div>
+                      <>
+                        <CheckCircle className="mr-1 h-4 w-4" />
+                        Connected
+                      </>
                     )}
-                  </div>
-                  
-                  {dbStatus?.message && (
-                    <Alert className="bg-blue-50 border-blue-500">
-                      <AlertDescription className="text-blue-600">
-                        {dbStatus.message}
-                      </AlertDescription>
-                    </Alert>
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Supabase URL:</span>
+                  <span>{dbStatus.supabaseUrl || 'Not configured'}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Supabase Client:</span>
+                  <span className={`flex items-center ${
+                    dbStatus.supabaseStatus === 'available' ? 'text-green-500' : 'text-red-500'
+                  }`}>
+                    {dbStatus.supabaseStatus === 'available' ? (
+                      <>
+                        <CheckCircle className="mr-1 h-4 w-4" />
+                        Available
+                      </>
+                    ) : (
+                      <>
+                        <XCircle className="mr-1 h-4 w-4" />
+                        Unavailable
+                      </>
+                    )}
+                  </span>
+                </div>
+                {dbStatus.error && (
+                  <Alert variant="destructive" className="mt-4">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Error</AlertTitle>
+                    <AlertDescription>
+                      {dbStatus.error}
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            ) : (
+              <div className="flex justify-center py-6">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* SQL Function Test Card */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center">
+              <Database className="mr-2 h-5 w-5" />
+              SQL Function Test
+            </CardTitle>
+            <CardDescription>
+              Test if required SQL functions are installed in Supabase
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {sqlTestResult ? (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <span>Status:</span>
+                  {sqlTestResult.success ? (
+                    <span className="flex items-center text-green-500">
+                      <CheckCircle className="mr-1 h-4 w-4" />
+                      Available
+                    </span>
+                  ) : (
+                    <span className="flex items-center text-red-500">
+                      <XCircle className="mr-1 h-4 w-4" />
+                      Not Available
+                    </span>
                   )}
                 </div>
-              )}
-            </CardContent>
-            <CardFooter>
-              <Button variant="outline" onClick={fetchDatabaseStatus} disabled={dbStatusLoading}>
-                {dbStatusLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Refreshing...
-                  </>
-                ) : (
-                  'Refresh Status'
+                
+                {!sqlTestResult.success && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>SQL Function Not Available</AlertTitle>
+                    <AlertDescription>
+                      <p className="mb-2">The required SQL function is not available in your Supabase database.</p>
+                      <p>Please copy the SQL below and execute it in the Supabase SQL Editor.</p>
+                    </AlertDescription>
+                  </Alert>
                 )}
-              </Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-      </Tabs>
+
+                {sqlFunctions && !sqlTestResult.success && (
+                  <Accordion type="single" collapsible className="w-full">
+                    <AccordionItem value="sql">
+                      <AccordionTrigger>SQL Function Code</AccordionTrigger>
+                      <AccordionContent>
+                        <pre className="bg-muted p-4 rounded-md overflow-x-auto text-xs">
+                          <code>{sqlFunctions.sqlScript}</code>
+                        </pre>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                )}
+
+                {sqlTestResult.error && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Error</AlertTitle>
+                    <AlertDescription>
+                      {sqlTestResult.error}
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            ) : (
+              <div className="flex justify-center py-6">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Database Tables Section */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center">
+            <Database className="mr-2 h-5 w-5" />
+            Database Tables
+          </CardTitle>
+          <CardDescription>
+            Check and create required database tables
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {schema ? (
+            <div className="space-y-6">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <h3 className="font-medium mb-2">Existing Tables</h3>
+                  {schema.existingTables.length > 0 ? (
+                    <ul className="space-y-1">
+                      {schema.existingTables.map((table) => (
+                        <li key={table} className="flex items-center text-green-500">
+                          <CheckCircle className="mr-1 h-4 w-4" />
+                          {table}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-muted-foreground text-sm">No tables found</p>
+                  )}
+                </div>
+                <div>
+                  <h3 className="font-medium mb-2">Missing Tables</h3>
+                  {schema.missingTables.length > 0 ? (
+                    <ul className="space-y-1">
+                      {schema.missingTables.map((table) => (
+                        <li key={table} className="flex items-center text-amber-500">
+                          <AlertCircle className="mr-1 h-4 w-4" />
+                          {table}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-green-500 flex items-center">
+                      <CheckCircle className="mr-1 h-4 w-4" />
+                      All required tables exist
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {sqlTestResult?.success && schema.missingTables.length > 0 && (
+                <Alert className="bg-amber-50 border-amber-200">
+                  <AlertCircle className="h-4 w-4 text-amber-600" />
+                  <AlertTitle className="text-amber-600">Missing Tables</AlertTitle>
+                  <AlertDescription className="text-amber-700">
+                    <p className="mb-2">Some required tables are missing in your Supabase database.</p>
+                    <p className="mb-4">You can create all necessary tables automatically by clicking the button below.</p>
+                    <Button 
+                      onClick={createAllTables}
+                      disabled={isCreatingTables}
+                      className="bg-amber-600 hover:bg-amber-700"
+                    >
+                      {isCreatingTables ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Creating Tables...
+                        </>
+                      ) : (
+                        <>Create All Missing Tables</>
+                      )}
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {tableCreationResult && (
+                <Alert variant={tableCreationResult.success ? "default" : "destructive"}>
+                  {tableCreationResult.success ? (
+                    <CheckCircle className="h-4 w-4" />
+                  ) : (
+                    <AlertCircle className="h-4 w-4" />
+                  )}
+                  <AlertTitle>{tableCreationResult.success ? "Success" : "Error"}</AlertTitle>
+                  <AlertDescription>
+                    {tableCreationResult.message || tableCreationResult.error || 
+                     (tableCreationResult.success ? "Tables created successfully" : "Failed to create tables")}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {schema.existingTables.includes('users') && schema.existingTables.includes('admins') && (
+                <Alert className="bg-blue-50 border-blue-200">
+                  <Shield className="h-4 w-4 text-blue-600" />
+                  <AlertTitle className="text-blue-600">Create Admin User</AlertTitle>
+                  <AlertDescription className="text-blue-700">
+                    <p className="mb-2">Create an admin user with default credentials (username: admin, password: admin123)</p>
+                    <Button 
+                      onClick={createAdminUser}
+                      disabled={isCreatingAdmin}
+                      className="bg-blue-600 hover:bg-blue-700 mt-2"
+                    >
+                      {isCreatingAdmin ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Creating Admin...
+                        </>
+                      ) : (
+                        <>Create Admin User</>
+                      )}
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {adminCreationResult && (
+                <Alert variant={adminCreationResult.success ? "default" : "destructive"}>
+                  {adminCreationResult.success ? (
+                    <CheckCircle className="h-4 w-4" />
+                  ) : (
+                    <AlertCircle className="h-4 w-4" />
+                  )}
+                  <AlertTitle>{adminCreationResult.success ? "Success" : "Error"}</AlertTitle>
+                  <AlertDescription>
+                    {adminCreationResult.message || adminCreationResult.error || 
+                     (adminCreationResult.success ? "Admin user created successfully" : "Failed to create admin user")}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {schema.error && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Error</AlertTitle>
+                  <AlertDescription>
+                    {schema.error}
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
+          ) : (
+            <div className="flex justify-center py-6">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {!sqlTestResult?.success && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>SQL Function Required</AlertTitle>
+          <AlertDescription className="space-y-2">
+            <p>You must first create the required SQL function in your Supabase database.</p>
+            <p>Go to the Supabase dashboard, open the SQL Editor, and run the following SQL script:</p>
+            {sqlFunctions && (
+              <pre className="bg-muted p-4 rounded-md overflow-x-auto text-xs mt-2">
+                <code>{sqlFunctions.sqlScript}</code>
+              </pre>
+            )}
+            <p className="font-medium mt-2">After adding the SQL function, click "Refresh All" above to verify.</p>
+          </AlertDescription>
+        </Alert>
+      )}
     </div>
   );
 };
 
-export default SuperbaseSetupPage;
+export default SupabaseSetupPage;

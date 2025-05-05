@@ -279,7 +279,7 @@ export default function AdminUsers() {
                   <TableHead className="text-gray-400">Username</TableHead>
                   <TableHead className="text-gray-400">Email</TableHead>
                   <TableHead className="text-gray-400">Phone</TableHead>
-                  <TableHead className="text-gray-400">Verified</TableHead>
+                  <TableHead className="text-gray-400">Status</TableHead>
                   <TableHead className="text-gray-400">Role</TableHead>
                   <TableHead className="text-gray-400 text-right">Actions</TableHead>
                 </TableRow>
@@ -303,15 +303,9 @@ export default function AdminUsers() {
                     <TableCell className="text-gray-300">{user.email}</TableCell>
                     <TableCell className="text-gray-300">{user.phone || "N/A"}</TableCell>
                     <TableCell className="text-gray-300">
-                      {user.phoneVerified ? (
-                        <span className="px-2 py-1 bg-green-500/20 text-green-500 rounded-full text-xs">
-                          Verified
-                        </span>
-                      ) : (
-                        <span className="px-2 py-1 bg-red-500/20 text-red-500 rounded-full text-xs">
-                          Unverified
-                        </span>
-                      )}
+                      <span className="px-2 py-1 bg-green-500/20 text-green-500 rounded-full text-xs">
+                        Active
+                      </span>
                     </TableCell>
                     <TableCell className="text-gray-300">
                       {user.role === "admin" ? (

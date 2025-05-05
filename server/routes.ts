@@ -374,6 +374,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Complete Supabase setup endpoint
+  app.post('/api/supabase/setup', async (_req, res) => {
+    try {
+      // Import the setup function dynamically to avoid circular dependencies
+      const { setupSupabaseDatabase } = await import('./supabase-direct-setup.js');
+      
+      const setupResult = await setupSupabaseDatabase();
+      res.json({
+        success: true,
+        message: 'Supabase setup completed',
+        ...setupResult
+      });
+    } catch (error) {
+      console.error('Error setting up Supabase:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Error setting up Supabase',
+        message: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
   // Direct database check endpoint
   app.get('/api/diagnostic/db-check', async (req, res) => {
     try {

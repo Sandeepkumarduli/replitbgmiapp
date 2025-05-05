@@ -257,7 +257,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         phone,
         gameId,
         role: 'user',
-        phoneVerified: false,
+        phoneVerified: true,
         phoneVerificationBypassed: true
       });
 

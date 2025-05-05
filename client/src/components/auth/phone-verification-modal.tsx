@@ -32,12 +32,8 @@ const PhoneVerificationModal: React.FC<PhoneVerificationModalProps> = ({
   });
   
   useEffect(() => {
-    if (user && open) {
-      // If user exists, phone exists, but not verified, show modal
-      setShouldShow(!data?.phoneVerified && !!user?.phone);
-    } else {
-      setShouldShow(false);
-    }
+    // Always set to false - we've removed phone verification requirement
+    setShouldShow(false);
   }, [user, data, open]);
   
   const handleVerificationSuccess = () => {

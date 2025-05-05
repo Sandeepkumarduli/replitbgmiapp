@@ -33,13 +33,14 @@ export default function AdminNotificationsPage() {
 
   // Fetch all users for the user selection
   const { 
-    data: users, 
+    data: users = [], 
     isLoading: loadingUsers, 
     error: userError 
   } = useQuery<User[]>({
     queryKey: ["/api/users"],
     retry: 1, // Only retry once
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    select: (data) => Array.isArray(data) ? data : []
   });
   
   // Show error toast if user fetch fails

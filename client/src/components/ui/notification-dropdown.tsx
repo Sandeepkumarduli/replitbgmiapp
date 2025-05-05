@@ -176,8 +176,12 @@ export function NotificationDropdown() {
     if (!user) return;
     
     try {
-      // Call the server to hide notifications for this user
-      await apiRequest("POST", "/api/notifications/hide", {});
+      // Create a temporary empty array to replace the notifications list immediately
+      const tempEmptyNotifications: Notification[] = [];
+      
+      // Immediately update UI with empty notifications
+      queryClient.setQueryData(["/api/notifications"], tempEmptyNotifications);
+      queryClient.setQueryData(["/api/notifications/count"], { count: 0 });
       
       // Hide notifications in the UI
       setHiddenNotifications(true);
@@ -185,8 +189,11 @@ export function NotificationDropdown() {
       // Store this preference in localStorage to persist across page refreshes
       localStorage.setItem(`notifications_cleared_${user.id}`, 'true');
       
-      // Update the count to zero in the cache (frontend only)
-      queryClient.setQueryData(["/api/notifications/count"], { count: 0 });
+      // Now call the API (the UI is already updated for better responsiveness)
+      await apiRequest("POST", "/api/notifications/hide", {});
+      
+      // After successful API call, refresh data to ensure consistency
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications/count"] });
       
       // Show success toast
       toast({
@@ -195,6 +202,15 @@ export function NotificationDropdown() {
       });
     } catch (error) {
       console.error("Error hiding notifications:", error);
+      
+      // If error occurs, refresh the data to ensure UI is in sync with server
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications/count"] });
+      
+      // Remove the cleared state since there was an error
+      localStorage.removeItem(`notifications_cleared_${user.id}`);
+      setHiddenNotifications(false);
+      
       toast({
         title: "Error",
         description: "Failed to clear notifications. Please try again.",

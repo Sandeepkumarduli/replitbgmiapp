@@ -79,24 +79,53 @@ export default function CreateTournament() {
   // Create tournament mutation
   const createTournamentMutation = useMutation({
     mutationFn: async (values: TournamentFormValues) => {
-      const response = await apiRequest("POST", "/api/tournaments", values);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to create tournament");
+      console.log("Submitting tournament data:", values);
+      
+      // Prepare the tournament data
+      const tournamentData = {
+        ...values,
+        // Make sure we have numbers for these fields
+        entryFee: values.isPaid ? Number(values.entryFee) : 0,
+        prizePool: Number(values.prizePool),
+        totalSlots: Number(values.totalSlots),
+        slots: Number(values.totalSlots), // Match slots with totalSlots
+        status: "upcoming", // Default status for new tournaments
+        // ISO format for date to ensure proper server handling
+        date: values.date.toISOString(),
+      };
+      
+      try {
+        const response = await apiRequest("POST", "/api/tournaments", tournamentData);
+        
+        if (!response.ok) {
+          // Parse error response
+          const errorData = await response.json().catch(() => ({ 
+            error: `Server responded with status: ${response.status}` 
+          }));
+          throw new Error(errorData.error || "Failed to create tournament");
+        }
+        
+        return await response.json();
+      } catch (error) {
+        console.error("Error creating tournament:", error);
+        throw error;
       }
-      return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Tournament created successfully:", data);
       toast({
         title: "Tournament created successfully",
         description: "The tournament has been created and is now available.",
       });
-      navigate("/admin/tournaments");
+      setTimeout(() => {
+        navigate("/admin/tournaments");
+      }, 1000); // Short delay to allow toast to be seen
     },
     onError: (error: Error) => {
+      console.error("Tournament creation error:", error);
       toast({
         title: "Failed to create tournament",
-        description: error.message,
+        description: error.message || "An unexpected error occurred",
         variant: "destructive",
       });
       setIsSubmitting(false);

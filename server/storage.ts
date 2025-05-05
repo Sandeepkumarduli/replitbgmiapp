@@ -193,8 +193,7 @@ export class MemStorage implements IStorage {
       createdAt,
       role: insertUser.role || "user",
       phoneVerified: insertUser.phoneVerified ?? false,
-      phoneVerificationBypassed: insertUser.phoneVerificationBypassed ?? true,
-      firebaseUid: insertUser.firebaseUid ?? null
+      phoneVerificationBypassed: insertUser.phoneVerificationBypassed ?? true
     };
     this.users.set(id, user);
     return user;

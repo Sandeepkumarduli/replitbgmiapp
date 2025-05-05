@@ -184,65 +184,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Add schema diagnostic endpoint to check database structure
   app.get('/api/diagnostic/schema', async (req, res) => {
     try {
-      // Import db module dynamically
-      const dbModule = await import('./db');
-      
-      // Check which tables exist
-      const { rows: tableRows } = await dbModule.pool.query(`
-        SELECT table_name, 
-               (SELECT COUNT(*) FROM information_schema.columns WHERE table_name = t.table_name) AS column_count
-        FROM information_schema.tables t
-        WHERE table_schema = 'public'
-        ORDER BY table_name
-      `);
-      
-      // Get list of table names
-      const existingTables = tableRows.map(r => r.table_name);
-      
       // Define required tables based on our schema
       const requiredTables = [
         'users', 'teams', 'team_members', 'tournaments', 
         'registrations', 'notifications', 'notification_reads'
       ];
       
-      // Check which required tables are missing
-      const missingTables = requiredTables.filter(t => !existingTables.includes(t));
-      
-      // Get column info for each table
+      // Use Supabase to check tables
+      const existingTables = [];
       const tableSchemas = [];
-      for (const table of existingTables) {
-        if (requiredTables.includes(table)) {
-          const { rows: columns } = await dbModule.pool.query(`
-            SELECT column_name, data_type, is_nullable
-            FROM information_schema.columns
-            WHERE table_name = $1
-            ORDER BY ordinal_position
-          `, [table]);
+      
+      for (const table of requiredTables) {
+        try {
+          // Check if table exists by trying to get count
+          const { count, error } = await supabase
+            .from(table)
+            .select('*', { count: 'exact', head: true });
           
-          // Get record count for the table
-          const { rows: countRows } = await dbModule.pool.query(
-            `SELECT COUNT(*) FROM "${table}"`
-          );
-          
-          tableSchemas.push({
-            name: table,
-            columns: columns,
-            recordCount: parseInt(countRows[0].count)
-          });
+          if (!error) {
+            existingTables.push(table);
+            
+            // Add table schema info
+            tableSchemas.push({
+              name: table,
+              recordCount: count || 0,
+              columns: [] // We don't have easy access to column info in Supabase JS client
+            });
+          }
+        } catch (tableError) {
+          console.error(`Error checking table ${table}:`, tableError);
         }
       }
+      
+      // Check which required tables are missing
+      const missingTables = requiredTables.filter(t => !existingTables.includes(t));
       
       res.json({
         existingTables,
         missingTables,
         tableSchemas,
-        env: process.env.NODE_ENV
+        env: process.env.NODE_ENV,
+        supabaseUrl: 'configured', // We don't show the actual URL for security
+        supabaseStatus: 'available'
       });
     } catch (error) {
       console.error('Error in schema diagnostic:', error);
       res.status(500).json({
         error: 'Schema diagnostic failed',
-        message: error instanceof Error ? error.message : String(error)
+        message: error instanceof Error ? error.message : String(error),
+        supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'configured' : 'missing',
+        supabaseStatus: 'error'
       });
     }
   });

@@ -1,3 +1,9 @@
+/**
+ * Supabase Database Connection
+ * This file sets up the Supabase client for database operations
+ * ONLY Supabase is used for all data persistence as per requirements
+ */
+
 import { createClient } from '@supabase/supabase-js';
 import * as schema from "@shared/schema";
 
@@ -14,16 +20,38 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // Create Supabase client
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// For compatibility with existing code
+// Log success on server startup
+try {
+  console.log("Server supabaseUrl:", supabaseUrl.substring(0, 10) + "...");
+  console.log("Server supabaseAnonKey:", supabaseAnonKey.substring(0, 10) + "...");
+  console.log("Supabase client initialized successfully.");
+} catch (e) {
+  console.error("Error logging Supabase configuration:", e);
+}
+
+// This interface simulates the old Neon DB interface to help with transition
+// Will be removed once all code is fully migrated to use Supabase directly
 export const db = {
   query: async (sql: string, params?: any[]) => {
-    const { data, error } = await supabase.rpc('execute_sql', { 
-      query: sql,
-      params: params || []
-    });
-    
-    if (error) throw error;
-    return data;
-  },
-  // Add any other database methods that might be needed
+    try {
+      // Use direct SQL execution through Supabase (requires appropriate permissions)
+      const { data, error } = await supabase.rpc('execute_sql', { 
+        query: sql,
+        params: params || []
+      });
+      
+      if (error) {
+        console.error("Supabase SQL execution error:", error);
+        throw error;
+      }
+      
+      return {
+        rows: data || [],
+        rowCount: data?.length || 0
+      };
+    } catch (e) {
+      console.error("Error executing SQL via Supabase:", e);
+      throw e;
+    }
+  }
 };

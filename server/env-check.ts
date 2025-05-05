@@ -41,10 +41,11 @@ export function checkEnvironmentVariables() {
   const isViteDev = process.env.VITE_DEV === 'true';
   console.log(`  Is Vite Dev: ${isViteDev ? 'Yes' : 'No'}`);
   
-  // Print all environment variables with VITE_ or NEXT_PUBLIC_ prefix (masked)
+  // Print all environment variables with VITE_ prefix (masked)
+  // Removed NEXT_PUBLIC_ prefix (used by Supabase) as we're now using Neon DB
   console.log('\nClient-side environment variables:');
   Object.keys(process.env)
-    .filter(key => key.startsWith('VITE_') || key.startsWith('NEXT_PUBLIC_'))
+    .filter(key => key.startsWith('VITE_'))
     .forEach(key => {
       const value = process.env[key] as string;
       const maskedValue = value.length > 10 

@@ -1,0 +1,15 @@
+server/supabase.ts
+server/supabase-auth.ts
+server/supabase-diagnostics.ts
+server/supabase-direct-setup.js
+server/supabase-migration.ts
+server/supabase-phone-auth.ts
+server/supabase-procedures.ts
+server/supabase-storage.ts
+server/supabase-tables.ts
+SUPABASE_MIGRATION_GUIDE.md
+SUPABASE_SETUP_GUIDE.md
+.env.supabase
+supabase-rls.sql
+supabase-setup.sql
+client/src/pages/supabase-setup.tsx

@@ -335,109 +335,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // ===== TABLE CREATION ENDPOINTS =====
-  // Endpoint to create all database tables in Supabase
-  app.post('/api/supabase/create-tables', async (_req, res) => {
-    try {
-      const result = await createSupabaseTables();
-      res.json(result);
-    } catch (error) {
-      console.error('Error creating tables:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: error instanceof Error ? error.message : String(error)
-      });
-    }
-  });
-  
-  // Endpoint to create a test admin user
-  app.post('/api/supabase/create-admin', async (_req, res) => {
-    try {
-      const result = await createTestAdmin();
-      res.json(result);
-    } catch (error) {
-      console.error('Error creating admin:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: error instanceof Error ? error.message : String(error)
-      });
-    }
-  });
-  
-  // Complete Supabase setup endpoint
-  app.post('/api/supabase/setup', async (_req, res) => {
-    try {
-      // Import the setup function dynamically to avoid circular dependencies
-      const { setupSupabaseDatabase } = await import('./supabase-direct-setup.js');
-      
-      const setupResult = await setupSupabaseDatabase();
-      res.json({
-        success: true,
-        message: 'Supabase setup completed',
-        ...setupResult
-      });
-    } catch (error) {
-      console.error('Error setting up Supabase:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Error setting up Supabase',
-        message: error instanceof Error ? error.message : String(error)
-      });
-    }
-  });
-  
-  // Direct database check endpoint
+  // ===== DIAGNOSTIC ENDPOINTS =====
+  // Database check endpoint
   app.get('/api/diagnostic/db-check', async (req, res) => {
     try {
-      // First call our checkDatabaseConnection function to log diagnostics
-      await checkDatabaseConnection();
+      // Test database connection
+      const isConnected = await testDatabaseConnection();
       
-      // Then get direct database status for the response
-      const status = await getDirectDatabaseStatus();
-      
-      // Generate the SQL for creating tables
-      const sql = generateCreateTableSQL();
+      // Get database status
+      const dbStatus = await storage.checkDatabaseStatus?.() || {
+        status: isConnected ? 'connected' : 'error',
+        userCount: 0,
+        tables: []
+      };
       
       res.json({
-        ...status,
-        sqlScript: 'SQL script generated in server console',
-        message: 'Tables must be created manually in Supabase dashboard using SQL Editor'
+        status: dbStatus.status,
+        userCount: dbStatus.userCount,
+        tables: dbStatus.tables,
+        connection: isConnected ? 'success' : 'failed'
       });
     } catch (error) {
       console.error('Error checking database:', error);
       res.status(500).json({
         error: 'Database check failed',
-        message: error instanceof Error ? error.message : String(error)
-      });
-    }
-  });
-  
-  // Test the Supabase run_sql function
-  app.get('/api/diagnostic/test-run-sql', async (_req, res) => {
-    try {
-      const result = await testRunSqlFunction();
-      res.json(result);
-    } catch (error) {
-      console.error('Error testing run_sql function:', error);
-      res.status(500).json({ 
-        error: 'Failed to test run_sql function',
-        message: error instanceof Error ? error.message : String(error)
-      });
-    }
-  });
-  
-  // Get SQL for create functions needed in Supabase
-  app.get('/api/diagnostic/sql-functions', async (_req, res) => {
-    try {
-      const sqlScript = generateExecuteSqlFunction();
-      res.json({
-        message: "These SQL functions need to be created in the Supabase SQL Editor",
-        sqlScript
-      });
-    } catch (error) {
-      console.error('Error generating SQL function script:', error);
-      res.status(500).json({ 
-        error: 'Failed to generate SQL function script',
         message: error instanceof Error ? error.message : String(error)
       });
     }
@@ -471,73 +392,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Direct diagnostic route for admin account (does not require login)
   app.get('/api/diagnostic/check-admin', async (req, res) => {
     try {
-      const adminUsername = "Sandeepkumarduli";
+      // Check if admin exists in Admins table first
+      const adminUsers = await storage.getAllAdmins();
       
-      // Check if admin exists
-      const adminUser = await storage.getUserByUsername(adminUsername);
-      
-      if (adminUser) {
+      if (adminUsers && adminUsers.length > 0) {
+        const adminUser = adminUsers[0];
         res.json({
           status: "success",
-          message: "Admin account exists",
+          message: "Admin account exists in Admins table",
           admin: {
             id: adminUser.id,
             username: adminUser.username,
-            role: adminUser.role,
-            email: adminUser.email
+            email: adminUser.email,
+            displayName: adminUser.displayName,
+            accessLevel: adminUser.accessLevel
           }
         });
       } else {
-        // Try creating admin directly for testing with direct Supabase access
-        try {
-          const { hashPassword } = await import('./auth');
-          const hashedPassword = await hashPassword("Sandy@1234");
-          
-          console.log("Attempting to create admin account in diagnostic mode");
-          
-          // Try direct Supabase insert first
-          const { data: newAdmin, error: insertError } = await supabase
-            .from('users')
-            .insert({
-              username: adminUsername,
-              password: hashedPassword,
-              email: "admin@bgmi-tournaments.com",
-              phone: "1234567890",
-              gameId: "admin",
-              role: "admin",
-              phoneVerified: true,
-              phoneVerificationBypassed: true,
-              firebaseUid: null,
-              createdAt: new Date()
-            })
-            .select()
-            .single();
-            
-          if (insertError) {
-            console.error("Direct insert error:", insertError);
-            throw new Error(insertError.message);
-          }
-          
-          if (!newAdmin) {
-            throw new Error("No admin account returned after insert");
-          }
-          
+        // Check legacy admin in Users table
+        const adminUsername = "Sandeepkumarduli";
+        const legacyAdmin = await storage.getUserByUsername(adminUsername);
+        
+        if (legacyAdmin) {
           res.json({
             status: "success",
-            message: "Admin account created directly via Supabase",
+            message: "Legacy admin account exists in Users table",
             admin: {
-              id: newAdmin.id,
-              username: newAdmin.username,
-              role: newAdmin.role,
-              email: newAdmin.email
-            }
+              id: legacyAdmin.id,
+              username: legacyAdmin.username,
+              role: legacyAdmin.role,
+              email: legacyAdmin.email
+            },
+            isLegacy: true
           });
-        } catch (createError) {
-          console.error("Diagnostic admin creation failed:", createError);
-          res.status(500).json({
-            status: "error",
-            message: "Failed to create admin account",
-            error: createError instanceof Error ? createError.message : String(createError)
+        } else {
+          res.json({
+            status: "warning",
+            message: "No admin accounts found in the database",
+            adminInAdminsTable: false,
+            legacyAdminInUsersTable: false
           });
         }
       }

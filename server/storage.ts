@@ -1,11 +1,12 @@
 import { 
-  users, teams, teamMembers, tournaments, registrations, notifications,
+  users, teams, teamMembers, tournaments, registrations, notifications, admins,
   type User, type InsertUser, 
   type Team, type InsertTeam, 
   type TeamMember, type InsertTeamMember,
   type Tournament, type InsertTournament, type UpdateTournament,
   type Registration, type InsertRegistration,
-  type Notification, type InsertNotification
+  type Notification, type InsertNotification,
+  type Admin, type InsertAdmin
 } from "@shared/schema";
 import session from "express-session";
 
@@ -22,6 +23,15 @@ export interface IStorage {
   updateUser(id: number, user: Partial<User>): Promise<User | undefined>;
   deleteUser(id: number): Promise<boolean>; // For admin user management
   getAllUsers(): Promise<User[]>; // For admin user management
+  
+  // Admin operations
+  getAdmin(id: number): Promise<Admin | undefined>;
+  getAdminByUsername(username: string): Promise<Admin | undefined>;
+  getAdminByEmail(email: string): Promise<Admin | undefined>;
+  createAdmin(admin: InsertAdmin): Promise<Admin>;
+  updateAdmin(id: number, admin: Partial<Admin>): Promise<Admin | undefined>;
+  deleteAdmin(id: number): Promise<boolean>;
+  getAllAdmins(): Promise<Admin[]>;
   
   // Diagnostic function to check database status
   checkDatabaseStatus?(): Promise<{ status: string, userCount: number, tables: string[] }>;

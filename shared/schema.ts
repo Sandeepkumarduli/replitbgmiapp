@@ -98,6 +98,20 @@ export const notificationReads = pgTable("notification_reads", {
   };
 });
 
+// Dedicated Admins table for administrator management
+export const admins = pgTable("admins", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
+  email: text("email").notNull().unique(),
+  phone: text("phone").notNull(),
+  displayName: text("display_name").notNull(),
+  accessLevel: text("access_level").notNull().default("standard"), // standard, super, owner
+  lastLogin: timestamp("last_login"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Zod schemas for validation
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -155,6 +169,13 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
   isRead: true
 });
 
+export const insertAdminSchema = createInsertSchema(admins).omit({
+  id: true,
+  createdAt: true,
+  lastLogin: true,
+  isActive: true
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -180,3 +201,6 @@ export type InsertNotificationRead = {
   userId: number;
   notificationId: number;
 };
+
+export type Admin = typeof admins.$inferSelect;
+export type InsertAdmin = z.infer<typeof insertAdminSchema>;

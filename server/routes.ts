@@ -1,5 +1,6 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
+import session from 'express-session';
 import { storage } from "./storage";
 import { supabase } from "./supabase";
 import { 
@@ -58,9 +59,6 @@ async function generate6DigitCode(storage: any): Promise<string> {
   // If we couldn't generate a unique code after 10 attempts, use a timestamp-based approach
   return `${Date.now().toString().slice(-6)}`;
 }
-
-import session from 'express-session';
-import { storage } from './storage';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Use fixed Supabase auth implementation to avoid conflicting endpoints
@@ -336,6 +334,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Direct diagnostic route to check if admin account exists
+  app.get('/api/diagnostic/admin', async (req, res) => {
+    try {
+      const adminUsername = "Sandeepkumarduli";
+      const adminEmail = "admin@bgmi-tournaments.com";
+      
+      // Check with both methods to be thorough
+      const adminByUsername = await storage.getUserByUsername(adminUsername);
+      const adminByEmail = await storage.getUserByEmail(adminEmail);
+      
+      res.json({
+        adminExists: !!(adminByUsername || adminByEmail),
+        adminByUsername: !!adminByUsername,
+        adminByEmail: !!adminByEmail,
+        message: (adminByUsername || adminByEmail) ? "Admin user found in database" : "No admin user found in database"
+      });
+    } catch (error) {
+      console.error("Admin check error:", error);
+      res.status(500).json({
+        error: "Failed to check admin",
+        message: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   // Direct diagnostic route for admin account (does not require login)
   app.get('/api/diagnostic/check-admin', async (req, res) => {
     try {
@@ -508,8 +531,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Add a special diagnostics route for the admin account
-  app.get('/api/diagnostic/admin', async (req, res) => {
+  // Add a special diagnostics route for the admin account details
+  app.get('/api/diagnostic/admin-details', async (req, res) => {
     try {
       // Only allow in development or with proper auth in production
       if (process.env.NODE_ENV !== 'production' || 

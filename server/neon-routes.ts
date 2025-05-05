@@ -257,7 +257,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         phone,
         gameId,
         role: 'user',
-        createdAt: new Date(),
         phoneVerified: false,
         phoneVerificationBypassed: true,
         firebaseUid: null
@@ -431,8 +430,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const team = await storage.createTeam({
         ...result.data,
         ownerId: userId,
-        inviteCode,
-        createdAt: new Date()
+        inviteCode
       });
       
       res.status(201).json(team);
@@ -526,8 +524,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const member = await storage.addTeamMember({
-        ...result.data,
-        createdAt: new Date()
+        ...result.data
       });
       
       res.status(201).json(member);
@@ -578,8 +575,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const tournament = await storage.createTournament({
         ...result.data,
-        createdBy: userId,
-        createdAt: new Date()
+        createdBy: userId
       });
       
       res.status(201).json(tournament);
@@ -669,7 +665,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const registration = await storage.createRegistration({
         ...result.data,
         userId,
-        createdAt: new Date(),
         status: 'pending',
         paymentStatus: 'pending'
       });
@@ -746,8 +741,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const notification = await storage.createNotification({
         ...result.data,
-        createdAt: new Date(),
-        isRead: false
+        type: result.data.type || "general"
       });
       
       res.status(201).json(notification);

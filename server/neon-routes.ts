@@ -535,19 +535,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const teamId = parseInt(req.params.id);
       const userId = req.session.userId as number;
       
+      console.log(`Attempting to delete team with ID: ${teamId} by user: ${userId}`);
+      
       // Check if the team exists and belongs to the user
       const team = await storage.getTeam(teamId);
       if (!team) {
+        console.log(`Team with ID ${teamId} not found`);
         return res.status(404).json({ error: 'Team not found' });
       }
       
       if (team.ownerId !== userId && req.session.role !== 'admin') {
+        console.log(`Permission denied: User ${userId} tried to delete team ${teamId} owned by ${team.ownerId}`);
         return res.status(403).json({ error: 'You do not have permission to delete this team' });
       }
       
-      // Delete the team
-      await storage.deleteTeam(teamId);
-      res.status(204).send();
+      // First, delete all team members
+      const members = await storage.getTeamMembers(teamId);
+      if (members.length > 0) {
+        console.log(`Deleting ${members.length} team members`);
+        for (const member of members) {
+          await storage.deleteTeamMember(member.id);
+        }
+      }
+      
+      // Then delete any registrations associated with this team
+      const registrations = await storage.getRegistrationsByTeam(teamId);
+      if (registrations.length > 0) {
+        console.log(`Deleting ${registrations.length} team registrations`);
+        for (const registration of registrations) {
+          await storage.deleteRegistration(registration.id);
+        }
+      }
+      
+      // Finally delete the team
+      console.log(`Deleting team ${teamId}`);
+      const deleted = await storage.deleteTeam(teamId);
+      
+      if (!deleted) {
+        console.log(`Failed to delete team ${teamId}`);
+        return res.status(500).json({ error: 'Failed to delete team' });
+      }
+      
+      console.log(`Team ${teamId} deleted successfully`);
+      res.status(200).json({ success: true, message: 'Team deleted successfully' });
     } catch (error) {
       console.error('Error deleting team:', error);
       res.status(500).json({ error: 'Failed to delete team' });

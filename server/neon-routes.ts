@@ -895,15 +895,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/tournaments/:id', isAdmin, async (req, res) => {
     try {
       const tournamentId = parseInt(req.params.id);
+      console.log(`Attempting to delete tournament with ID: ${tournamentId}`);
       
-      // Delete the tournament
-      const success = await storage.deleteTournament(tournamentId);
-      
-      if (!success) {
+      // Check if tournament exists
+      const tournament = await storage.getTournament(tournamentId);
+      if (!tournament) {
+        console.log(`Tournament with ID ${tournamentId} not found`);
         return res.status(404).json({ error: 'Tournament not found' });
       }
       
-      res.status(204).send();
+      // First delete all registrations for this tournament
+      const registrations = await storage.getRegistrationsByTournament(tournamentId);
+      if (registrations.length > 0) {
+        console.log(`Deleting ${registrations.length} registrations for tournament ${tournamentId}`);
+        for (const registration of registrations) {
+          await storage.deleteRegistration(registration.id);
+        }
+      }
+      
+      // Then delete the tournament
+      console.log(`Deleting tournament ${tournamentId}`);
+      const deletedTournament = await storage.deleteTournament(tournamentId);
+      
+      if (!deletedTournament) {
+        console.log(`Failed to delete tournament ${tournamentId}`);
+        return res.status(500).json({ error: 'Failed to delete tournament' });
+      }
+      
+      console.log(`Tournament ${tournamentId} deleted successfully`);
+      res.status(200).json({ success: true, message: 'Tournament deleted successfully' });
     } catch (error) {
       console.error('Error deleting tournament:', error);
       res.status(500).json({ error: 'Failed to delete tournament' });

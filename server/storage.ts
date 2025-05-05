@@ -67,7 +67,7 @@ export interface IStorage {
   getRegistrationsByUser(userId: number): Promise<Registration[]>;
   getRegistrationsByTeam(teamId: number): Promise<Registration[]>;
   checkRegistration(tournamentId: number, teamId: number): Promise<boolean>;
-  createRegistration(registration: InsertRegistration): Promise<Registration>;
+  createRegistration(registration: InsertRegistration & { status?: string, paymentStatus?: string }): Promise<Registration>;
   updateRegistration(id: number, registration: Partial<Registration>): Promise<Registration | undefined>;
   deleteRegistration(id: number): Promise<boolean>;
   
@@ -442,7 +442,7 @@ export class MemStorage implements IStorage {
     );
   }
 
-  async createRegistration(insertRegistration: InsertRegistration): Promise<Registration> {
+  async createRegistration(insertRegistration: InsertRegistration & { status?: string, paymentStatus?: string }): Promise<Registration> {
     const id = this.registrationId++;
     const registeredAt = new Date();
     
@@ -453,7 +453,15 @@ export class MemStorage implements IStorage {
       : 0;
     const slot = maxSlot + 1;
     
-    const registration: Registration = { ...insertRegistration, id, registeredAt, slot };
+    const registration: Registration = { 
+      ...insertRegistration, 
+      id,
+      registeredAt, 
+      slot,
+      status: insertRegistration.status || 'pending',
+      paymentStatus: insertRegistration.paymentStatus || 'pending'
+    };
+    
     this.registrations.set(id, registration);
     return registration;
   }

@@ -412,8 +412,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Check if user is a member of this team
         const members = await storage.getTeamMembers(team.id);
         
-        // Check if any member matches the current user
-        const isMember = members.some(member => member.userId === userId);
+        // Get the current user to check by username
+        const user = await storage.getUser(userId);
+        if (!user) {
+          continue;
+        }
+        
+        // Check if any member matches the current user's username
+        const isMember = members.some(member => member.username === user.username);
         
         if (isMember) {
           memberTeams.push(team);

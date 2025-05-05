@@ -88,9 +88,17 @@ export default function AuthPage() {
 
   const onSignupSubmit = async (values: SignupValues) => {
     try {
+      console.log("Signup attempt with values:", {
+        username: values.username,
+        email: values.email,
+        phone: values.phone
+      });
+      
       await register({ ...values, role });
     } catch (error) {
       console.error("Signup failed:", error);
+      // Explicitly stay on signup tab when registration fails
+      setActiveTab("signup");
     }
   };
 

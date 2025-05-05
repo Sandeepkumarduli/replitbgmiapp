@@ -60,14 +60,14 @@ async function generate6DigitCode(storage: any): Promise<string> {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Choose which authentication system to use
-  // Default to Supabase auth
-  const useSupabase = process.env.USE_SUPABASE !== 'false';
+  // Use fixed Supabase auth implementation to avoid conflicting endpoints
+  console.log("Using Supabase storage (strictly enforced)");
+  
+  // Import the fixed auth implementation
+  const { setupFixedAuth } = await import('./fixed-auth');
   
   // Setup authentication with middleware
-  const { isAuthenticated, isAdmin } = useSupabase 
-    ? setupSupabaseAuth(app) 
-    : setupAuth(app);
+  const { isAuthenticated, isAdmin } = setupFixedAuth(app);
     
   // Setup enhanced security middleware
   setupSecurityMiddleware(app);

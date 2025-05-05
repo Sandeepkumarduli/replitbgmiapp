@@ -185,9 +185,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const registerMutation = useMutation({
     mutationFn: async (data: RegisterData) => {
       try {
+        console.log("Attempting registration with data:", {
+          username: data.username,
+          email: data.email,
+          phone: data.phone,
+          gameId: data.gameId,
+          role: data.role || 'user'
+        });
+        
         const res = await apiRequest("POST", "/api/auth/register", data);
+        if (!res.ok) {
+          // Get the error message from the response
+          const errorData = await res.json();
+          console.error("Registration API error:", errorData);
+          
+          // Throw specific error based on the response
+          if (errorData.message) {
+            throw new Error(errorData.message);
+          } else {
+            throw new Error(`Registration failed with status: ${res.status}`);
+          }
+        }
+        
         return res.json();
       } catch (error) {
+        console.error("Registration error:", error);
+        
         // Handle specific error cases more gracefully
         if (error instanceof Error) {
           if (error.message.includes("Email already exists")) {
@@ -199,7 +222,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           } else if (error.message.includes("400") || error.message.includes("Bad Request")) {
             throw new Error("Please check all required fields are filled correctly.");
           } else {
-            throw new Error("Registration failed. Please try again later.");
+            throw new Error(error.message || "Registration failed. Please try again later.");
           }
         } else {
           throw new Error("An unexpected error occurred. Please try again later.");
@@ -222,11 +245,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     },
     onError: (error: Error) => {
+      console.error("Registration mutation error:", error);
       toast({
         title: "Registration failed",
         description: error.message || "Please check your information and try again.",
         variant: "destructive",
       });
+      
+      // DO NOT navigate to login page on error - stay on registration form
     },
   });
 

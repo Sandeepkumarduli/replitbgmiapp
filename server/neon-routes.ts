@@ -177,6 +177,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get current authenticated user
+  app.get('/api/auth/me', async (req, res) => {
+    if (!req.session || !req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    try {
+      if (req.session.isFromAdminTable && req.session.role === 'admin') {
+        // Get admin from admins table
+        const admin = await storage.getAdmin(req.session.userId);
+        
+        if (!admin) {
+          return res.status(404).json({ message: "Admin not found" });
+        }
+        
+        // Remove password from response and add role field
+        const { password: _, ...adminData } = admin;
+        return res.json({
+          ...adminData,
+          role: "admin" // Ensure role is set to admin
+        });
+      } else {
+        // Regular user
+        const user = await storage.getUser(req.session.userId);
+        
+        if (!user) {
+          return res.status(404).json({ message: "User not found" });
+        }
+        
+        // Return user without password
+        const { password: _, ...userWithoutPassword } = user;
+        return res.json(userWithoutPassword);
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+      return res.status(500).json({ 
+        error: 'Failed to get user data',
+        message: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   // API Routes for User Management
   app.post('/api/register', async (req, res) => {
     try {

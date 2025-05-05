@@ -23,9 +23,49 @@ Before starting the migration, ensure you have:
 
 ## Migration Steps
 
-### 1. Set Up Supabase Database
+### 1. Create Required SQL Functions (MOST CRITICAL STEP)
 
-First, we need to set up the database tables in Supabase:
+Before any other steps, you **MUST** create the SQL functions in Supabase to enable proper communication between the application and database:
+
+1. Access the Supabase SQL Editor
+2. Create a new query
+3. Copy and paste the following SQL and execute it:
+
+```sql
+-- Function to execute arbitrary SQL (required for diagnostics and schema management)
+CREATE OR REPLACE FUNCTION public.run_sql(sql_query TEXT) 
+RETURNS SETOF json AS $$
+BEGIN
+    RETURN QUERY EXECUTE sql_query;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Alternative function name for compatibility
+CREATE OR REPLACE FUNCTION public.execute_sql(query TEXT) 
+RETURNS SETOF json AS $$
+BEGIN
+    RETURN QUERY EXECUTE query;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Function to list all tables in the public schema
+CREATE OR REPLACE FUNCTION public.list_tables()
+RETURNS TABLE(table_name text) AS $$
+BEGIN
+    RETURN QUERY 
+    SELECT t.table_name::text
+    FROM information_schema.tables t
+    WHERE t.table_schema = 'public'
+    AND t.table_type = 'BASE TABLE';
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+```
+
+**You must execute this SQL in the Supabase SQL Editor before proceeding with any other steps. The application WILL NOT work without these functions!**
+
+### 2. Set Up Supabase Database Tables
+
+Once the SQL functions are created, we need to set up the database tables:
 
 1. Generate the SQL setup scripts:
    ```bash
@@ -34,7 +74,7 @@ First, we need to set up the database tables in Supabase:
 
 2. Follow the instructions in `SUPABASE_SETUP_GUIDE.md` to create the tables using the Supabase SQL Editor
 
-### 2. Configure Environment Variables
+### 3. Configure Environment Variables
 
 Update your environment variables to use Supabase:
 
@@ -46,7 +86,7 @@ Update your environment variables to use Supabase:
 
 2. Ensure no old Neon DB variables are being used in the application
 
-### 3. Run Database Diagnostic
+### 4. Run Database Diagnostic
 
 Verify that your Supabase setup is working correctly:
 
@@ -56,7 +96,7 @@ node scripts/supabase-diagnostic.js
 
 This tool will check your Supabase configuration and database status.
 
-### 4. Test Authentication
+### 5. Test Authentication
 
 Test the authentication system to ensure it's working with Supabase:
 
@@ -64,7 +104,7 @@ Test the authentication system to ensure it's working with Supabase:
 2. Test the login functionality
 3. Verify admin access
 
-### 5. Verify Data Operations
+### 6. Verify Data Operations
 
 Ensure all data operations are working correctly:
 

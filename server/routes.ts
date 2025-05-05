@@ -17,7 +17,13 @@ import {
 import { setupAuth, hashPassword } from "./auth";
 import { setupSupabaseAuth } from "./supabase-auth";
 import { registerSupabasePhoneAuthRoutes } from "./supabase-phone-auth";
-import { checkDatabaseConnection, generateCreateTableSQL, getDirectDatabaseStatus, testRunSqlFunction } from "./db-check";
+import { 
+  checkDatabaseConnection, 
+  generateCreateTableSQL, 
+  getDirectDatabaseStatus, 
+  testRunSqlFunction,
+  generateExecuteSqlFunction
+} from "./db-check";
 import { 
   setupSecurityMiddleware, 
   trackFailedLogin, 

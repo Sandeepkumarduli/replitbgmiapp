@@ -6,7 +6,43 @@ This document provides step-by-step instructions for setting up your Supabase da
 
 The RD Tournaments Hub application requires a properly configured Supabase database to function correctly. The JavaScript client alone cannot create the necessary database tables, so we need to set them up manually through the Supabase SQL Editor.
 
-> **Critical Note:** Supabase does not allow direct execution of SQL from their JavaScript client by default. A special stored procedure needs to be created to enable this functionality, and this is included in our setup scripts.
+> **CRITICAL ISSUE:** Supabase does not allow direct execution of SQL from their JavaScript client by default. A special stored procedure needs to be created to enable this functionality, and this is included in our setup scripts.
+
+## Required SQL Functions
+
+Before any other steps, you **MUST** create the following SQL functions in your Supabase project using the SQL Editor:
+
+```sql
+-- Function to execute arbitrary SQL (required for diagnostics and schema management)
+CREATE OR REPLACE FUNCTION public.run_sql(sql_query TEXT) 
+RETURNS SETOF json AS $$
+BEGIN
+    RETURN QUERY EXECUTE sql_query;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Alternative function name for compatibility
+CREATE OR REPLACE FUNCTION public.execute_sql(query TEXT) 
+RETURNS SETOF json AS $$
+BEGIN
+    RETURN QUERY EXECUTE query;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Function to list all tables in the public schema
+CREATE OR REPLACE FUNCTION public.list_tables()
+RETURNS TABLE(table_name text) AS $$
+BEGIN
+    RETURN QUERY 
+    SELECT t.table_name::text
+    FROM information_schema.tables t
+    WHERE t.table_schema = 'public'
+    AND t.table_type = 'BASE TABLE';
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+```
+
+These functions are **essential** for the application to communicate with the database properly. Without them, many features will not work correctly.
 
 ## Instructions
 

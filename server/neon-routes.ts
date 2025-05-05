@@ -579,6 +579,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Join team by invite code
+  app.post('/api/teams/join', isAuthenticated, async (req, res) => {
+    try {
+      const { inviteCode } = req.body;
+      if (!inviteCode) {
+        return res.status(400).json({ error: 'Invite code is required' });
+      }
+      
+      // Get the current user
+      const userId = req.session.userId as number;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      // Find team by invite code
+      const team = await storage.getTeamByInviteCode(inviteCode);
+      
+      if (!team) {
+        return res.status(404).json({ error: 'Team not found with that invite code' });
+      }
+      
+      // Check if the user already exists in the team
+      const members = await storage.getTeamMembers(team.id);
+      const existingMember = members.some(m => m.username === user.username);
+      
+      if (existingMember) {
+        return res.status(400).json({ error: 'You are already a member of this team' });
+      }
+      
+      // Add the user to the team
+      const teamMember = await storage.addTeamMember({
+        teamId: team.id,
+        username: user.username,
+        gameId: user.gameId,
+        role: 'member'
+      });
+      
+      // Create notification for team owner
+      await storage.createNotification({
+        userId: team.ownerId,
+        title: 'New Team Member',
+        message: `${user.username} has joined your team ${team.name}`,
+        type: 'team',
+        relatedId: team.id
+      });
+      
+      // Notify the team owner via WebSocket if they're online
+      notifyUser(team.ownerId, {
+        type: 'team_update',
+        message: `${user.username} has joined your team ${team.name}`
+      });
+      
+      res.status(201).json({ 
+        success: true,
+        team,
+        member: teamMember
+      });
+    } catch (error) {
+      console.error('Error joining team:', error);
+      res.status(500).json({ error: 'Failed to join team' });
+    }
+  });
+  
   // Tournament routes
   app.get('/api/tournaments', async (req, res) => {
     try {
@@ -687,6 +752,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/registrations/user', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId as number;
+      const registrations = await storage.getRegistrationsByUser(userId);
+      res.json(registrations);
+    } catch (error) {
+      console.error('Error fetching user registrations:', error);
+      res.status(500).json({ error: 'Failed to fetch registrations' });
+    }
+  });
+  
+  app.get('/api/registrations/counts', async (req, res) => {
+    try {
+      // Get all tournaments
+      const tournaments = await storage.getAllTournaments();
+      
+      // For each tournament, get count of registrations
+      const counts: Record<number, number> = {};
+      
+      for (const tournament of tournaments) {
+        const registrations = await storage.getRegistrationsByTournament(tournament.id);
+        counts[tournament.id] = registrations.length;
+      }
+      
+      res.json(counts);
+    } catch (error) {
+      console.error('Error fetching registration counts:', error);
+      res.status(500).json({ error: 'Failed to fetch registration counts' });
+    }
+  });
+  
   app.post('/api/registrations', isAuthenticated, async (req, res) => {
     try {
       const result = insertRegistrationSchema.safeParse(req.body);
@@ -741,6 +837,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching unread notifications count:', error);
       res.status(500).json({ error: 'Failed to fetch unread notifications count' });
+    }
+  });
+  
+  // Additional endpoint for notification count (client compatibility)
+  app.get('/api/notifications/count', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId as number;
+      const count = await storage.getUnreadNotificationsCount(userId);
+      res.json({ count });
+    } catch (error) {
+      console.error('Error fetching notification count:', error);
+      res.status(500).json({ error: 'Failed to fetch notification count' });
     }
   });
 

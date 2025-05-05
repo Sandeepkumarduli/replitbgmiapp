@@ -274,8 +274,15 @@ export class NeonDBStorage implements IStorage {
     return !!registration;
   }
 
-  async createRegistration(insertRegistration: InsertRegistration): Promise<Registration> {
-    const [registration] = await db.insert(registrations).values(insertRegistration).returning();
+  async createRegistration(insertRegistration: InsertRegistration & { status?: string, paymentStatus?: string }): Promise<Registration> {
+    // Ensure status and paymentStatus have defaults if not provided
+    const regData = {
+      ...insertRegistration,
+      status: insertRegistration.status || 'pending',
+      paymentStatus: insertRegistration.paymentStatus || 'pending'
+    };
+    
+    const [registration] = await db.insert(registrations).values(regData).returning();
     return registration;
   }
 

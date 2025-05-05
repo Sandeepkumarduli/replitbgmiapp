@@ -475,13 +475,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const userId = req.session.userId as number;
       
+      // Get the user to automatically add them as team captain
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
       // Generate a unique invite code
       const inviteCode = await generate6DigitCode(storage);
       
       const team = await storage.createTeam({
         ...result.data,
         ownerId: userId,
+        description: result.data.description || '',
         inviteCode
+      });
+      
+      // Add the user as team captain automatically
+      await storage.addTeamMember({
+        teamId: team.id,
+        username: user.username,
+        gameId: user.gameId,
+        role: 'captain'
       });
       
       res.status(201).json(team);

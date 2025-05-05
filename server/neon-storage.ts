@@ -160,8 +160,14 @@ export class NeonDBStorage implements IStorage {
     return await db.select().from(teams).where(eq(teams.ownerId, ownerId));
   }
 
-  async createTeam(insertTeam: InsertTeam & { inviteCode: string }): Promise<Team> {
-    const [team] = await db.insert(teams).values(insertTeam).returning();
+  async createTeam(insertTeam: InsertTeam & { inviteCode: string, description?: string }): Promise<Team> {
+    // Ensure description has a default value if not provided
+    const teamData = {
+      ...insertTeam,
+      description: insertTeam.description || ''
+    };
+    
+    const [team] = await db.insert(teams).values(teamData).returning();
     return team;
   }
 

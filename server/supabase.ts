@@ -21,7 +21,37 @@ let supabase: any = null;
 try {
   // Only create client if we have valid URLs
   if (supabaseUrl && supabaseAnonKey) {
-    supabase = createClient(supabaseUrl, supabaseAnonKey);
+    supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: false, // Don't persist auth state in browser storage
+        autoRefreshToken: true // Automatically refresh tokens
+      },
+      // Set more detailed logging for debugging
+      db: {
+        schema: 'public'
+      },
+      global: {
+        // Enable debug logging if in development mode
+        fetch: (...args) => {
+          const [url, options] = args;
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`Supabase fetch: ${url}`);
+          }
+          return fetch(...args);
+        }
+      }
+    });
+    
+    // Test connection
+    supabase.from('users').select('count(*)', { count: 'exact', head: true })
+      .then(({ count, error }: any) => {
+        if (error) {
+          console.error('Supabase connection test failed:', error.message);
+        } else {
+          console.log('Supabase connection successful, user count:', count);
+        }
+      });
+      
     console.log('Supabase client initialized successfully.');
   } else {
     console.error('Cannot initialize Supabase client: Missing credentials');

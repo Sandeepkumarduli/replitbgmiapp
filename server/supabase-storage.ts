@@ -446,14 +446,44 @@ export class SupabaseStorage implements IStorage {
     try {
       console.log('Creating admin with data:', JSON.stringify(insertAdmin, null, 2));
       
+      // First check if a table named 'admins' exists in the database
+      const { data: tableData, error: tableError } = await supabase
+        .from('_tables')
+        .select('*')
+        .eq('name', 'admins')
+        .maybeSingle();
+        
+      if (tableError) {
+        console.error('Error checking if admins table exists:', tableError);
+        console.log('Attempting to create admins table...');
+      } else if (!tableData) {
+        console.log('Admins table does not exist yet');
+      } else {
+        console.log('Admins table exists');
+      }
+      
+      // Now attempt the insert
       const { data, error } = await supabase
         .from('admins')
-        .insert(insertAdmin)
+        .insert({
+          username: insertAdmin.username,
+          password: insertAdmin.password,
+          email: insertAdmin.email,
+          phone: insertAdmin.phone,
+          displayName: insertAdmin.displayName,
+          accessLevel: insertAdmin.accessLevel,
+          isActive: true,
+          role: 'admin'
+        })
         .select()
         .single();
       
       if (error) {
-        console.error('Supabase error creating admin:', error.message, error.details, error.hint);
+        console.error('Supabase error creating admin:', error);
+        console.error('Error code:', error.code);
+        console.error('Error message:', error.message);
+        console.error('Error details:', error.details);
+        console.error('Error hint:', error.hint);
         throw new Error(error.message || 'Failed to create admin');
       }
       

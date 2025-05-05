@@ -46,8 +46,7 @@ const PhoneVerificationModal: React.FC<PhoneVerificationModalProps> = ({
     if (user) {
       console.log("Phone verification modal - User data:", {
         id: user.id,
-        phone: user.phone,
-        phoneVerified: user.phoneVerified
+        phone: user.phone
       });
     }
     

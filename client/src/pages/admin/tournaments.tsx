@@ -13,8 +13,9 @@ export default function AdminTournaments() {
   const { isAdmin, isAuthenticated, isLoading } = useAuth();
   const [, navigate] = useLocation();
 
-  const { data: tournaments } = useQuery<Tournament[]>({
+  const { data: tournaments = [] } = useQuery<Tournament[]>({
     queryKey: ["/api/tournaments"],
+    select: (data) => Array.isArray(data) ? data : []
   });
 
   useEffect(() => {

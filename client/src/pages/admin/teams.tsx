@@ -80,11 +80,13 @@ export default function AdminTeams() {
 
   const { data: teams = [], isLoading: isTeamsLoading, refetch } = useQuery<any[]>({
     queryKey: ["/api/admin/teams"],
+    select: (data) => Array.isArray(data) ? data : []
   });
 
   // Fetch users to select team owner
   const { data: users = [] } = useQuery<any[]>({
     queryKey: ["/api/admin/users"],
+    select: (data) => Array.isArray(data) ? data : []
   });
   
   // Update teamOwners when users data changes

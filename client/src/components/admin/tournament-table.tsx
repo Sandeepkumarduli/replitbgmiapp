@@ -75,8 +75,9 @@ export function TournamentTable() {
   // Set default filter to show live and upcoming tournaments
   const [defaultStatusFilter, setDefaultStatusFilter] = useState<string | null>("live-upcoming");
 
-  const { data: tournaments, isLoading, refetch } = useQuery<Tournament[]>({
+  const { data: tournaments = [], isLoading, refetch } = useQuery<Tournament[]>({
     queryKey: ["/api/tournaments"],
+    select: (data) => Array.isArray(data) ? data : []
   });
   
   const { data: registrationCounts = {} as Record<string, number> } = useQuery<Record<string, number>>({

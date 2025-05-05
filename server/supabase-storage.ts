@@ -514,7 +514,7 @@ export class SupabaseStorage implements IStorage {
       if (readError) return userNotifications.length;
       
       // Extract the notification IDs
-      const readNotificationIds = readData ? readData.map(item => item.notificationId) : [];
+      const readNotificationIds = readData ? readData.map((item: {notificationId: number}) => item.notificationId) : [];
       
       // Count notifications that haven't been read
       const unreadCount = userNotifications.filter(

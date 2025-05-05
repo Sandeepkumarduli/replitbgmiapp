@@ -191,7 +191,10 @@ export class MemStorage implements IStorage {
       ...insertUser, 
       id, 
       createdAt,
-      role: insertUser.role || "user"
+      role: insertUser.role || "user",
+      phoneVerified: insertUser.phoneVerified ?? false,
+      phoneVerificationBypassed: insertUser.phoneVerificationBypassed ?? true,
+      firebaseUid: insertUser.firebaseUid ?? null
     };
     this.users.set(id, user);
     return user;
@@ -289,7 +292,12 @@ export class MemStorage implements IStorage {
   async createTeam(insertTeam: InsertTeam & { inviteCode: string }): Promise<Team> {
     const id = this.teamId++;
     const createdAt = new Date();
-    const team: Team = { ...insertTeam, id, createdAt };
+    const team: Team = { 
+      ...insertTeam, 
+      id, 
+      createdAt,
+      gameType: insertTeam.gameType || "BGMI"
+    };
     this.teams.set(id, team);
     return team;
   }
@@ -374,7 +382,8 @@ export class MemStorage implements IStorage {
       description: insertTournament.description,
       date: insertTournament.date,
       mapType: insertTournament.mapType,
-      gameType: insertTournament.gameType || "Squad", // New field with default
+      gameType: insertTournament.gameType || "BGMI",
+      gameMode: insertTournament.gameMode || "Squad", // Required field
       teamType: insertTournament.teamType,
       isPaid: insertTournament.isPaid,
       totalSlots: insertTournament.totalSlots,

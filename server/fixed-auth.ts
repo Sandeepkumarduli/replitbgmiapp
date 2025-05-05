@@ -8,6 +8,17 @@ import { storage } from "./storage";
 import { hashPassword, comparePasswords } from "./auth";
 import { User, InsertUser, insertUserSchema, Admin, InsertAdmin, insertAdminSchema } from "@shared/schema";
 import { logSecurityEvent } from "./auth-security";
+import session from "express-session";
+
+// Extend Express Session type to include our custom fields
+declare module "express-session" {
+  interface SessionData {
+    userId: number;
+    username: string;
+    role: string;
+    isFromAdminTable?: boolean;
+  }
+}
 
 // Basic security tracking
 const loginAttempts = new Map<string, number>();
@@ -39,7 +50,25 @@ export function setupFixedAuth(app: Express) {
     if (!req.session || !req.session.userId) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-
+    
+    // Check if this is a session from the admins table
+    if (req.session.isFromAdminTable && req.session.role === 'admin') {
+      // Verify admin still exists and is active
+      const admin = await storage.getAdmin(req.session.userId);
+      if (!admin || !admin.isActive) {
+        return res.status(403).json({ message: "Admin account inactive or not found" });
+      }
+      
+      // Admin is valid and active
+      return next();
+    }
+    
+    // Special case for mock admin in dev mode
+    if (req.session.userId === 999999 && req.session.role === 'admin') {
+      return next();
+    }
+    
+    // Check regular user with admin role
     const user = await storage.getUser(req.session.userId);
     if (!user || user.role !== "admin") {
       return res.status(403).json({ message: "Not authorized" });
@@ -148,7 +177,25 @@ export function setupFixedAuth(app: Express) {
     }
   });
 
-  // Hardcoded admin login check
+  // Admin login check using Admins table
+  const checkAdminCredentials = async (username: string, password: string): Promise<Admin | null> => {
+    try {
+      // Check if admin exists in admins table
+      const admin = await storage.getAdminByUsername(username);
+      if (!admin) return null;
+      
+      // Verify password
+      const isPasswordValid = await comparePasswords(password, admin.password);
+      if (!isPasswordValid) return null;
+      
+      return admin;
+    } catch (error) {
+      console.error("Error checking admin credentials:", error);
+      return null;
+    }
+  };
+
+  // Check for hardcoded admin to migrate to database
   const checkHardcodedAdmin = (username: string, password: string): boolean => {
     return username === "Sandeepkumarduli" && password === "Sandy@1234";
   };
@@ -161,51 +208,98 @@ export function setupFixedAuth(app: Express) {
       // Log login attempt for security monitoring
       logSecurityEvent("login_attempt", req, { username, hasRole: !!role });
 
-      // Special case for hardcoded admin
-      if (checkHardcodedAdmin(username, password)) {
-        console.log("Hardcoded admin login detected");
+      // First check if this is an admin from the admins table
+      const adminUser = await checkAdminCredentials(username, password);
+      
+      if (adminUser) {
+        console.log("Admin login successful from Admins table");
         
-        // Check if admin exists in database
-        let adminUser = await storage.getUserByUsername(username);
-        
-        if (adminUser) {
-          console.log("Found existing admin user in database");
-        } else {
-          // DEVELOPMENT MODE WORKAROUND: Use mock admin in memory
-          // This allows admin login without requiring database writes
-          console.log("DEVELOPMENT MODE: Using in-memory admin session");
-          adminUser = {
-            id: 999999, // Use a large number to avoid conflicts
-            username: username,
-            password: await hashPassword(password), // Never expose real password
-            email: "admin@bgmi-tournaments.com",
-            phone: "1234567890",
-            gameId: "admin",
-            role: "admin",
-            phoneVerified: true,
-            phoneVerificationBypassed: true,
-            firebaseUid: null,
-            createdAt: new Date()
-          } as User;
-          
-          console.log("Using mock admin user for development");
-          
-          // We're not actually creating this in the database
-          // This is just for development/testing purposes
-        }
-        
-        // Set admin session regardless
+        // Set admin session
         if (req.session) {
           req.session.userId = adminUser.id;
           req.session.username = adminUser.username;
           req.session.role = "admin"; // Force admin role
+          req.session.isFromAdminTable = true; // Mark that this is from admins table
+          
+          // Reset login attempts for admin
+          resetLoginAttempts(req);
+          
+          // Update last login timestamp
+          await storage.updateAdmin(adminUser.id, {
+            lastLogin: new Date()
+          });
+          
+          // Remove password from response
+          const { password: _, ...adminData } = adminUser;
+          return res.status(200).json({
+            ...adminData,
+            role: "admin" // Ensure role is set to admin
+          });
+        } else {
+          console.error("Session object not available for admin login");
+          return res.status(500).json({ message: "Session not available" });
+        }
+      }
+      
+      // Special case for hardcoded admin - for backward compatibility
+      if (checkHardcodedAdmin(username, password)) {
+        console.log("Hardcoded admin login detected - migrating to Admins table");
+        
+        // Check if admin exists in users table
+        let userAdmin = await storage.getUserByUsername(username);
+        
+        // Check if the admin exists in the admins table
+        let dbAdmin = await storage.getAdminByUsername(username);
+        
+        if (!dbAdmin) {
+          // Create the admin in the admins table
+          try {
+            dbAdmin = await storage.createAdmin({
+              username: username,
+              password: await hashPassword(password),
+              email: "admin@bgmi-tournaments.com",
+              phone: "1234567890",
+              displayName: "Sandeep Kumar Duli",
+              accessLevel: "owner"
+              // isActive is automatically set to true by default in the schema
+            });
+            console.log("Created admin in Admins table");
+          } catch (error) {
+            console.error("Failed to create admin in Admins table:", error);
+            
+            // Fallback to mock admin
+            dbAdmin = {
+              id: 999999,
+              username: username,
+              password: await hashPassword(password),
+              email: "admin@bgmi-tournaments.com",
+              phone: "1234567890",
+              displayName: "Sandeep Kumar Duli",
+              accessLevel: "owner",
+              isActive: true,
+              createdAt: new Date(),
+              lastLogin: null
+            } as Admin;
+            console.log("Using mock admin user for development");
+          }
+        }
+        
+        // Set admin session
+        if (req.session) {
+          req.session.userId = dbAdmin.id;
+          req.session.username = dbAdmin.username;
+          req.session.role = "admin"; // Force admin role
+          req.session.isFromAdminTable = true; // Mark that this is from admins table
           
           // Reset login attempts for admin
           resetLoginAttempts(req);
           
           // Remove password from response
-          const { password: _, ...adminData } = adminUser;
-          return res.status(200).json(adminData);
+          const { password: _, ...adminData } = dbAdmin;
+          return res.status(200).json({
+            ...adminData,
+            role: "admin" // Ensure role is set to admin
+          });
         } else {
           console.error("Session object not available for admin login");
           return res.status(500).json({ message: "Session not available" });
@@ -269,7 +363,45 @@ export function setupFixedAuth(app: Express) {
         return res.status(401).json({ message: "Not authenticated" });
       }
       
-      // Special case for our mock admin user in dev mode
+      // Check if this session is from the admins table
+      if (req.session.isFromAdminTable && req.session.role === 'admin') {
+        console.log("Fetching admin data from Admins table");
+        
+        // Get admin from admins table
+        const admin = await storage.getAdmin(req.session.userId as number);
+        
+        if (!admin) {
+          console.log("Admin not found in database, session may be invalid");
+          
+          // Special case for our mock admin user in dev mode
+          if (req.session.userId === 999999) {
+            console.log("Using mock admin data for /api/auth/me");
+            return res.json({
+              id: 999999,
+              username: req.session.username,
+              email: "admin@bgmi-tournaments.com",
+              phone: "1234567890",
+              displayName: "Sandeep Kumar Duli",
+              role: "admin",
+              accessLevel: "owner",
+              isActive: true,
+              createdAt: new Date(),
+              lastLogin: new Date()
+            });
+          }
+          
+          return res.status(404).json({ message: "Admin not found" });
+        }
+        
+        // Remove password from response and add role field
+        const { password: _, ...adminData } = admin;
+        return res.json({
+          ...adminData,
+          role: "admin" // Ensure role is set
+        });
+      }
+      
+      // Special case for our mock admin user in dev mode - legacy support
       if (req.session.userId === 999999 && req.session.role === 'admin') {
         console.log("Using mock admin data for /api/auth/me");
         return res.json({
@@ -286,6 +418,7 @@ export function setupFixedAuth(app: Express) {
         });
       }
       
+      // Regular user handling
       const user = await storage.getUser(req.session.userId as number);
       if (!user) {
         return res.status(404).json({ message: "User not found" });

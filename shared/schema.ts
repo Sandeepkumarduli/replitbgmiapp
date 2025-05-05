@@ -20,6 +20,7 @@ export const users = pgTable("users", {
 export const teams = pgTable("teams", {
   id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),
+  description: text("description").default(''),
   ownerId: integer("owner_id").notNull().references(() => users.id),
   gameType: text("game_type").notNull().default("BGMI"), // BGMI, COD, FREEFIRE
   inviteCode: text("invite_code").notNull().unique(), // 6-digit unique code for team invites

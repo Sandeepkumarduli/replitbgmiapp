@@ -677,6 +677,125 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin Users API Endpoints
+  app.get('/api/admin/users', isAdmin, async (req, res) => {
+    try {
+      // Get all users
+      const users = await storage.getAllUsers();
+      
+      // Filter out sensitive information
+      const safeUsers = users.map(user => ({
+        ...user,
+        password: undefined
+      }));
+      
+      res.json(safeUsers);
+    } catch (error) {
+      console.error('Error fetching admin users:', error);
+      res.status(500).json({ error: 'Failed to fetch users' });
+    }
+  });
+  
+  app.get('/api/admin/administrators', isAdmin, async (req, res) => {
+    try {
+      // Get all admins
+      const admins = await storage.getAllAdmins();
+      
+      // Filter out sensitive information
+      const safeAdmins = admins.map(admin => ({
+        ...admin,
+        password: undefined
+      }));
+      
+      res.json(safeAdmins);
+    } catch (error) {
+      console.error('Error fetching administrators:', error);
+      res.status(500).json({ error: 'Failed to fetch administrators' });
+    }
+  });
+  
+  // Admin Teams API Endpoints
+  app.get('/api/admin/teams', isAdmin, async (req, res) => {
+    try {
+      // Get all teams
+      const teams = await storage.getAllTeams();
+      
+      // Enhance team info with owner and member counts
+      const enhancedTeams = await Promise.all(teams.map(async (team) => {
+        // Get owner info
+        const owner = await storage.getUser(team.ownerId);
+        
+        // Get member count
+        const members = await storage.getTeamMembers(team.id);
+        const memberCount = members.length;
+        
+        return {
+          ...team,
+          owner: owner ? { 
+            id: owner.id,
+            username: owner.username,
+            role: owner.role,
+            email: owner.email
+          } : null,
+          memberCount
+        };
+      }));
+      
+      res.json(enhancedTeams);
+    } catch (error) {
+      console.error('Error fetching admin teams:', error);
+      res.status(500).json({ error: 'Failed to fetch teams' });
+    }
+  });
+  
+  app.post('/api/admin/teams', isAdmin, async (req, res) => {
+    try {
+      const { name, ownerId, gameType, description } = req.body;
+      
+      // Validate required fields
+      if (!name || !ownerId) {
+        return res.status(400).json({ error: 'Team name and owner ID are required' });
+      }
+      
+      // Check if the owner exists
+      const owner = await storage.getUser(ownerId);
+      if (!owner) {
+        return res.status(404).json({ error: 'Owner not found' });
+      }
+      
+      // Check if team name already exists
+      const existingTeam = await storage.getTeamByName(name);
+      if (existingTeam) {
+        return res.status(400).json({ error: 'Team name already exists' });
+      }
+      
+      // Generate a unique invite code
+      const inviteCode = await generate6DigitCode(storage);
+      
+      // Create the team
+      const team = await storage.createTeam({
+        name,
+        ownerId,
+        gameType: gameType || 'BGMI', // Default to BGMI if not specified
+        description: description || '',
+        inviteCode
+      });
+      
+      // Add the team owner as team captain automatically
+      await storage.addTeamMember({
+        teamId: team.id,
+        username: owner.username,
+        gameId: owner.gameId,
+        role: 'captain'
+      });
+      
+      res.status(201).json(team);
+    } catch (error) {
+      console.error('Error creating team through admin:', error);
+      res.status(500).json({ error: 'Failed to create team' });
+    }
+  });
+  
   app.post('/api/tournaments', isAdmin, async (req, res) => {
     try {
       const result = insertTournamentSchema.safeParse(req.body);

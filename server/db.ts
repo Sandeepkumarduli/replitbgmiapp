@@ -5,17 +5,10 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import * as schema from "@shared/schema";
 
-// Get Supabase credentials from environment variables
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error(
-    "NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY must be set. Did you forget to provision Supabase?"
-  );
-}
+// Get Supabase credentials from environment variables or use the ones provided by user
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://fiouuhhbascmlbrncqcp.supabase.co';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpb3V1aGhiYXNjbWxicm5jcWNwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYwMjg3NDksImV4cCI6MjA2MTYwNDc0OX0.3Y3PlXsP6SjEPSrgR9zYNwhMSHsFBsiFCPoj8NVWzWs';
 
 // Create Supabase client
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
@@ -29,12 +22,11 @@ try {
   console.error("Error logging Supabase configuration:", e);
 }
 
-// This interface simulates the old Neon DB interface to help with transition
-// Will be removed once all code is fully migrated to use Supabase directly
+// Database access interface for executing SQL
 export const db = {
   query: async (sql: string, params?: any[]) => {
     try {
-      // Use direct SQL execution through Supabase (requires appropriate permissions)
+      // Use Supabase for all database operations
       const { data, error } = await supabase.rpc('execute_sql', { 
         query: sql,
         params: params || []
@@ -50,7 +42,7 @@ export const db = {
         rowCount: data?.length || 0
       };
     } catch (e) {
-      console.error("Error executing SQL via Supabase:", e);
+      console.error("Error executing SQL:", e);
       throw e;
     }
   }

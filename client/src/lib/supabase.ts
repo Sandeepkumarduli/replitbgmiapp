@@ -1,9 +1,9 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 // Variables to store Supabase credentials
-// Using hardcoded values for reliability - from the newer Supabase instance
-let supabaseUrl: string | undefined = 'https://fiouuhhbascmlbrncqcp.supabase.co';
-let supabaseAnonKey: string | undefined = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpb3V1aGhiYXNjbWxicm5jcWNwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYwMjg3NDksImV4cCI6MjA2MTYwNDc0OX0.3Y3PlXsP6SjEPSrgR9zYNwhMSHsFBsiFCPoj8NVWzWs';
+// Using values provided by user
+let supabaseUrl: string | undefined = import.meta.env.VITE_SUPABASE_URL || 'https://fiouuhhbascmlbrncqcp.supabase.co';
+let supabaseAnonKey: string | undefined = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpb3V1aGhiYXNjbWxicm5jcWNwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYwMjg3NDksImV4cCI6MjA2MTYwNDc0OX0.3Y3PlXsP6SjEPSrgR9zYNwhMSHsFBsiFCPoj8NVWzWs';
 
 // Log the state of credentials
 console.log('Client supabaseUrl:', supabaseUrl ? supabaseUrl.substring(0, 15) + '...' : 'Missing');

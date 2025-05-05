@@ -1,6 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { supabase } from "./db";
 import { 
   Team,
   User,
@@ -86,9 +87,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Also check database connection directly if possible
       let connectionStatus = "unknown";
       try {
-        const dbModule = await import('./db');
-        await dbModule.pool.query('SELECT 1');
-        connectionStatus = "connected";
+        // Use the supabase client to check connection
+        const { data, error } = await supabase.from('users').select('count(*)', { count: 'exact', head: true });
+        connectionStatus = error ? "error: " + error.message : "connected";
       } catch (dbError) {
         connectionStatus = "error: " + (dbError instanceof Error ? dbError.message : String(dbError));
       }

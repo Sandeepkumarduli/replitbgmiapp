@@ -586,7 +586,7 @@ export class SupabaseStorage implements IStorage {
       .eq('userId', userId);
     
     if (error || !data) return [];
-    return data.map(item => item.notificationId);
+    return data.map((item: {notificationId: number}) => item.notificationId);
   }
   
   async markAllNotificationsAsRead(userId: number): Promise<void> {

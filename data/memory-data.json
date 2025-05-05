@@ -1,14 +1,15 @@
 {
   "users": [
     {
-      "username": "admin",
-      "password": "admin123",
-      "email": "admin@bgmi.com",
+      "username": "Sandeepkumarduli",
+      "password": "fb87d0de9c797662691a3ac9947e1f1a4edde13c506f1f10f980b9fce202988ee613d60a8dce349f146a6f33595be0b1c6db4b46a27fdc78601c1b7c01183764.eeff159242f3b0bbcc504b0728f9eedb",
+      "email": "admin@bgmi-tournaments.com",
       "phone": "1234567890",
-      "gameId": "ADMIN001",
+      "gameId": "admin",
       "role": "admin",
-      "id": 1,
-      "createdAt": "2025-05-01T21:11:13.639Z"
+      "phoneVerified": true,
+      "id": 2,
+      "createdAt": "2025-05-05T08:38:44.093Z"
     }
   ],
   "teams": [],

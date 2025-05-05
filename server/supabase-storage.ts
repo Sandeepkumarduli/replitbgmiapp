@@ -1,11 +1,12 @@
 import { 
-  users, teams, teamMembers, tournaments, registrations, notifications, notificationReads,
+  users, teams, teamMembers, tournaments, registrations, notifications, notificationReads, admins,
   type User, type InsertUser, 
   type Team, type InsertTeam, 
   type TeamMember, type InsertTeamMember,
   type Tournament, type InsertTournament, type UpdateTournament,
   type Registration, type InsertRegistration,
-  type Notification, type InsertNotification
+  type Notification, type InsertNotification,
+  type Admin, type InsertAdmin
 } from "@shared/schema";
 import { IStorage } from "./storage";
 import { supabase } from "./supabase";
@@ -405,6 +406,85 @@ export class SupabaseStorage implements IStorage {
     
     if (error || !data) return undefined;
     return data as User;
+  }
+  
+  // Admin operations
+  async getAdmin(id: number): Promise<Admin | undefined> {
+    const { data, error } = await supabase
+      .from('admins')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error || !data) return undefined;
+    return data as Admin;
+  }
+
+  async getAdminByUsername(username: string): Promise<Admin | undefined> {
+    const { data, error } = await supabase
+      .from('admins')
+      .select('*')
+      .eq('username', username)
+      .single();
+    
+    if (error || !data) return undefined;
+    return data as Admin;
+  }
+
+  async getAdminByEmail(email: string): Promise<Admin | undefined> {
+    const { data, error } = await supabase
+      .from('admins')
+      .select('*')
+      .eq('email', email)
+      .single();
+    
+    if (error || !data) return undefined;
+    return data as Admin;
+  }
+
+  async createAdmin(insertAdmin: InsertAdmin): Promise<Admin> {
+    const { data, error } = await supabase
+      .from('admins')
+      .insert(insertAdmin)
+      .select()
+      .single();
+    
+    if (error || !data) {
+      throw new Error(error?.message || 'Failed to create admin');
+    }
+    
+    return data as Admin;
+  }
+
+  async updateAdmin(id: number, adminUpdate: Partial<Admin>): Promise<Admin | undefined> {
+    const { data, error } = await supabase
+      .from('admins')
+      .update(adminUpdate)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error || !data) return undefined;
+    return data as Admin;
+  }
+
+  async deleteAdmin(id: number): Promise<boolean> {
+    const { error } = await supabase
+      .from('admins')
+      .delete()
+      .eq('id', id);
+    
+    return !error;
+  }
+  
+  async getAllAdmins(): Promise<Admin[]> {
+    const { data, error } = await supabase
+      .from('admins')
+      .select('*')
+      .order('id', { ascending: true });
+    
+    if (error || !data) return [];
+    return data as Admin[];
   }
   
   // Team invite code operations

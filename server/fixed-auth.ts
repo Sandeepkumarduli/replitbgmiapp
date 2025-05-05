@@ -6,7 +6,7 @@
 import { Express, Request, Response, NextFunction } from "express";
 import { storage } from "./storage";
 import { hashPassword, comparePasswords } from "./auth";
-import { User, InsertUser, insertUserSchema } from "@shared/schema";
+import { User, InsertUser, insertUserSchema, Admin, InsertAdmin, insertAdminSchema } from "@shared/schema";
 import { logSecurityEvent } from "./auth-security";
 
 // Basic security tracking

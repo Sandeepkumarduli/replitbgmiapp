@@ -1069,13 +1069,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const notificationId = parseInt(req.params.id);
       const userId = req.session.userId as number;
       
+      console.log(`Marking notification ${notificationId} as read for user ${userId}`);
+      
       const updated = await storage.markNotificationAsRead(notificationId, userId);
       
       if (!updated) {
+        console.log(`Notification ${notificationId} not found or could not be updated`);
         return res.status(404).json({ error: 'Notification not found' });
       }
       
-      res.json(updated);
+      // Get updated unread count after marking one notification as read
+      const unreadCount = await storage.getUnreadNotificationsCount(userId);
+      
+      // Notify the user via WebSocket with updated count
+      notifyUser(userId, {
+        type: 'notification_update',
+        count: unreadCount
+      });
+      
+      console.log(`Notification ${notificationId} marked as read successfully. Unread count: ${unreadCount}`);
+      res.json({ 
+        notification: updated, 
+        unreadCount 
+      });
     } catch (error) {
       console.error('Error marking notification as read:', error);
       res.status(500).json({ error: 'Failed to mark notification as read' });
@@ -1085,8 +1101,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/notifications/read-all', isAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId as number;
+      console.log(`Marking all notifications as read for user ${userId}`);
+      
       await storage.markAllNotificationsAsRead(userId);
-      res.status(200).json({ message: 'All notifications marked as read' });
+      
+      // Notify the user via WebSocket that they have 0 unread notifications
+      notifyUser(userId, {
+        type: 'notification_update',
+        count: 0
+      });
+      
+      console.log(`All notifications marked as read for user ${userId}`);
+      res.status(200).json({ 
+        success: true,
+        message: 'All notifications marked as read',
+        unreadCount: 0
+      });
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
       res.status(500).json({ error: 'Failed to mark all notifications as read' });
@@ -1108,6 +1138,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...result.data,
         type: result.data.type || "general"
       });
+      
+      console.log(`Created notification: ${notification.title} for user ${notification.userId || 'broadcast'}`);
+      
+      // If this is a broadcast notification (userId is null)
+      if (notification.userId === null) {
+        // Notify all connected clients about the new notification
+        for (const [client, info] of clients) {
+          if (client.readyState === WebSocket.OPEN && info.userId) {
+            // Get unread count for this user
+            const count = await storage.getUnreadNotificationsCount(info.userId);
+            client.send(JSON.stringify({
+              type: 'notification_update',
+              count: count
+            }));
+          }
+        }
+      } 
+      // If this is for a specific user
+      else if (notification.userId) {
+        // Notify just this user about their new notification
+        const count = await storage.getUnreadNotificationsCount(notification.userId);
+        notifyUser(notification.userId, {
+          type: 'notification_update',
+          count: count
+        });
+      }
       
       res.status(201).json(notification);
     } catch (error) {

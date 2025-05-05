@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Menu, X, User, Trophy, LogOut, Users, Home, Settings, Mail, Info, Gamepad } from "lucide-react";
+import { Menu, X, User, Trophy, LogOut, Users, Home, Settings, Mail, Info, Gamepad, Database } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { NotificationDropdown } from "@/components/ui/notification-dropdown";
 
@@ -80,6 +80,10 @@ export default function Navbar() {
                   </Link>
                   <Link href="/admin/admins" className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${isActive("/admin/admins") ? "border-primary text-white" : "border-transparent text-gray-300 hover:text-white hover:border-accent"}`}>
                     Admins
+                  </Link>
+                  <Link href="/supabase-setup" className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${isActive("/supabase-setup") ? "border-primary text-white" : "border-transparent text-gray-300 hover:text-white hover:border-accent"}`}>
+                    <Database className="h-4 w-4 mr-1" />
+                    Database Setup
                   </Link>
                 </>
               )}
@@ -195,6 +199,10 @@ export default function Navbar() {
               <Link href="/admin/admins" className={`block pl-3 pr-4 py-2 text-base font-medium ${isActive("/admin/admins") ? "bg-primary text-white" : "text-gray-300 hover:bg-dark-card hover:text-white"}`}>
                 <Users className="h-4 w-4 inline mr-2" />
                 Admins
+              </Link>
+              <Link href="/supabase-setup" className={`block pl-3 pr-4 py-2 text-base font-medium ${isActive("/supabase-setup") ? "bg-primary text-white" : "text-gray-300 hover:bg-dark-card hover:text-white"}`}>
+                <Database className="h-4 w-4 inline mr-2" />
+                Database Setup
               </Link>
             </>
           )}

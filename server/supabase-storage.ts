@@ -1,10 +1,11 @@
 import { 
-  users, teams, teamMembers, tournaments, registrations,
+  users, teams, teamMembers, tournaments, registrations, notifications, notificationReads,
   type User, type InsertUser, 
   type Team, type InsertTeam, 
   type TeamMember, type InsertTeamMember,
   type Tournament, type InsertTournament, type UpdateTournament,
-  type Registration, type InsertRegistration
+  type Registration, type InsertRegistration,
+  type Notification, type InsertNotification
 } from "@shared/schema";
 import { IStorage } from "./storage";
 import { supabase } from "./supabase";
@@ -390,5 +391,290 @@ export class SupabaseStorage implements IStorage {
       .eq('id', id);
     
     return !error;
+  }
+  
+  // Missing methods required by IStorage interface
+  
+  // User phone operations
+  async getUserByPhone(phone: string): Promise<User | undefined> {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('phone', phone)
+      .single();
+    
+    if (error || !data) return undefined;
+    return data as User;
+  }
+  
+  // Team invite code operations
+  async getTeamByInviteCode(inviteCode: string): Promise<Team | undefined> {
+    const { data, error } = await supabase
+      .from('teams')
+      .select('*')
+      .eq('inviteCode', inviteCode)
+      .single();
+    
+    if (error || !data) return undefined;
+    return data as Team;
+  }
+  
+  // Database status check
+  async checkDatabaseStatus(): Promise<{ status: string, userCount: number, tables: string[] }> {
+    try {
+      // Check if we can connect to the database
+      const { data: tablesData, error: tablesError } = await supabase
+        .from('users')
+        .select('count(*)', { count: 'exact', head: true });
+        
+      if (tablesError) {
+        return {
+          status: 'error',
+          userCount: 0,
+          tables: []
+        };
+      }
+      
+      // Get list of tables
+      const tables = ['users', 'teams', 'team_members', 'tournaments', 'registrations', 'notifications'];
+      
+      // Count users
+      const { count, error: countError } = await supabase
+        .from('users')
+        .select('*', { count: 'exact', head: true });
+      
+      if (countError) {
+        return {
+          status: 'warning',
+          userCount: 0,
+          tables
+        };
+      }
+      
+      return {
+        status: 'connected',
+        userCount: count || 0,
+        tables
+      };
+    } catch (error) {
+      console.error('Database status check error:', error);
+      return {
+        status: 'error',
+        userCount: 0,
+        tables: []
+      };
+    }
+  }
+  
+  // Notification operations
+  async getNotification(id: number): Promise<Notification | undefined> {
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error || !data) return undefined;
+    return data as Notification;
+  }
+  
+  async getUserNotifications(userId: number): Promise<Notification[]> {
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .or(`userId.eq.${userId},userId.is.null`)
+      .order('createdAt', { ascending: false });
+    
+    if (error || !data) return [];
+    return data as Notification[];
+  }
+  
+  async getBroadcastNotifications(): Promise<Notification[]> {
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .is('userId', null)
+      .order('createdAt', { ascending: false });
+    
+    if (error || !data) return [];
+    return data as Notification[];
+  }
+  
+  async getUnreadNotificationsCount(userId: number): Promise<number> {
+    try {
+      // Get all notifications for this user
+      const userNotifications = await this.getUserNotifications(userId);
+      
+      // Get all notification IDs the user has already read
+      const { data: readData, error: readError } = await supabase
+        .from('notification_reads')
+        .select('notificationId')
+        .eq('userId', userId);
+      
+      if (readError) return userNotifications.length;
+      
+      // Extract the notification IDs
+      const readNotificationIds = readData ? readData.map(item => item.notificationId) : [];
+      
+      // Count notifications that haven't been read
+      const unreadCount = userNotifications.filter(
+        notification => !readNotificationIds.includes(notification.id)
+      ).length;
+      
+      return unreadCount;
+    } catch (error) {
+      console.error('Error getting unread notifications count:', error);
+      return 0;
+    }
+  }
+  
+  async createNotification(insertNotification: InsertNotification): Promise<Notification> {
+    const { data, error } = await supabase
+      .from('notifications')
+      .insert(insertNotification)
+      .select()
+      .single();
+    
+    if (error || !data) {
+      throw new Error(error?.message || 'Failed to create notification');
+    }
+    
+    return data as Notification;
+  }
+  
+  async markNotificationAsRead(id: number, userId: number): Promise<Notification | undefined> {
+    try {
+      // First, get the notification
+      const notification = await this.getNotification(id);
+      if (!notification) return undefined;
+      
+      // Insert a record in the notification_reads table
+      const { error } = await supabase
+        .from('notification_reads')
+        .insert({
+          userId,
+          notificationId: id
+        });
+      
+      if (error) {
+        console.error('Error marking notification as read:', error);
+        return undefined;
+      }
+      
+      return notification;
+    } catch (error) {
+      console.error('Error in markNotificationAsRead:', error);
+      return undefined;
+    }
+  }
+  
+  async hasUserReadNotification(userId: number, notificationId: number): Promise<boolean> {
+    const { data, error } = await supabase
+      .from('notification_reads')
+      .select('id')
+      .eq('userId', userId)
+      .eq('notificationId', notificationId)
+      .single();
+    
+    return !error && !!data;
+  }
+  
+  async getUserReadNotifications(userId: number): Promise<number[]> {
+    const { data, error } = await supabase
+      .from('notification_reads')
+      .select('notificationId')
+      .eq('userId', userId);
+    
+    if (error || !data) return [];
+    return data.map(item => item.notificationId);
+  }
+  
+  async markAllNotificationsAsRead(userId: number): Promise<void> {
+    try {
+      // Get all notifications for this user
+      const userNotifications = await this.getUserNotifications(userId);
+      
+      // Get all notification IDs the user has already read
+      const readNotificationIds = await this.getUserReadNotifications(userId);
+      
+      // Filter out notifications that are already read
+      const unreadNotifications = userNotifications.filter(
+        notification => !readNotificationIds.includes(notification.id)
+      );
+      
+      // Mark each unread notification as read
+      const readEntries = unreadNotifications.map(notification => ({
+        userId,
+        notificationId: notification.id
+      }));
+      
+      if (readEntries.length > 0) {
+        await supabase
+          .from('notification_reads')
+          .insert(readEntries);
+      }
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+    }
+  }
+  
+  async deleteNotification(id: number): Promise<boolean> {
+    const { error } = await supabase
+      .from('notifications')
+      .delete()
+      .eq('id', id);
+    
+    return !error;
+  }
+  
+  async cleanupOldNotifications(olderThan: Date): Promise<number> {
+    try {
+      const { data, error } = await supabase
+        .from('notifications')
+        .delete()
+        .lt('createdAt', olderThan.toISOString())
+        .select('id');
+      
+      if (error) {
+        console.error('Error cleaning up old notifications:', error);
+        return 0;
+      }
+      
+      return data?.length || 0;
+    } catch (error) {
+      console.error('Error in cleanupOldNotifications:', error);
+      return 0;
+    }
+  }
+  
+  async deleteAllUserNotifications(userId: number): Promise<number> {
+    try {
+      // First, get all notification IDs for this user
+      const { data: notifications, error: fetchError } = await supabase
+        .from('notifications')
+        .select('id')
+        .eq('userId', userId);
+      
+      if (fetchError || !notifications || notifications.length === 0) {
+        return 0;
+      }
+      
+      // Delete the notifications
+      const { data: deletedData, error: deleteError } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('userId', userId)
+        .select('id');
+      
+      if (deleteError) {
+        console.error('Error deleting user notifications:', deleteError);
+        return 0;
+      }
+      
+      return deletedData?.length || 0;
+    } catch (error) {
+      console.error('Error in deleteAllUserNotifications:', error);
+      return 0;
+    }
   }
 }

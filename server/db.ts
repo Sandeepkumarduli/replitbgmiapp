@@ -1,15 +1,29 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import ws from "ws";
+import { createClient } from '@supabase/supabase-js';
 import * as schema from "@shared/schema";
 
-neonConfig.webSocketConstructor = ws;
+// Get Supabase credentials from environment variables
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-if (!process.env.DATABASE_URL) {
+if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
+    "NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY must be set. Did you forget to provision Supabase?"
   );
 }
 
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-export const db = drizzle({ client: pool, schema });
+// Create Supabase client
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+// For compatibility with existing code
+export const db = {
+  query: async (sql: string, params?: any[]) => {
+    const { data, error } = await supabase.rpc('execute_sql', { 
+      query: sql,
+      params: params || []
+    });
+    
+    if (error) throw error;
+    return data;
+  },
+  // Add any other database methods that might be needed
+};

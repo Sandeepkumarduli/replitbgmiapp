@@ -29,6 +29,8 @@ type TeamFormProps = {
 
 const teamFormSchema = z.object({
   name: z.string().min(3, "Team name must be at least 3 characters"),
+  description: z.string().optional(),
+  gameType: z.string().default("BGMI"),
 });
 
 const memberFormSchema = z.object({
@@ -54,6 +56,8 @@ export function TeamForm({ team, isEditing = false, onSuccess }: TeamFormProps) 
     resolver: zodResolver(teamFormSchema),
     defaultValues: {
       name: team?.name || "",
+      description: team?.description || "",
+      gameType: team?.gameType || "BGMI",
     },
   });
 
@@ -177,6 +181,28 @@ export function TeamForm({ team, isEditing = false, onSuccess }: TeamFormProps) 
                     </FormControl>
                     <FormDescription className="text-gray-400">
                       This name will be displayed in tournaments
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={teamForm.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-white">Team Description</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Enter team description (optional)"
+                        className="bg-dark-surface border-gray-700 text-white"
+                        autoComplete="off"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription className="text-gray-400">
+                      A brief description of your team
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

@@ -14,6 +14,10 @@ export function JoinTeamForm() {
   const joinTeamMutation = useMutation({
     mutationFn: async (code: string) => {
       const res = await apiRequest("POST", "/api/teams/join", { inviteCode: code });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to join team. Please try again.");
+      }
       return await res.json();
     },
     onSuccess: (data) => {
@@ -40,6 +44,7 @@ export function JoinTeamForm() {
       }, 1000);
     },
     onError: (error: any) => {
+      console.error("Join team error:", error);
       toast({
         title: "Failed to join team",
         description: error.message || "An error occurred while joining the team. Please try again.",

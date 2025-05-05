@@ -633,6 +633,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Join team by invite code
   app.post('/api/teams/join', isAuthenticated, async (req, res) => {
     try {
+      console.log('Join team route called with body:', req.body);
       const { inviteCode } = req.body;
       if (!inviteCode) {
         return res.status(400).json({ error: 'Invite code is required' });
@@ -640,34 +641,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get the current user
       const userId = req.session.userId as number;
-      const user = await storage.getUser(userId);
+      console.log(`Processing join request for user ID: ${userId} with invite code: ${inviteCode}`);
       
+      const user = await storage.getUser(userId);
       if (!user) {
+        console.log(`User with ID ${userId} not found`);
         return res.status(404).json({ error: 'User not found' });
       }
       
       // Find team by invite code
       const team = await storage.getTeamByInviteCode(inviteCode);
-      
       if (!team) {
+        console.log(`Team with invite code ${inviteCode} not found`);
         return res.status(404).json({ error: 'Team not found with that invite code' });
+      }
+      
+      console.log(`Found team ${team.name} (ID: ${team.id}) with invite code ${inviteCode}`);
+      
+      // Check if user is the team owner
+      if (team.ownerId === userId) {
+        return res.status(400).json({ error: 'You are already the owner of this team' });
       }
       
       // Check if the user already exists in the team
       const members = await storage.getTeamMembers(team.id);
-      const existingMember = members.some(m => m.username === user.username);
+      console.log(`Team has ${members.length} members`);
       
+      const existingMember = members.some(m => m.username === user.username);
       if (existingMember) {
+        console.log(`User ${user.username} is already a member of team ${team.name}`);
         return res.status(400).json({ error: 'You are already a member of this team' });
       }
       
+      // Check team size limit based on team type
+      const maxTeamSize = team.gameType === 'Squad' ? 4 : team.gameType === 'Duo' ? 2 : 1;
+      if (members.length >= maxTeamSize) {
+        console.log(`Team ${team.name} is full (${members.length}/${maxTeamSize} members)`);
+        return res.status(400).json({ error: `This team is already full (${members.length}/${maxTeamSize} members)` });
+      }
+      
       // Add the user to the team
+      console.log(`Adding user ${user.username} to team ${team.name}`);
       const teamMember = await storage.addTeamMember({
         teamId: team.id,
         username: user.username,
-        gameId: user.gameId,
+        gameId: user.gameId || user.username, // Fallback to username if gameId is not set
         role: 'member'
       });
+      
+      console.log(`Successfully added user to team, new member ID: ${teamMember.id}`);
       
       // Create notification for team owner
       await storage.createNotification({
